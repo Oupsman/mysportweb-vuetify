@@ -15,8 +15,7 @@ interface Dialog extends DialogOptions {
 }
 
 export const useAppStore = defineStore('app', () => {
-
-  const drawer: Ref<boolean> = ref(false);
+  const drawer: Ref<boolean> = ref(false)
 
   const toggleDrawer = (newValue?: boolean): void => {
     if (typeof newValue === 'boolean') {
@@ -40,7 +39,7 @@ export const useAppStore = defineStore('app', () => {
     contents: '',
     visible: false,
     fullscreen: false,
-  });
+  })
 
   const showDialog = (options: DialogOptions = { title: '', contents: '' }): void => {
     dialog.value = { ...options, visible: true }

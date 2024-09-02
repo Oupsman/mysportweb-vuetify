@@ -2,12 +2,12 @@ export interface Equipment {
   id: string;
   name: string;
   brand: string;
-  equipmentmodel: string;
-  dateofpurchase: string;
+  model: string;
+  date_of_purchase: string;
   mileage: number;
   weight: number;
-  maintenanceInterval: number;
-  isdefault: boolean;
+  maintenance_interval: number;
+  is_default: boolean;
 }
 
 export interface Equipments {

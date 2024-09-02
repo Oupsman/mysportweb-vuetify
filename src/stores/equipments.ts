@@ -1,27 +1,22 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
-
-import { useUserStore } from '@/stores/user'
-const userStore = useUserStore()
+import axios from 'axios'
 
 export const useEquipmentsStore = defineStore('equipments', () => {
   const equipments: Ref<Equipment[]> = ref([])
   const getAllEquipments = async (): Promise<Equipment[] | undefined> => {
-    const userStore = useUserStore()
-    const token = userStore.session.value?.token
+    console.log('Get all equipments - function')
+    const token = localStorage.getItem('msw-token')
     if (!token) {
       throw new Error('No token')
     }
     const request = axios.create({
       baseUrl: import.meta.env.VITE_BACKEND_URL,
       timeout: 1000,
-      headers: { Authorization: `Bearer ${userStore.session.value.token}` },
+      headers: { Authorization: `Bearer ${token}` },
     })
-    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/equipment/all', {
-      ...equipment,
-      token,
-    }).then(response => {
+    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/equipment/all').then(response => {
       console.log('Equipments:', response.data)
       equipments.value = response.data
     }).catch(error => {
@@ -29,17 +24,17 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       throw new Error('get equipments failed')
     })
   }
+  console.log('Get all equipments - store')
   getAllEquipments()
   const insertEquipment = async (equipment: Equipment): Promise<void> => {
-    const userStore = useUserStore()
-    const token = userStore.session.value?.token
+    const token = localStorage.getItem('msw-token')
     if (!token) {
       throw new Error('No token')
     }
     const request = axios.create({
       baseUrl: import.meta.env.VITE_BACKEND_URL,
       timeout: 1000,
-      headers: { Authorization: `Bearer ${userStore.session.value.token}` },
+      headers: { Authorization: `Bearer ${token}` },
     })
     request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/equipment', {
       ...equipment,
@@ -50,5 +45,11 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Create equipment error:', error)
       throw new Error('Create equipment failed')
     })
+  }
+
+  return {
+    equipments,
+    getAllEquipments,
+    insertEquipment,
   }
 })

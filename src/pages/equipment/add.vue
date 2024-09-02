@@ -1,11 +1,13 @@
 <script setup lang="ts">
-  import EquipmentsList from '@/components/EquipmentsList.vue'
+  import EquipmentForm from '@/components/EquipmentForm.vue'
 </script>
 
 <template>
   <v-container>
-    <EquipmentsList />
+    <h1>Add Equipment</h1>
+    <EquipmentForm />
   </v-container>
+
 </template>
 
 <style scoped lang="sass">
