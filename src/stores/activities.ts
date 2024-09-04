@@ -49,6 +49,28 @@ export const useActivitiesStore = defineStore('activities', () => {
       throw new Error('get activities failed')
     })
   }
+
+  const deleteActivity = async (id: string): Promise<Object | undefined> => {
+    console.log('Delete activity - function')
+    confirm('Are you sure you want to delete this activity?')
+    const token = localStorage.getItem('msw-token')
+    if (!token) {
+      throw new Error('No token')
+    }
+    const request = axios.create({
+      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      timeout: 1000,
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    request.delete(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/' + id).then(response => {
+      console.log('Activity deleted:', response.data)
+      getActivities()
+    }).catch(error => {
+      console.error('Delete activity error:', error)
+      throw new Error('delete activity')
+    })
+  }
+
   getActivities()
   return {
     activity,
@@ -56,5 +78,6 @@ export const useActivitiesStore = defineStore('activities', () => {
     getDate,
     getActivity,
     getActivities,
+    deleteActivity,
   }
 })

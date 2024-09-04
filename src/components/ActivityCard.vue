@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-
+  import { computed } from 'vue'
+  import { useActivitiesStore } from '@/stores/activities'
+  const activitiesStore = useActivitiesStore()
   const props = defineProps({
     activity: {
       type: Object,
@@ -25,6 +26,8 @@ import { computed, onMounted } from 'vue'
     </v-card-text>
     <v-card-actions>
       <v-btn color="primary" @click="appStore.navigateToPage(`/activity/${props.activity.id}`)">View</v-btn>
+      <v-btn color="primary" @click="appStore.navigateToPage(`/activity/edit/${props.activity.id}`)">Edit</v-btn>
+      <v-btn color="primary" @click="activitiesStore.deleteActivity(props.activity.id)">Delete</v-btn>
     </v-card-actions>
   </v-card>
 </template>
