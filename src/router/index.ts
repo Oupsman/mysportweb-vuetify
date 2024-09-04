@@ -8,10 +8,14 @@
 import { createRouter, createWebHistory } from 'vue-router/auto'
 import { setupLayouts } from 'virtual:generated-layouts'
 import { routes } from 'vue-router/auto-routes'
-
+import ActivityViewPage from '../pages/activity/view.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: setupLayouts(routes),
+})
+
+router.addRoute({
+  path: '/activity/:id', component: ActivityViewPage,
 })
 
 // Workaround for https://github.com/vitejs/vite/issues/11804

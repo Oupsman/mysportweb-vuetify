@@ -7,7 +7,10 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppFooter: typeof import('./components/AppFooter.vue')['default']
+    ActivitiesList: typeof import('./components/ActivitiesList.vue')['default']
+    ActivityCard: typeof import('./components/ActivityCard.vue')['default']
+    ActivityUpload: typeof import('./components/ActivityUpload.vue')['default']
+    ActivityView: typeof import('./components/ActivityView.vue')['default']
     AppMenu: typeof import('./components/AppMenu.vue')['default']
     Dashboard: typeof import('./components/Dashboard.vue')['default']
     Equipment: typeof import('./components/equipment.vue')['default']

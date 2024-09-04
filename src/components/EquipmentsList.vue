@@ -6,26 +6,12 @@
 
 <template>
 
-  <v-layout wrap>
-    <li v-for="equipment in equipmentStore.equipments" :key="equipment.id">
-      <v-card class="mb-4">
-        <v-row>
-          <v-col cols="12">
-            <v-row>
-              <v-col cols="12">
-                <h5 class="text-h5">{{ equipment.name }}</h5>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12">
-                <p> {{ equipment.brand }} - {{ equipment.equipmentmodel }} ></p>
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
-      </v-card>
-    </li>
-  </v-layout>
+  <v-sheet v-for="equipment in equipmentStore.equipments" :key="equipment.id" class="d-flex flex-wrap">
+    <v-card class="h-auto w-25">
+      <v-card-title> {{ equipment.name }}</v-card-title>
+      <v-card-text> {{ equipment.brand }} - {{ equipment.equipmentmodel }} ></v-card-text>
+    </v-card>
+  </v-sheet>
 
 </template>
 
