@@ -102,5 +102,28 @@ export const useUserStore = defineStore('user', () => {
     }
     return true
   })
-  return { session, userIsLoggedIn, login, logout, setUserSession, checkToken, signup }
+
+  const dashboard = ref({})
+
+  const refreshDashboard = async (): Promise<void> => {
+    console.log('Get dashboard - function')
+    const token = localStorage.getItem('msw-token')
+    if (!token) {
+      throw new Error('No token')
+    }
+    const request = axios.create({
+      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      timeout: 1000,
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/user/dashboard').then(response => {
+      dashboard.value = response.data
+      console.log('Dashboard:', response.data)
+    }).catch(error => {
+      console.error('Get dashboard error:', error)
+      throw new Error('get dashboard failed')
+    })
+  }
+  refreshDashboard()
+  return { session, userIsLoggedIn, login, logout, setUserSession, checkToken, signup, dashboard, refreshDashboard }
 })

@@ -1,7 +1,9 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useActivitiesStore } from '@/stores/activities'
+  import { useAppStore } from '@/stores/app'
   const activitiesStore = useActivitiesStore()
+  const appStore = useAppStore()
   const props = defineProps({
     activity: {
       type: Object,
@@ -11,7 +13,12 @@
 
   const formatedDate = computed(() => {
     const date = new Date(props.activity.date)
-    return `${date.getDay()}/${date.getMonth()}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}`
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const year = date.getFullYear()
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${month}/${day}/${year} ${hours}:${minutes}`
   })
 
 </script>

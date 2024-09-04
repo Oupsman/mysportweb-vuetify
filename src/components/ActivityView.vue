@@ -16,8 +16,13 @@
   activitiesStore.getActivity(route.params.id)
   activity.value = activitiesStore.activity
   const date = computed(() => {
-    const d = new Date(activity.value.date)
-    return d.getDay() + '/' + d.getMonth() + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes()
+    const date = new Date(activity.value.date)
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const year = date.getFullYear()
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${month}/${day}/${year} ${hours}:${minutes}`
   })
 </script>
 
