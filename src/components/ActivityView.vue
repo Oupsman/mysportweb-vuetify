@@ -26,7 +26,7 @@
   })
   onMounted(() => {
     activitiesStore.getActivity(route.params.id)
-    appStore.pageTitle = `Activity ${activity.value.title}`
+    appStore.pageTitle = `${activity.value.title}`
   })
 </script>
 
