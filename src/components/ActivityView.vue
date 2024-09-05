@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref, computed, onMounted } from 'vue'
   import { useAppStore } from '@/stores/app'
   import { useUserStore } from '@/stores/user'
   import { useActivitiesStore } from '@/stores/activities'
@@ -23,6 +23,10 @@
     const hours = date.getHours().toString().padStart(2, '0')
     const minutes = date.getMinutes().toString().padStart(2, '0')
     return `${month}/${day}/${year} ${hours}:${minutes}`
+  })
+  onMounted(() => {
+    activitiesStore.getActivity(route.params.id)
+    appStore.pageTitle = `Activity ${activity.value.title}`
   })
 </script>
 
