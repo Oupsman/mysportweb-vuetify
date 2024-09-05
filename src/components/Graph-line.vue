@@ -37,29 +37,38 @@
       type: String,
       required: true,
     },
-    id: {
-      type: String,
+    activity: {
+      type: Object,
       required: true,
     },
   })
-  console.log('Graph:', props.graph, props.id)
+  console.log('Graph:', props.graph)
   const xaxis = ref<number[]>([])
   const yaxis = ref<number[]>([])
   let labels: string[] = []
   let data: number[] = []
-
-  if (props.graph && props.id) {
-    await activitiesStore.getActivity(props.id)
-    const activity = activitiesStore.activity
-    while (activity.value === undefined) {
-      console.log('Activity not found')
-    }
+  let color = 'green'
+  if (props.graph) {
     switch (props.graph) {
       case 'speed':
-        xaxis.value = activity?.value.dist_array
-        yaxis.value = activity?.value.speeds
+        xaxis.value = props.activity.dist_array
+        yaxis.value = props.activity.speeds
         labels = xaxis.value.map(x => (x / 1000).toFixed(1))
         data = yaxis.value.map(x => x * 3.6)
+        break
+      case 'hr':
+        xaxis.value = props.activity.dist_array
+        yaxis.value = props.activity.hearts
+        labels = xaxis.value.map(x => (x / 1000).toFixed(1))
+        data = yaxis.value
+        color = 'red'
+        break
+      case 'cadence':
+        xaxis.value = props.activity.dist_array
+        yaxis.value = props.activity.cadences
+        labels = xaxis.value.map(x => (x / 1000).toFixed(1))
+        data = yaxis.value
+        color = 'blue'
         break
     }
     console.log('Labels:', labels)
@@ -69,18 +78,22 @@
       datasets: [{
         label: props.graph,
         data,
+        borderColor: color,
+        pointRadius: 0,
       }],
     }
+  } else {
+    console.log(props.graph)
   }
 </script>
 
 <template>
   <suspense>
     <Line
-      id="line-chart-id"
-      :options="chartOptions"
-      :data="chartData"
       v-if="xaxis && yaxis"
+      id="line-chart-id"
+      :data="chartData"
+      :options="chartOptions"
     />
   </suspense>
 </template>

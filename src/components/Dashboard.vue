@@ -5,7 +5,7 @@
   import { ref } from 'vue'
   const userStore = useUserStore()
   const appStore = useAppStore()
-
+  const value = new Date()
 </script>
 
 <template>
@@ -53,7 +53,11 @@
     <v-row>
       <v-col class="w-25">
         <h5>Calendar</h5>
-        <v-calendar :events="userStore.dashboard.activities_calendar" />
+        <v-calendar
+          ref="calendar"
+          v-model="value"
+          :events="userStore.dashboard.activities_calendar"
+        />
       </v-col>
       <v-col class="w-75">
         <h5>10 last activities</h5>

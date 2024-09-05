@@ -21,6 +21,7 @@ declare module 'vue' {
     GraphLine: typeof import('./components/Graph-line.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     LoginForm: typeof import('./components/LoginForm.vue')['default']
+    Map: typeof import('./components/Map.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']

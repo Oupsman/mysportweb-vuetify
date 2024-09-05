@@ -7,31 +7,30 @@ export const useActivitiesStore = defineStore('activities', () => {
   const activity: Ref<Object | undefined> = ref({})
   const activities = ref([])
 
-  const getActivity = async (id: string): Promise<Object | undefined> => {
+  const getActivity = async (id: string): Promise<Object> => {
     console.log('Get activity - function')
     const token = localStorage.getItem('msw-token')
     if (!token) {
       throw new Error('No token')
     }
-    const request = axios.create({
-      baseUrl: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/' + id).then(response => {
-      console.log('Activity:', response.data)
-      activity.value = response.data.activity
-    }).catch(error => {
+
+    try {
+      const request = axios.create({
+        baseURL: import.meta.env.VITE_BACKEND_URL,
+        timeout: 1000,
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      const response = await request.get(`/api/v1/activity/${id}`)
+      console.log('Activity:', response.data.activity )
+      return response.data.activity
+    } catch (error) {
       console.error('Get activity error:', error)
       throw new Error('get activity failed')
-    })
+    }
   }
-  const getDate = computed(() => {
-    const d = new Date(activity.value.date)
-    return d.getDay() + '/' + d.getMonth() + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes()
-  })
 
-  const getActivities = async (): Promise<Object | undefined> => {
+  const getActivities = (): Object => {
     console.log('Get activities - function')
     const token = localStorage.getItem('msw-token')
     if (!token) {
@@ -44,6 +43,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     })
     request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/list').then(response => {
       activities.value = response.data.activities
+      return response.data.activities
     }).catch(error => {
       console.error('Get activities error:', error)
       throw new Error('get activities failed')
@@ -75,7 +75,6 @@ export const useActivitiesStore = defineStore('activities', () => {
   return {
     activity,
     activities,
-    getDate,
     getActivity,
     getActivities,
     deleteActivity,
