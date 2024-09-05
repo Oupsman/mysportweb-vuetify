@@ -54,20 +54,19 @@ export const useUserStore = defineStore('user', () => {
     })
   }
   const signup = async (username: string, password: string, email: string): Promise<void> => {
-    axios.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/user/signup', {
+    const request = axios.create(
+      {
+        baseUrl: import.meta.env.VITE_BACKEND_URL,
+        timeout: 1000,
+        withCredentials: false,
+      }
+    )
+    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/user/register', {
       username,
       password,
       email,
     }).then(response => {
-      if (response.data.token) {
-        localStorage.setItem('msw-token', response.data.token)
-        const data = parseJwt(response.data.token)
-        setUserSession({
-          ...data,
-          token: response.data.token,
-        })
-        router.push('/login')
-      }
+      console.log('Signup response:', response)
     }).catch(error => {
       console.error('Signup error:', error)
       throw new Error('Signup failed')

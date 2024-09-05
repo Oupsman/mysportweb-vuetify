@@ -11,7 +11,6 @@
   const name:Ref<string> = ref('')
   const brand:Ref<string> = ref('')
   const model:Ref<string> = ref('')
-  const date_of_purchase:Ref<string> = ref('')
   const initial_mileage:Ref<number> = ref(0)
   const weight:Ref<bigint> = ref(0)
   const is_default:Ref<boolean> = ref(false)

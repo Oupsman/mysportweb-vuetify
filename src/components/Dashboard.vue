@@ -1,13 +1,15 @@
 <script setup lang="ts">
   import ActivityCard from '@/components/ActivityCard.vue'
   import { useUserStore } from '@/stores/user'
+  import { useAppStore } from '@/stores/app'
   import { ref } from 'vue'
   const userStore = useUserStore()
+  const appStore = useAppStore()
 
 </script>
 
 <template>
-  <v-container>
+  <v-container v-if="userStore.userIsLoggedIn">
     <v-row>
       <h5 class="text-h5">Dashboard</h5>
     </v-row>
