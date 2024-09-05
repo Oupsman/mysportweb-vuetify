@@ -9,9 +9,10 @@
   const userStore = useUserStore()
   const appStore = useAppStore()
   const activitiesStore = useActivitiesStore()
-
+  const graphs = ['speed', 'hr', 'cadence']
   const route = useRoute()
   const activity = ref('')
+  const panel: Ref<Number[]> = ref([0])
 
   activitiesStore.getActivity(route.params.id)
   activity.value = activitiesStore.activity
@@ -24,7 +25,7 @@
     const minutes = date.getMinutes().toString().padStart(2, '0')
     return `${month}/${day}/${year} ${hours}:${minutes}`
   })
-  onMounted(() => {
+  onMounted(async () => {
     activitiesStore.getActivity(route.params.id)
     appStore.pageTitle = `${activity.value.title}`
   })
@@ -70,6 +71,17 @@
           <v-card-text> {{ (activitiesStore.activity.co2 / 1000).toFixed(1) }}</v-card-text>
         </v-card>
       </v-sheet>
+    </v-row>
+    <v-row>
+      <v-expansion-panels v-model="panel" accordion>
+        <Suspense>
+          <v-expansion-panel v-for="graph in graphs" :key="graph">
+            <v-expansion-panel-text>
+              <Graph-line :id="route.params.id" :graph="graph" />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </Suspense>
+      </v-expansion-panels>
     </v-row>
   </v-container>
 </template>
