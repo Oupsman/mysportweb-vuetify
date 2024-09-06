@@ -18,6 +18,7 @@ declare module 'vue' {
     EquipmentsList: typeof import('./components/EquipmentsList.vue')['default']
     FormLogin: typeof import('./components/FormLogin.vue')['default']
     Graph: typeof import('./components/Graph.vue')['default']
+    GraphBar: typeof import('./components/Graph-bar.vue')['default']
     GraphLine: typeof import('./components/Graph-line.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     LoginForm: typeof import('./components/LoginForm.vue')['default']

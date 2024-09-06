@@ -2,13 +2,13 @@
   import { ref, onBeforeMount } from 'vue'
   import type { Ref } from 'vue'
 
-  import { Line } from 'vue-chartjs'
+  import { Bar } from 'vue-chartjs'
   import {
     Chart as ChartJS,
     CategoryScale,
     LinearScale,
-    PointElement,
-    LineElement,
+    BarController,
+    BarElement,
     Title,
     Tooltip,
     Legend,
@@ -19,8 +19,8 @@
   ChartJS.register(
     CategoryScale,
     LinearScale,
-    PointElement,
-    LineElement,
+    BarController,
+    BarElement,
     Title,
     Tooltip,
     Legend
@@ -46,35 +46,16 @@
   const yaxis = ref<number[]>([])
   let labels: string[] = []
   let data: number[] = []
-  let color = 'green'
+  let color = 'lightgreen'
   if (props.graph) {
     switch (props.graph) {
-      case 'speed':
-        xaxis.value = props.activity.dist_array
-        yaxis.value = props.activity.speeds
-        labels = xaxis.value.map(x => (x / 1000).toFixed(1))
+      case 'means':
+        for (let i = 0; i < props.activity.means.length; i++) {
+          labels[i] = (i + 1).toString()
+        }
+        yaxis.value = props.activity.means
+        //    labels = xaxis.value.map(x => (x / 1000).toFixed(1))
         data = yaxis.value.map(x => x * 3.6)
-        break
-      case 'hr':
-        xaxis.value = props.activity.dist_array
-        yaxis.value = props.activity.hearts
-        labels = xaxis.value.map(x => (x / 1000).toFixed(1))
-        data = yaxis.value
-        color = 'red'
-        break
-      case 'cadence':
-        xaxis.value = props.activity.dist_array
-        yaxis.value = props.activity.cadences
-        labels = xaxis.value.map(x => (x / 1000).toFixed(1))
-        data = yaxis.value
-        color = 'blue'
-        break
-      case 'altitude':
-        xaxis.value = props.activity.dist_array
-        yaxis.value = props.activity.altitudes
-        labels = xaxis.value.map(x => (x / 1000).toFixed(1))
-        data = yaxis.value
-        color = 'blue'
         break
     }
     chartData.value = {
@@ -82,7 +63,7 @@
       datasets: [{
         label: props.graph,
         data,
-        borderColor: color,
+        backgroundColor: color,
         pointRadius: 0,
       }],
     }
@@ -92,17 +73,17 @@
 </script>
 
 <template>
-  <Line
+  <Bar
     v-if="xaxis && yaxis"
-    id="line-chart-id"
+    id='bar-chart-id'
+    class="graphbar"
     :data="chartData"
     :options="chartOptions"
-    class="graphline"
   />
 </template>
 
 <style scoped lang="css">
-  .graphline {
-    height: 50px;
-  }
+.graphbar {
+  height: 150px;
+}
 </style>

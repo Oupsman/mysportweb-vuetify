@@ -11,7 +11,8 @@
   const activity = ref(null)
   const isLoading = ref(true)
   const panel = ref(0)
-  const graphs = ['speed', 'hr']
+  const graphs = ['speed', 'hr', 'cadence', 'altitude']
+  const means = 'means'
   const formattedActivityDate = computed(() => {
     if (!activity.value?.date) return ''
 
@@ -29,7 +30,6 @@
     try {
       isLoading.value = true
       activity.value = await activitiesStore.getActivity(route.params.id)
-      console.log('Fetched activity:', activity.value)
       if (activity.value) {
         appStore.pageTitle = activity.value.title
       }
@@ -39,10 +39,6 @@
       isLoading.value = false
     }
   }
-
-  watchEffect(() => {
-    console.log('Activity changed:', activity.value)
-  })
   onMounted(fetchActivity)
 </script>
 
@@ -89,11 +85,14 @@
           </v-card>
         </v-sheet>
       </v-row>
-
+      <v-row>
+        <Map :activity="activity" />
+      </v-row>
       <v-row>
         <v-expansion-panels v-model="panel" accordion>
-          <v-expansion-panel class="h-150">
-            <Graph-line v-for="graph in graphs" :key="graph" :graph="graph" :activity="activity" />
+          <v-expansion-panel>
+            <Graph-line v-for="graph in graphs" :key="graph" :activity="activity" :graph="graph" style="height: 200px;  " />
+            <Graph-bar  v-if="activity.means.length >0" :activity="activity" :graph="means" />
           </v-expansion-panel>
         </v-expansion-panels>
       </v-row>
