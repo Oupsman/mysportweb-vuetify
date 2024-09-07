@@ -2,10 +2,24 @@
   import ActivityCard from '@/components/ActivityCard.vue'
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   const userStore = useUserStore()
   const appStore = useAppStore()
-  const value = new Date()
+  const value = ref([])
+  const calendar = ref()
+
+  const formattedActivitiesCalendar = computed(() => {
+    return userStore.dashboard.activities_calendar.map(event => {
+      const startDate = new Date(event.start)
+      const endDate = new Date(startDate.getTime() + Number(event.duration) * 1000)
+      return {
+        ...event,
+        start: startDate,
+        end: endDate,
+      }
+    })
+  })
+  console.log(formattedActivitiesCalendar)
 </script>
 
 <template>
@@ -56,7 +70,7 @@
         <v-calendar
           ref="calendar"
           v-model="value"
-          :events="userStore.dashboard.activities_calendar"
+          :events="formattedActivitiesCalendar"
         />
       </v-col>
       <v-col class="w-75">

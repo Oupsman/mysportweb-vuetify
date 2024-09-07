@@ -29,6 +29,7 @@
 
   // iterate over activitiesStore.activity.gps_points to create an 2 dimensions array of Float wanted by leaflet
   const transformedPoints: number[][] = props.activity.gps_points.map(point => [point.lat, point.lon])
+  const publicPoints:number[][] = props.activity.public_gps_points.map(point => [point.lat, point.lon])
   const gpsCenter: number[] = [props.activity.gps_center.lat, props.activity.gps_center.lon]
   gpsBounds.value = props.activity.gps_bounds.map(point => [point.lat, point.lon])
   const pointsNumbers = props.activity.gps_points.length
@@ -96,12 +97,16 @@
           color="red"
           :lat-lngs="transformedPoints"
         />
+        <LPolyline
+          color="green"
+          :lat-lngs="publicPoints"
+        />
         <LMarker
           v-for="marker in markers"
           :key="marker.name "
           :lat-lng="marker.coords"
         >
-          <LIcon :icon-url="marker.icon" />
+          <LIcon :icon-size="30" :icon-url="marker.icon" />
         </LMarker>
       </template>
     </l-map>
