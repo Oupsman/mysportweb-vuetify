@@ -24,7 +24,7 @@
 </script>
 
 <template>
-  <v-card class="h-auto w-20 ma-2 pa-1">
+  <v-card class="h-auto w-33 ma-2 pa-1">
     <v-card-title>
       <h5 class="text-h5">{{ props.activity.title }}</h5>
     </v-card-title>
@@ -33,7 +33,7 @@
     </v-card-text>
     <v-card-actions>
       <v-btn color="primary" @click="appStore.navigateToPage(`/activity/${props.activity.id}`)">View</v-btn>
-      <v-btn color="primary" @click="appStore.navigateToPage(`/activity/edit/${props.activity.id}`)">Edit</v-btn>
+      <router-link :to="'/activity/' + props.activity.id + '/edit'"><v-btn color="primary">Edit</v-btn></router-link>
       <v-btn color="primary" @click="activitiesStore.deleteActivity(props.activity.id)">Delete</v-btn>
     </v-card-actions>
   </v-card>

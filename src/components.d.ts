@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ActivitiesList: typeof import('./components/ActivitiesList.vue')['default']
     ActivityCard: typeof import('./components/ActivityCard.vue')['default']
+    ActivityForm: typeof import('./components/ActivityForm.vue')['default']
     ActivityUpload: typeof import('./components/ActivityUpload.vue')['default']
     ActivityView: typeof import('./components/ActivityView.vue')['default']
     AppMenu: typeof import('./components/AppMenu.vue')['default']

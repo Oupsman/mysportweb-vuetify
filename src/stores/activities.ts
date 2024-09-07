@@ -22,7 +22,7 @@ export const useActivitiesStore = defineStore('activities', () => {
       })
 
       const response = await request.get(`/api/v1/activity/${id}`)
-      console.log('Activity:', response.data.activity )
+      console.log('Activity:', response.data.activity)
       return response.data.activity
     } catch (error) {
       console.error('Get activity error:', error)
@@ -71,6 +71,28 @@ export const useActivitiesStore = defineStore('activities', () => {
     })
   }
 
+  const saveActivity = async (activity: Object):Promise<Object | undefined> => {
+    console.log('Activity to save', activity)
+    const token = localStorage.getItem('msw-token')
+    if (!token) {
+      throw new Error('No token')
+    }
+    const request = axios.create({
+      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      timeout: 1000,
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/' + activity.ID, {
+      ...activity,
+    }).then(response => {
+      console.log('Activity updated:', response.data)
+      getActivities()
+    }).catch(error => {
+      console.error('Update activity error:', error)
+      throw new Error('update activity')
+    })
+  }
+
   getActivities()
   return {
     activity,
@@ -78,5 +100,6 @@ export const useActivitiesStore = defineStore('activities', () => {
     getActivity,
     getActivities,
     deleteActivity,
+    saveActivity,
   }
 })
