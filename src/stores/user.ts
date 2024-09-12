@@ -137,7 +137,7 @@ export const useUserStore = defineStore('user', () => {
     }
     const request = axios.create({
       baseUrl: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
+      timeout: 30000,
       headers: { Authorization: `Bearer ${token}` },
     })
     request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/user', {
@@ -160,7 +160,7 @@ export const useUserStore = defineStore('user', () => {
     }
     const request = axios.create({
       baseUrl: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
+      timeout: 30000,
       headers: { Authorization: `Bearer ${token}` },
     })
     request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/user/dashboard').then(response => {

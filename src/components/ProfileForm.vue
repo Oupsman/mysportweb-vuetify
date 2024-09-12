@@ -2,90 +2,63 @@
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
   import { useVuelidate } from '@vuelidate/core'
+  import { minLength, required, sameAs } from '@vuelidate/validators'
+  import { computed, ref } from 'vue'
 
-  import { validationMixin } from 'vuelidate'
-  import { sameAs } from 'vuelidate/lib/validators'
-
-  import { ref } from 'vue'
   const userStore = useUserStore()
   const appStore = useAppStore()
 
   const isLoading = ref(true)
   const showPassword = ref(false)
 
-  let userForm = {}
-  let v$ = null
+  const userForm = ref({
+    oldPassword: '',
+    newPassword: '',
+    newPasswordConfirmation: '',
+    birthmonth: 1,
+    birthday: 1,
+    birthyear: 2000,
+    gender: 0,
+    weight: 0,
+    height: 0,
+    max_hr: 170,
+    security_distance: 500,
+  })
 
   const rules = computed(() => ({
+    oldPassword: { required },
+    newPassword: { minLength: minLength(6) },
     newPasswordConfirmation: {
-      sameAsPassword: sameAs(computed(() => userForm.newPassword)),
+      sameAsPassword: sameAs(userForm.value.newPassword),
     },
   }))
+
+  const v$ = useVuelidate(rules, userForm)
+
   const user = ref(null)
-  const months = []
-  for (let month = 1; month <= 12; month++) {
-    months.push({ value: month, title: month.toString() })
-  }
-
-  const days = []
-  for (let day = 1; day <= 31; day++) {
-    days.push({ value: day, title: day.toString() })
-  }
-
+  const months = [...Array(12)].map((_, i) => ({ value: i + 1, title: (i + 1).toString() }))
+  const days = [...Array(31)].map((_, i) => ({ value: i + 1, title: (i + 1).toString() }))
   const currentYear = new Date().getFullYear()
-  const startYear = currentYear - 100
-  const years: number[] = []
-
-  for (let year = currentYear; year >= startYear; year--) {
-    years.push({ value: year, title: year.toString() })
-  }
-
+  const years = [...Array(101)].map((_, i) => ({ value: currentYear - i, title: (currentYear - i).toString() }))
   const genders = [
     { title: 'Male', value: 0 },
     { title: 'Female', value: 1 },
   ]
-
-  const birthmonth = ref(0)
-  const birthday = ref(0)
-  const birthyear = ref(2000)
 
   const fetchUser = async () => {
     try {
       isLoading.value = true
       await userStore.getUser()
       user.value = userStore.user
-      console.log('ProfileForm: ', userStore.user)
-      if (userStore.user.date_of_birth !== null) {
-        const date = new Date(userStore.user.date_of_birth)
-        console.log('date_of_birth:', date)
-        birthmonth.value = date.getMonth()
-        birthday.value = date.getDay()
-        birthyear.value = date.getFullYear()
-        if (birthmonth.value === 0) {
-          birthmonth.value = 1
-        }
-        if (birthday.value === 0) {
-          birthday.value = 1
-        }
-
-        if (birthyear.value < 1900) {
-          birthyear.value = 1980
-        }
+      if (user.value?.date_of_birth) {
+        const date = new Date(user.value.date_of_birth)
+        userForm.value.birthmonth = date.getMonth() + 1
+        userForm.value.birthday = date.getDate()
+        userForm.value.birthyear = date.getFullYear()
       }
-
       if (user.value) {
         appStore.pageTitle = user.value.username
-        userForm = {
-          currentPassword: '',
-          newPassword: '',
-          newPasswordConfirmation: '',
-          birthmonth: birthmonth.value,
-          birthday: birthday.value,
-          birthyear: birthyear.value,
-          ...userStore.user,
-        }
-        console.log(userForm)
-        v$ = useVuelidate(rules, userForm, { $autoDirty: true })
+        Object.assign(userForm.value, user.value)
       }
     } catch (error) {
       console.error('Error while loading user', error)
@@ -93,15 +66,19 @@
       isLoading.value = false
     }
   }
+
   onMounted(fetchUser)
 
   const save = async () => {
-    const date_of_birth = new Date(`${birthyear.value}/${birthmonth.value}/${birthday.value}`)
-    console.log(date_of_birth)
-    user.value = {
-      ...userForm,
+    const isValid = await v$.value.$validate()
+    if (!isValid) return
+
+    const date_of_birth = new Date(`${userForm.value.birthyear}/${userForm.value.birthmonth}/${userForm.value.birthday}`)
+    const updatedUser = {
+      ...userForm.value,
+      date_of_birth: date_of_birth.toISOString(),
     }
-    await userStore.updateUser(user.value)
+    await userStore.updateUser(updatedUser)
   }
 </script>
 
@@ -111,8 +88,9 @@
     <v-container>
       <v-form @submit.prevent="save">
         <v-text-field
-          v-model="userForm.currentPassword"
+          v-model="userForm.oldPassword"
           :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+          :error-messages="v$.oldPassword.$errors.map(e => e.$message)"
           label="Current Password"
           prepend-icon="mdi-lock"
           required
@@ -121,6 +99,7 @@
         <v-text-field
           v-model="userForm.newPassword"
           :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+          :error-messages="v$.newPassword.$errors.map(e => e.$message)"
           label="New Password"
           prepend-icon="mdi-lock"
           type="password"
@@ -128,6 +107,7 @@
         <v-text-field
           v-model="userForm.newPasswordConfirmation"
           :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+          :error-messages="v$.newPasswordConfirmation.$errors.map(e => e.$message)"
           label="Confirm Password"
           prepend-icon="mdi-lock"
           type="password"
@@ -143,13 +123,9 @@
         <v-text-field v-model="userForm.height" label="Height (cm)" type="number" />
         <v-text-field v-model="userForm.max_hr" label="Max HR" type="number" />
         <v-text-field v-model="userForm.security_distance" label="Security Distance (m)" type="number" />
-        <v-btn color="primary" type="submit">Save</v-btn>
+        <v-btn color="primary" :disabled="v$.$invalid" type="submit">Save</v-btn>
       </v-form>
     </v-container>
   </div>
   <div v-else>User not found</div>
 </template>
-
-<style scoped lang="sass">
-
-</style>
