@@ -102,6 +102,54 @@ export const useUserStore = defineStore('user', () => {
     return true
   })
 
+  const user = ref({})
+
+  const getUser = async () : Promise<Object> => {
+    console.log('Get user - function')
+    const token = localStorage.getItem('msw-token')
+    if (!token) {
+      throw new Error('No token')
+    }
+
+    try {
+      const request = axios.create({
+        baseURL: import.meta.env.VITE_BACKEND_URL,
+        timeout: 1000,
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      const response = await request.get(`/api/v1/user`)
+      console.log('Response : ', response.data)
+      user.value = response.data
+      console.log('user:', response.data)
+      return response.data.activity
+    } catch (error) {
+      console.error('Get user error:', error)
+      throw new Error('get user failed')
+    }
+  }
+
+  const updateUser = async (user: Object) : Promise<Object> => {
+    console.log('user to save', user)
+    const token = localStorage.getItem('msw-token')
+    if (!token) {
+      throw new Error('No token')
+    }
+    const request = axios.create({
+      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      timeout: 1000,
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/user', {
+      ...user,
+    }).then(response => {
+      console.log('User updated:', response.data)
+    }).catch(error => {
+      console.error('Update user error:', error)
+      throw new Error('update user')
+    })
+  }
+
   const dashboard = ref({})
 
   const refreshDashboard = async (): Promise<void> => {
@@ -124,5 +172,5 @@ export const useUserStore = defineStore('user', () => {
     })
   }
   refreshDashboard()
-  return { session, userIsLoggedIn, login, logout, setUserSession, checkToken, signup, dashboard, refreshDashboard }
+  return { session, userIsLoggedIn, login, logout, setUserSession, checkToken, signup, dashboard, refreshDashboard, user, getUser, updateUser }
 })

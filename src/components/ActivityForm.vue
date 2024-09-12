@@ -65,7 +65,7 @@
   <div v-if="isLoading">Loading...</div>
   <div v-else-if="activity">
     <v-container>
-      <h2>Activity Edit </h2>
+      <h2>Activity Edit</h2>
       <v-form @submit.prevent="save">
         <v-text-field
           v-model="title"

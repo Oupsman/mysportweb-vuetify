@@ -28,7 +28,7 @@
     {
       icon: 'mdi-account',
       title: 'Your profile',
-      page: '/profile',
+      page: '/profile/view',
     },
   ]
 </script>
