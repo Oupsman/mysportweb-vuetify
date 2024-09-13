@@ -45,7 +45,6 @@
       icon: StopIcon,
     },
   ]
-  console.log(markers.value)
   const mapIsReady = async () => {
     showMap.value = true
     await nextTick()

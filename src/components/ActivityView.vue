@@ -12,6 +12,7 @@
   const isLoading = ref(true)
   const panel = ref(0)
   const graphs = ['speed', 'hr', 'cadence', 'altitude']
+  const graphsSwimming = ['hr', 'swolf', 'pace', 'strokes']
   const means = 'means'
   const formattedActivityDate = computed(() => {
     if (!activity.value?.date) return ''
@@ -86,13 +87,20 @@
         </v-sheet>
       </v-row>
       <v-row>
-        <Map :activity="activity" />
+        <Map v-if="activity.gps_points !== null " :activity="activity" />
       </v-row>
       <v-row>
         <v-expansion-panels v-model="panel" accordion>
-          <v-expansion-panel>
+          <v-expansion-panel
+            v-if="activity.sport === 'hiking' || activity.sport === 'cycling'"
+          >
             <Graph-line v-for="graph in graphs" :key="graph" :activity="activity" :graph="graph" style="height: 200px;  " />
-            <Graph-bar  v-if="activity.means.length >0" :activity="activity" :graph="means" />
+            <Graph-bar  v-if="activity.means !== null && activity.means.length >0" :activity="activity" :graph="means" />
+          </v-expansion-panel>
+          <v-expansion-panel
+            v-if="activity.sport === 'swimming'"
+          >
+            <Graph-line v-for="graph in graphsSwimming" :key="graph" :activity="activity" :graph="graph" />
           </v-expansion-panel>
         </v-expansion-panels>
       </v-row>
