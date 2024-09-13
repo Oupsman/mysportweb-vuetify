@@ -35,7 +35,7 @@
         appStore.pageTitle = activity.value.title
       }
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'activité:', error)
+      console.error('Erreur lors du chargement de l\'activité:'   )
     } finally {
       isLoading.value = false
     }
@@ -87,12 +87,12 @@
         </v-sheet>
       </v-row>
       <v-row>
-        <Map v-if="activity.gps_points !== null " :activity="activity" />
+        <Map v-if="activity.public_gps_points !== null " :activity="activity" />
       </v-row>
       <v-row>
         <v-expansion-panels v-model="panel" accordion>
           <v-expansion-panel
-            v-if="activity.sport === 'hiking' || activity.sport === 'cycling'"
+            v-if="activity.sport === 'walking' || activity.sport === 'cycling' || activity.sport === 'running' || activity.sport === 'rowing'"
           >
             <Graph-line v-for="graph in graphs" :key="graph" :activity="activity" :graph="graph" style="height: 200px;  " />
             <Graph-bar  v-if="activity.means !== null && activity.means.length >0" :activity="activity" :graph="means" />

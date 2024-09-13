@@ -102,7 +102,7 @@
         />
         <LMarker
           v-for="marker in markers"
-          :key="marker.name "
+          :key="marker.name"
           :lat-lng="marker.coords"
         >
           <LIcon :icon-size="30" :icon-url="marker.icon" />
