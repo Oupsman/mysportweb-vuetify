@@ -14,6 +14,7 @@
     TimeScale,
     Title,
     Tooltip,
+    Filler,
   } from 'chart.js'
 
   import { useActivitiesStore } from '@/stores/activities'
@@ -26,7 +27,8 @@
     LineElement,
     Title,
     Tooltip,
-    Legend
+    Legend,
+    Filler,
   )
   const activitiesStore = useActivitiesStore()
 

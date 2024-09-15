@@ -35,7 +35,7 @@
         appStore.pageTitle = activity.value.title
       }
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'activité:'   )
+      console.error('Erreur lors du chargement de l\'activité:')
     } finally {
       isLoading.value = false
     }
