@@ -140,7 +140,7 @@
         }
         break
       case 'altitude':
-        if (props.activity.altitudes !== null ) {
+        if (props.activity.altitudes !== null) {
           const date = new Date(props.activity.date)
           xaxis.value = []
           yaxis.value = props.activity.altitudes
@@ -166,6 +166,34 @@
           color = 'lightblue'
         }
         break
+      case 'power':
+        if (props.activity.powers !== null) {
+          const date = new Date(props.activity.date)
+          xaxis.value = []
+          yaxis.value = props.activity.powers
+          data = yaxis.value.map((y, i) => {
+            const timestamp = date.getTime() + props.activity.power_ts[i] * 1000
+            return { x: timestamp, y }
+          })
+          chartOptions = {
+            responsive: true,
+            scales: {
+              x: {
+                type: 'time',
+                time: {
+                  unit: 'second',
+                  displayFormats: {
+                    second: 'HH:mm:ss',
+                  },
+                },
+              },
+            },
+          }
+          display.value = true
+          color = 'darksalmon'
+        }
+        break
+
       case 'swolf':
         for (let i = 0; i < props.activity.lengths.length; i++) {
           const date = new Date(props.activity.date)

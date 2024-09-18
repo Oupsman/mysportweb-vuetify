@@ -26,7 +26,7 @@
   const leafletObject = ref({} as LeafletMap)
   const gpsBounds = ref([])
   const markers = ref([])
-  const publicActivity = ref(true )
+  const publicActivity = ref(true)
   // iterate over activitiesStore.activity.gps_points to create an 2 dimensions array of Float wanted by leaflet
   let transformedPoints:number[][]
   if (props.activity.gps_points !== null) {
@@ -103,7 +103,7 @@
           :lat-lngs="transformedPoints"
         />
         <LPolyline
-          color="green"
+          color="blue"
           :lat-lngs="publicPoints"
         />
         <LMarker

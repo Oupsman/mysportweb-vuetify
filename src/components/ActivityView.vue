@@ -16,7 +16,7 @@
   const activity = ref(null)
   const isLoading = ref(true)
   const panel = ref(0)
-  const graphs = ['speed', 'hr', 'cadence', 'altitude']
+  const graphs = ['speed', 'hr', 'cadence', 'altitude', 'power']
   const graphsSwimming = ['hr', 'swolf', 'pace', 'strokes']
   const means = 'means'
   const formattedActivityDate = computed(() => {
@@ -72,7 +72,7 @@
           </v-card>
           <v-card class="h-auto w-20">
             <v-card-title> Date: </v-card-title>
-            <v-card-text> {{ formattedActivityDate   }}</v-card-text>
+            <v-card-text> {{ formattedActivityDate}}</v-card-text>
           </v-card>
           <v-card v-if="activity.avg_speed > 0" class="h-auto w-20">
             <v-card-title> Average Speed: </v-card-title>

@@ -10,6 +10,10 @@ export const useActivitiesStore = defineStore('activities', () => {
   const getActivity = async (id: string): Promise<Object> => {
     console.log('Get activity - function', id)
     const token = localStorage.getItem('msw-token')
+    console.log('Token: ', token)
+    if (!token) {
+      throw new Error('No token')
+    }
     try {
       const request = axios.create({
         baseURL: import.meta.env.VITE_BACKEND_URL,
