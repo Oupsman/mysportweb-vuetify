@@ -1,12 +1,17 @@
 <script setup>
   import { ref, computed, onMounted } from 'vue'
   import { useRoute } from 'vue-router'
-  import { useActivitiesStore } from '@/stores/activities' // Ajustez le chemin selon votre structure
-  import { useAppStore } from '@/stores/app' // Ajustez le chemin selon votre structure
+  import { useActivitiesStore } from '@/stores/activities'
+  import { useAppStore } from '@/stores/app'
+  import axios from 'axios'
 
   const route = useRoute()
-  const activitiesStore = useActivitiesStore()
+  const token = localStorage.getItem('msw-token')
+  let activitiesStore = null
   const appStore = useAppStore()
+  if (token !== null) {
+    activitiesStore = useActivitiesStore()
+  }
 
   const activity = ref(null)
   const isLoading = ref(true)
@@ -30,12 +35,21 @@
   const fetchActivity = async () => {
     try {
       isLoading.value = true
-      activity.value = await activitiesStore.getActivity(route.params.id)
+      console.log('Getting activity: ', route.params.id)
+      const request = axios.create({
+        baseURL: import.meta.env.VITE_BACKEND_URL,
+        timeout: 1000,
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      const response = await request.get(`/api/v1/activity/${route.params.id}`)
+      console.log('Activity:', response.data.activity)
+      activity.value = response.data.activity
       if (activity.value) {
         appStore.pageTitle = activity.value.title
       }
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'activité:')
+      console.error('Erreur lors du chargement de l\'activité:', error)
     } finally {
       isLoading.value = false
     }

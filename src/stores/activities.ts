@@ -8,12 +8,8 @@ export const useActivitiesStore = defineStore('activities', () => {
   const activities = ref([])
 
   const getActivity = async (id: string): Promise<Object> => {
-    console.log('Get activity - function')
+    console.log('Get activity - function', id)
     const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
-    }
-
     try {
       const request = axios.create({
         baseURL: import.meta.env.VITE_BACKEND_URL,
@@ -33,9 +29,6 @@ export const useActivitiesStore = defineStore('activities', () => {
   const getActivities = (): Object => {
     console.log('Get activities - function')
     const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
-    }
     const request = axios.create({
       baseUrl: import.meta.env.VITE_BACKEND_URL,
       timeout: 1000,

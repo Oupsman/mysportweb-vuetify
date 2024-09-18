@@ -26,25 +26,30 @@
   const leafletObject = ref({} as LeafletMap)
   const gpsBounds = ref([])
   const markers = ref([])
-
+  const publicActivity = ref(true )
   // iterate over activitiesStore.activity.gps_points to create an 2 dimensions array of Float wanted by leaflet
-  const transformedPoints: number[][] = props.activity.gps_points.map(point => [point.lat, point.lon])
+  let transformedPoints:number[][]
+  if (props.activity.gps_points !== null) {
+    transformedPoints = props.activity.gps_points.map(point => [point.lat, point.lon])
+    publicActivity.value = false
+    const pointsNumbers = props.activity.gps_points.length
+    markers.value = [
+      {
+        name: 'start',
+        coords: [props.activity.gps_points[0].lat, props.activity.gps_points[0].lon],
+        icon: StartIcon,
+      },
+      {
+        name: 'stop',
+        coords: [props.activity.gps_points[pointsNumbers - 1].lat, props.activity.gps_points[pointsNumbers - 1].lon],
+        icon: StopIcon,
+      },
+    ]
+  }
   const publicPoints:number[][] = props.activity.public_gps_points.map(point => [point.lat, point.lon])
   const gpsCenter: number[] = [props.activity.gps_center.lat, props.activity.gps_center.lon]
   gpsBounds.value = props.activity.gps_bounds.map(point => [point.lat, point.lon])
-  const pointsNumbers = props.activity.gps_points.length
-  markers.value = [
-    {
-      name: 'start',
-      coords: [props.activity.gps_points[0].lat, props.activity.gps_points[0].lon],
-      icon: StartIcon,
-    },
-    {
-      name: 'stop',
-      coords: [props.activity.gps_points[pointsNumbers - 1].lat, props.activity.gps_points[pointsNumbers - 1].lon],
-      icon: StopIcon,
-    },
-  ]
+
   const mapIsReady = async () => {
     showMap.value = true
     await nextTick()
@@ -93,6 +98,7 @@
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <l-polyline
+          v-if="!publicActivity"
           color="red"
           :lat-lngs="transformedPoints"
         />
