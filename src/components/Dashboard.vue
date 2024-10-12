@@ -9,15 +9,19 @@
   const calendar = ref()
 
   const formattedActivitiesCalendar = computed(() => {
-    return userStore.dashboard.activities_calendar.map(event => {
-      const startDate = new Date(event.start)
-      const endDate = new Date(startDate.getTime() + Number(event.duration) * 1000)
-      return {
-        ...event,
-        start: startDate,
-        end: endDate,
-      }
-    })
+    if (userStore.dashboard.activities_calendar.length > 0) {
+      return userStore.dashboard.activities_calendar.map(event => {
+        const startDate = new Date(event.start)
+        const endDate = new Date(startDate.getTime() + Number(event.duration) * 1000)
+        return {
+          ...event,
+          start: startDate,
+          end: endDate,
+        }
+      })
+    } else {
+      return null
+    }
   })
   console.log(formattedActivitiesCalendar)
 </script>
@@ -68,6 +72,7 @@
       <v-col class="w-25">
         <h5>Calendar</h5>
         <v-calendar
+          v-if="userStore.dashboard.activities_calendar !== null"
           ref="calendar"
           v-model="value"
           :events="formattedActivitiesCalendar"

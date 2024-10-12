@@ -26,6 +26,11 @@
       page: '/activities',
     },
     {
+      icon: 'mdi-heart',
+      title: 'Health Datas',
+      page: '/health',
+    },
+    {
       icon: 'mdi-account',
       title: 'Your profile',
       page: '/profile/view',

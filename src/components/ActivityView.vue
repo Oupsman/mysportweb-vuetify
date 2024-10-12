@@ -32,6 +32,18 @@
     }).format(date)
   })
 
+  const formattedActivityDuration = computed(() => {
+    const hours = Math.floor(activity.value.duration / 3600)
+    const minutes = Math.floor((activity.value.duration % 3600) / 60)
+    const remainingSeconds = activity.value.duration % 60
+
+    const formattedHours = String(hours).padStart(2, '0')
+    const formattedMinutes = String(minutes).padStart(2, '0')
+    const formattedSeconds = String(remainingSeconds).padStart(2, '0')
+
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+  })
+
   const fetchActivity = async () => {
     try {
       isLoading.value = true
@@ -66,37 +78,46 @@
       </v-row>
       <v-row>
         <v-sheet class="d-flex flex-wrap">
-          <v-card class="h-auto w-20">
+          <v-card class="h-auto w-20 ma-2">
             <v-card-title> Sport:</v-card-title>
             <v-card-text> {{ activity.sport }}</v-card-text>
           </v-card>
-          <v-card class="h-auto w-20">
+          <v-card class="h-auto w-20 ma-2">
             <v-card-title> Date: </v-card-title>
-            <v-card-text> {{ formattedActivityDate}}</v-card-text>
+            <v-card-text> {{ formattedActivityDate }}</v-card-text>
           </v-card>
-          <v-card v-if="activity.avg_speed > 0" class="h-auto w-20">
+          <v-card class="h-auto w-20 ma-2">
+            <v-card-title> Duration: </v-card-title>
+            <v-card-text> {{ formattedActivityDuration }}</v-card-text>
+          </v-card>
+
+          <v-card v-if="activity.avg_speed > 0" class="h-auto w-20 ma-2">
             <v-card-title> Average Speed: </v-card-title>
             <v-card-text> {{ (activity.avg_speed * 3.6).toFixed(2) }} km/h</v-card-text>
           </v-card>
-          <v-card v-if="activity.distance > 0" class="h-auto w-20">
+          <v-card v-if="activity.distance > 0" class="h-auto w-20 ma-2">
             <v-card-title> Distance : </v-card-title>
             <v-card-text> {{ (activity.distance / 1000).toFixed(2) }} km</v-card-text>
           </v-card>
-          <v-card v-if="activity.kcal > 0" class="h-auto w-15">
+          <v-card v-if="activity.kcal > 0" class="h-auto w-15 ma-2">
             <v-card-title> Calories:</v-card-title>
             <v-card-text>  {{ activity.kcal }}</v-card-text>
           </v-card>
-          <v-card v-if="activity.avg_rpm > 0" class="h-auto w-20">
+          <v-card v-if="activity.avg_rpm > 0" class="h-auto w-20 ma-2">
             <v-card-title>Average Cadence:</v-card-title>
             <v-card-text>  {{ activity.avg_rpm }} rpm</v-card-text>
           </v-card>
-          <v-card v-if="activity.avg_hr > 0" class="h-auto w-20">
+          <v-card v-if="activity.avg_hr > 0" class="h-auto w-20 ma-2">
             <v-card-title> Average Heart rate:</v-card-title>
             <v-card-text>  {{ activity.avg_hr }} bpm</v-card-text>
           </v-card>
-          <v-card v-if="activity.is_commute" class="h-auto w-20">
+          <v-card v-if="activity.is_commute" class="h-auto w-20 ma-2">
             <v-card-title> CO2:</v-card-title>
-            <v-card-text> {{ (activity.co2 / 1000).toFixed(1) }}</v-card-text>
+            <v-card-text> {{ (activity.co2 / 1000).toFixed(1) }} kg</v-card-text>
+          </v-card>
+          <v-card v-if="activity.power_avg > 0" class="h-auto w-20 ma-2">
+            <v-card-title> Average Power:</v-card-title>
+            <v-card-text> {{ (activity.power_avg).toFixed(1) }} W</v-card-text>
           </v-card>
         </v-sheet>
       </v-row>

@@ -64,7 +64,7 @@
         yaxis.value = props.activity.speeds
         data = yaxis.value.map((y, i) => {
           const timestamp = date.getTime() + props.activity.time_stamps[i] * 1000
-          return { x: timestamp, y: y * 3.6       }
+          return { x: timestamp, y: y * 3.6 }
         })
         chartOptions = {
           responsive: true,

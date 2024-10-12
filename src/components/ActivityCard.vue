@@ -43,7 +43,9 @@
       </v-card-actions>
     </v-card>
     <v-card v-if="hover" style="height: 250px; width:300px; ">
-      <v-img :src="thumbnailUrl" />
+      <v-lazy>
+        <v-img :src="thumbnailUrl" />
+      </v-lazy>
       <v-card-actions>
         <v-btn color="primary" @click="appStore.navigateToPage(`/activity/${props.activity.id}`)">View</v-btn>
         <router-link :to="'/activity/' + props.activity.id + '/edit'"><v-btn color="primary">Edit</v-btn></router-link>
