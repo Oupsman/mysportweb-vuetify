@@ -3,6 +3,8 @@
   import 'leaflet/dist/leaflet.css'
   import StartIcon from '@/assets/start.svg'
   import StopIcon from '@/assets/stop.svg'
+  import type { Point } from '@/types/activities'
+  import { LatLngExpression, LatLngTuple, Map as LeafletMap, PointTuple } from 'leaflet'
 
   import {
     LControlScale,
@@ -24,13 +26,13 @@
   const zoom = ref(9)
   const leafletReady = ref<boolean>(false)
   const leafletObject = ref({} as LeafletMap)
-  const gpsBounds = ref([])
+  // const gpsBounds = ref([])
   const markers = ref([])
   const publicActivity = ref(true)
   // iterate over activitiesStore.activity.gps_points to create an 2 dimensions array of Float wanted by leaflet
-  let transformedPoints:number[][]
+  let transformedPoints: LatLngExpression[]
   if (props.activity.gps_points !== null) {
-    transformedPoints = props.activity.gps_points.map(point => [point.lat, point.lon])
+    transformedPoints = props.activity.gps_points.map((point: Point) => [point.lat, point.lon])
     publicActivity.value = false
     const pointsNumbers = props.activity.gps_points.length
     markers.value = [
@@ -46,9 +48,9 @@
       },
     ]
   }
-  const publicPoints:number[][] = props.activity.public_gps_points.map(point => [point.lat, point.lon])
-  const gpsCenter: number[] = [props.activity.gps_center.lat, props.activity.gps_center.lon]
-  gpsBounds.value = props.activity.gps_bounds.map(point => [point.lat, point.lon])
+  const publicPoints: LatLngExpression[] = props.activity.public_gps_points.map((point: Point) => [point.lat, point.lon])
+  const gpsCenter: PointTuple = [props.activity.gps_center.lat, props.activity.gps_center.lon]
+  const gpsBounds: LatLngExpression[] = props.activity.gps_bounds.map((point: Point) => [point.lat, point.lon])
 
   const mapIsReady = async () => {
     showMap.value = true
@@ -62,11 +64,18 @@
 
       await nextTick()
 
-      if (gpsBounds.value.length > 0) {
+      if (gpsBounds.length > 0) {
         try {
-          leafletObject.value.fitBounds(gpsBounds.value.map(b => [b[0], b[1]] as LatLngTuple))
+          leafletObject.value.fitBounds(gpsBounds.map((b: LatLngExpression): LatLngTuple => {
+            if (Array.isArray(b)) {
+              return [b[0], b[1]]
+            } else if (typeof b === 'object' && 'lat' in b && 'lng' in b) {
+              return [b.lat, b.lng]
+            }
+            throw new Error('Invalid LatLngExpression')
+          }))
         } catch (err) {
-          console.log(err, `Invalid bounds array: ${gpsBounds.value}`)
+          console.log(err, `Invalid bounds array: ${gpsBounds}`)
         }
       }
     }
@@ -83,10 +92,10 @@
       ref="gpsMap"
       v-model="zoom"
       :center="gpsCenter"
-      :useGlobalLeaflet="false"
-      @ready="mapIsReady"
+      :use-global-leaflet="false"
+      :zoom-animation="true"
       @error="handleMapError"
-      :zoomAnimation="true"
+      @ready="mapIsReady"
     >
       <template v-if="leafletReady">
         <LControlScale
@@ -111,7 +120,7 @@
           :key="marker.name"
           :lat-lng="marker.coords"
         >
-          <LIcon :icon-size="30" :icon-url="marker.icon" />
+          <LIcon :icon-size="[30, 30]" :icon-url="marker.icon" />
         </LMarker>
       </template>
     </l-map>

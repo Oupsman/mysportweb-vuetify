@@ -3,26 +3,30 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
+import type { Equipment } from '@/types/equipments'
+
 export const useEquipmentsStore = defineStore('equipments', () => {
   const equipments: Ref<Equipment[]> = ref([])
-  const getAllEquipments = async (): Promise<Equipment[] | undefined> => {
+  const getAllEquipments = async (): Promise<boolean | undefined> => {
     console.log('Get all equipments - function')
     const token = localStorage.getItem('msw-token')
     if (!token) {
       throw new Error('No token')
     }
     const request = axios.create({
-      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      baseURL: import.meta.env.VITE_BACKEND_URL,
       timeout: 1000,
       headers: { Authorization: `Bearer ${token}` },
     })
     request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/equipment/all').then(response => {
       console.log('Equipments:', response.data)
       equipments.value = response.data
+      return true
     }).catch(error => {
       console.error('Get all equipments error:', error)
       throw new Error('get equipments failed')
     })
+    return true
   }
   console.log('Get all equipments - store')
   getAllEquipments()
@@ -32,7 +36,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       throw new Error('No token')
     }
     const request = axios.create({
-      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      baseURL: import.meta.env.VITE_BACKEND_URL,
       timeout: 1000,
       headers: { Authorization: `Bearer ${token}` },
     })

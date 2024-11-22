@@ -2,10 +2,8 @@
   import { ref } from 'vue'
   import type { Ref } from 'vue'
   import { useUserStore } from '@/stores/user'
-  import { useAppStore } from '@/stores/app'
 
   const userStore = useUserStore()
-  const appStore = useAppStore()
 
   const username: Ref<string> = ref('')
   const password: Ref<string> = ref('')

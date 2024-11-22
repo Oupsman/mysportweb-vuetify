@@ -3,7 +3,6 @@
   import { useAppStore } from '@/stores/app'
   import { useVuelidate } from '@vuelidate/core'
   import { minLength, required, sameAs } from '@vuelidate/validators'
-  import { computed, ref } from 'vue'
 
   const userStore = useUserStore()
   const appStore = useAppStore()
@@ -73,10 +72,10 @@
     const isValid = await v$.value.$validate()
     if (!isValid) return
 
-    const date_of_birth = new Date(`${userForm.value.birthyear}/${userForm.value.birthmonth}/${userForm.value.birthday}`)
+    const dateOfBirth = new Date(`${userForm.value.birthyear}/${userForm.value.birthmonth}/${userForm.value.birthday}`)
     const updatedUser = {
       ...userForm.value,
-      date_of_birth: date_of_birth.toISOString(),
+      date_of_birth: dateOfBirth.toISOString(),
     }
     await userStore.updateUser(updatedUser)
   }
@@ -90,7 +89,7 @@
         <v-text-field
           v-model="userForm.oldPassword"
           :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-          :error-messages="v$.oldPassword.$errors.map(e => e.$message)"
+          :error-messages="v$.oldPassword.$errors.map(e => unref(e.$message))"
           label="Current Password"
           prepend-icon="mdi-lock"
           required
@@ -99,7 +98,7 @@
         <v-text-field
           v-model="userForm.newPassword"
           :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-          :error-messages="v$.newPassword.$errors.map(e => e.$message)"
+          :error-messages="v$.newPassword.$errors.map(e => unref(e.$message))"
           label="New Password"
           prepend-icon="mdi-lock"
           type="password"
@@ -107,7 +106,7 @@
         <v-text-field
           v-model="userForm.newPasswordConfirmation"
           :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-          :error-messages="v$.newPasswordConfirmation.$errors.map(e => e.$message)"
+          :error-messages="v$.newPasswordConfirmation.$errors.map(e => unref(e.$message))"
           label="Confirm Password"
           prepend-icon="mdi-lock"
           type="password"

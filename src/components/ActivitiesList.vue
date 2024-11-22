@@ -1,6 +1,8 @@
 <script setup lang="ts">
   import { useActivitiesStore } from '@/stores/activities'
   import ActivityCard from '@/components/ActivityCard.vue'
+  // import type { Activity } from '@/types/activities'
+
 
   const activitiesStore = useActivitiesStore()
   const activitiesDisplay = ref([])

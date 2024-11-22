@@ -7,6 +7,8 @@
   import {
     CategoryScale,
     Chart as ChartJS,
+    ChartData as GraphData,
+    Filler,
     Legend,
     LinearScale,
     LineElement,
@@ -14,10 +16,7 @@
     TimeScale,
     Title,
     Tooltip,
-    Filler,
   } from 'chart.js'
-
-  import { useActivitiesStore } from '@/stores/activities'
 
   ChartJS.register(
     CategoryScale,
@@ -30,14 +29,15 @@
     Legend,
     Filler,
   )
-  const activitiesStore = useActivitiesStore()
 
   let chartOptions = {
     responsive: true,
   }
-
+  interface DataPoint {
+    x: number;
+    y: number;
+  }
   const chartData: Ref<GraphData> = ref({ labels: [], datasets: [] })
-  const type = ref('line')
   const stepped = ref(false)
   const display = ref(false)
   const props = defineProps({
@@ -53,8 +53,8 @@
 
   const xaxis = ref<number[]>([])
   const yaxis = ref<number[]>([])
-  let labels: string[] = []
-  let data: number[] = []
+  let labels: number[] = []
+  let data: DataPoint[] = []
   let color = 'green'
   if (props.graph) {
     switch (props.graph) {

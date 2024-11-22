@@ -1,7 +1,9 @@
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
+
+import type { Activity } from '@/types/activities'
 
 export const useActivitiesStore = defineStore('activities', () => {
   const activity: Ref<Object | undefined> = ref({})
@@ -34,7 +36,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     console.log('Get activities - function')
     const token = localStorage.getItem('msw-token')
     const request = axios.create({
-      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      baseURL: import.meta.env.VITE_BACKEND_URL,
       timeout: 1000,
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -45,6 +47,7 @@ export const useActivitiesStore = defineStore('activities', () => {
       console.error('Get activities error:', error)
       throw new Error('get activities failed')
     })
+    return {}
   }
 
   const deleteActivity = async (id: string): Promise<Object | undefined> => {
@@ -55,39 +58,43 @@ export const useActivitiesStore = defineStore('activities', () => {
       throw new Error('No token')
     }
     const request = axios.create({
-      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      baseURL: import.meta.env.VITE_BACKEND_URL,
       timeout: 1000,
       headers: { Authorization: `Bearer ${token}` },
     })
     request.delete(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/' + id).then(response => {
       console.log('Activity deleted:', response.data)
       getActivities()
+      return true
     }).catch(error => {
       console.error('Delete activity error:', error)
       throw new Error('delete activity')
     })
+    return true
   }
 
-  const saveActivity = async (activity: Object):Promise<Object | undefined> => {
+  const saveActivity = async (activity: Activity):Promise<Object | undefined> => {
     console.log('Activity to save', activity)
     const token = localStorage.getItem('msw-token')
     if (!token) {
       throw new Error('No token')
     }
     const request = axios.create({
-      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      baseURL: import.meta.env.VITE_BACKEND_URL,
       timeout: 1000,
       headers: { Authorization: `Bearer ${token}` },
     })
-    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/' + activity.ID, {
+    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/' + activity.id, {
       ...activity,
     }).then(response => {
       console.log('Activity updated:', response.data)
       getActivities()
+      return true
     }).catch(error => {
       console.error('Update activity error:', error)
       throw new Error('update activity')
     })
+    return true
   }
 
   getActivities()

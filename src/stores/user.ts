@@ -6,7 +6,7 @@ import axios from 'axios'
 
 import type { UserSession } from '@/types/user'
 
-function parseJwt (token) {
+function parseJwt (token: string) {
   const base64Url = token.split('.')[1]
   const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
   const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
@@ -39,7 +39,8 @@ export const useUserStore = defineStore('user', () => {
     })
   }
 
-  const logout = async (callback?: Function): Promise<void> => {
+  const logout = async (): Promise<void> => {
+    const token = localStorage.getItem('msw-token')
     axios.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/user/logout', {
       token,
     }).then(response => {
@@ -56,7 +57,7 @@ export const useUserStore = defineStore('user', () => {
   const signup = async (username: string, password: string, email: string): Promise<void> => {
     const request = axios.create(
       {
-        baseUrl: import.meta.env.VITE_BACKEND_URL,
+        baseURL: import.meta.env.VITE_BACKEND_URL,
         timeout: 1000,
         withCredentials: false,
       }
@@ -136,7 +137,7 @@ export const useUserStore = defineStore('user', () => {
       throw new Error('No token')
     }
     const request = axios.create({
-      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      baseURL: import.meta.env.VITE_BACKEND_URL,
       timeout: 30000,
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -144,10 +145,12 @@ export const useUserStore = defineStore('user', () => {
       ...user,
     }).then(response => {
       console.log('User updated:', response.data)
+      return true
     }).catch(error => {
       console.error('Update user error:', error)
       throw new Error('update user')
     })
+    return true
   }
 
   const dashboard = ref({})
@@ -159,7 +162,7 @@ export const useUserStore = defineStore('user', () => {
       throw new Error('No token')
     }
     const request = axios.create({
-      baseUrl: import.meta.env.VITE_BACKEND_URL,
+      baseURL: import.meta.env.VITE_BACKEND_URL,
       timeout: 30000,
       headers: { Authorization: `Bearer ${token}` },
     })
