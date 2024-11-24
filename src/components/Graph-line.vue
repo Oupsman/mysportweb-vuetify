@@ -1,13 +1,13 @@
 <script setup lang="ts">
-  import type { Ref } from 'vue'
   import { ref } from 'vue'
   import 'chartjs-adapter-date-fns'
 
   import { Line } from 'vue-chartjs'
   import {
     CategoryScale,
+    ChartData,
+    ChartDataset,
     Chart as ChartJS,
-    ChartData as GraphData,
     Filler,
     Legend,
     LinearScale,
@@ -32,13 +32,26 @@
 
   let chartOptions = {
     responsive: true,
+    scales: { },
   }
+
   interface DataPoint {
     x: number;
     y: number;
   }
-  const chartData: Ref<GraphData> = ref({ labels: [], datasets: [] })
-  const stepped = ref(false)
+  let chartData: ChartData<'line'> = {
+    labels: [], // Vos labels ici
+    datasets: [
+      {
+        type: 'line',
+        label: 'Votre label',
+        data: [], // Vos données ici
+        // Autres propriétés du dataset...
+      },
+    ] as ChartDataset<'line', (number | DataPoint)[]>[],
+  }
+
+  const stepped = ref<boolean | 'before' | 'after' | 'middle'>(false)
   const display = ref(false)
   const props = defineProps({
     graph: {
@@ -204,7 +217,10 @@
 
         stepped.value = 'before'
         labels = xaxis.value
-        data = yaxis.value
+        data = yaxis.value.map((y, i) => {
+          const timestamp = date.getTime() + props.activity.time_stamps[i] * 1000
+          return { x: timestamp, y }
+        })
         color = 'blue'
         chartOptions = {
           responsive: true,
@@ -245,7 +261,10 @@
         }
         stepped.value = 'before'
         labels = xaxis.value
-        data = yaxis.value
+        data = yaxis.value.map((y, i) => {
+          const timestamp = date.getTime() + props.activity.time_stamps[i] * 1000
+          return { x: timestamp, y }
+        })
         color = 'lightgreen'
         display.value = true
 
@@ -277,13 +296,16 @@
         }
         stepped.value = 'before'
         labels = xaxis.value
-        data = yaxis.value
+        data = yaxis.value.map((y, i) => {
+          const timestamp = date.getTime() + props.activity.time_stamps[i] * 1000
+          return { x: timestamp, y }
+        })
         color = 'orange'
         display.value = true
 
         break
     }
-    chartData.value = {
+    chartData = {
       labels,
       datasets: [{
         stepped: stepped.value,
