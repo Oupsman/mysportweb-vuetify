@@ -3,12 +3,21 @@
   import ActivityCard from '@/components/ActivityCard.vue'
   // import type { Activity } from '@/types/activities'
 
-
   const activitiesStore = useActivitiesStore()
   const activitiesDisplay = ref([])
   const pointer = ref(0)
+  // Define possible scroll sides
+  type InfiniteScrollSide = 'end' | 'start' | 'both'
 
-  async function load ({ done }) {
+  // Define possible status values
+  type InfiniteScrollStatus = 'ok' | 'error' | 'loading'
+
+  interface InfiniteScrollOptions {
+    side: InfiniteScrollSide;
+    done: (status: InfiniteScrollStatus) => void;
+  }
+
+  async function load ({ side, done }: InfiniteScrollOptions): Promise<void> {
     const newActivities = activitiesStore.activities.slice(pointer.value, pointer.value + 100)
     pointer.value += 20
     activitiesDisplay.value.push(...newActivities)

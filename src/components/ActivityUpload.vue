@@ -6,7 +6,7 @@
   import { useUserStore } from '@/stores/user'
 
   const importResults = ref([])
-  const files: Ref<File | any | undefined> = ref(undefined)
+  const files: Ref<File[]> = ref(undefined)
   const uploadedFiles = ref({ completed: 0, count: 0, total: 0 })
   const appStore = useAppStore()
   const activitiesStore = useActivitiesStore()

@@ -1,18 +1,12 @@
-<script setup>
-  import { ref, computed, onMounted } from 'vue'
-  import { useRoute } from 'vue-router'
-  import { useActivitiesStore } from '@/stores/activities'
+<script setup lang="ts">
+  import { computed, onMounted, ref } from 'vue'
   import { useAppStore } from '@/stores/app'
+  import { useRoute } from 'vue-router'
   import axios from 'axios'
 
-  const route = useRoute()
   const token = localStorage.getItem('msw-token')
-  let activitiesStore = null
   const appStore = useAppStore()
-  if (token !== null) {
-    activitiesStore = useActivitiesStore()
-  }
-
+  const route = useRoute('/activity/[id]')
   const activity = ref(null)
   const isLoading = ref(true)
   const panel = ref(0)
@@ -41,7 +35,7 @@
     const formattedMinutes = String(minutes).padStart(2, '0')
     const formattedSeconds = String(remainingSeconds).padStart(2, '0')
 
-    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`
   })
 
   const fetchActivity = async () => {
@@ -129,8 +123,14 @@
           <v-expansion-panel
             v-if="activity.sport === 'walking' || activity.sport === 'cycling' || activity.sport === 'running' || activity.sport === 'rowing'"
           >
-            <Graph-line v-for="graph in graphs" :key="graph" :activity="activity" :graph="graph" style="height: 200px;  " />
-            <Graph-bar  v-if="activity.means !== null && activity.means.length >0" :activity="activity" :graph="means" />
+            <Graph-line
+              v-for="graph in graphs"
+              :key="graph"
+              :activity="activity"
+              :graph="graph"
+              style="height: 200px;  "
+            />
+            <Graph-bar v-if="activity.means !== null && activity.means.length >0" :activity="activity" :graph="means" />
           </v-expansion-panel>
           <v-expansion-panel
             v-if="activity.sport === 'swimming'"

@@ -8,8 +8,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router/auto'
 import { setupLayouts } from 'virtual:generated-layouts'
 import { routes } from 'vue-router/auto-routes'
-import ActivityViewPage from '../pages/activity/view.vue'
-import ActivityEditPage from '../pages/activity/edit.vue'
 import ProfileEditPage from '../pages/profile/edit.vue'
 import ProfileView from '../pages/profile/view.vue'
 
@@ -17,15 +15,17 @@ const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: setupLayouts(routes),
 })
-
+/*
 router.addRoute(
   {
-    path: '/activity/:id', component: ActivityViewPage,
+    path: '/activity/:id',
+    name: 'ActivityView',
+    component: ActivityViewPage,
   })
-
 router.addRoute({
   path: '/activity/:id/edit', name: 'ActivityEdit', component: ActivityEditPage,
 })
+*/
 router.addRoute({
   path: '/profile', name: 'Profile', component: ProfileView,
 })

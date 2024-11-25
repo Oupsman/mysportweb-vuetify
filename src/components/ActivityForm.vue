@@ -18,11 +18,12 @@
   // forms fields
   const title = ref('')
   const commute = ref(false)
-  const can_comments = ref(false)
+  const canComments = ref(false)
   const visibility = ref()
   const equipmentID = ref()
 
-  const route = useRoute()
+  const route = useRoute('/activity/[id]/edit')
+
   const activitiesStore = useActivitiesStore()
   const appStore = useAppStore()
   const equipmentsStore = useEquipmentsStore()
@@ -33,7 +34,7 @@
       activity.value = await activitiesStore.getActivity(route.params.id)
       title.value = activity.value.title
       commute.value = activity.value.commute
-      can_comments.value = activity.value.can_comments
+      canComments.value = activity.value.can_comments
       visibility.value = activity.value.visibility
       equipmentID.value = activity.value.equipment_id
 
@@ -52,7 +53,7 @@
     activity.value = {
       ...activity.value,
       title: title.value,
-      can_comments: can_comments.value,
+      can_comments: canComments.value,
       visibility: visibility.value,
       is_commute: commute.value,
       equipmentID: equipmentID.value,
@@ -93,7 +94,7 @@
             label="Commute"
           />
           <v-checkbox
-            v-model="can_comments"
+            v-model="canComments"
             label="Comments allowed"
           />
         </v-row>

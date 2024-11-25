@@ -10,6 +10,7 @@ declare global {
   const createApp: typeof import('vue')['createApp']
   const customRef: typeof import('vue')['customRef']
   const defineAsyncComponent: typeof import('vue')['defineAsyncComponent']
+  const defineBasicLoader: typeof import('unplugin-vue-router/data-loaders/basic')['defineBasicLoader']
   const defineComponent: typeof import('vue')['defineComponent']
   const effectScope: typeof import('vue')['effectScope']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
