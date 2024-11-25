@@ -6,6 +6,4 @@ export interface UserSession {
   sub: number,
   uuid: string,
   token: string,
-
 }
-

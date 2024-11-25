@@ -7,14 +7,14 @@
 
   const importResults = ref([])
   const files: Ref<File | any | undefined> = ref(undefined)
-  const uploadedFiles = ref({ completed: 0, count: 0 })
+  const uploadedFiles = ref({ completed: 0, count: 0, total: 0 })
   const appStore = useAppStore()
   const activitiesStore = useActivitiesStore()
   const userStore = useUserStore()
   const uploadActivity = () => {
     if (!files.value || files.value.length === 0) return
 
-    uploadedFiles.value = { completed: 0, total: files.value.length }
+    uploadedFiles.value = { completed: 0, total: files.value.length, count: 0 }
     importResults.value = []
 
     const request = axios.create({

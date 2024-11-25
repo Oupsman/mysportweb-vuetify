@@ -5,6 +5,7 @@ import router from '@/router'
 import axios from 'axios'
 
 import type { UserSession } from '@/types/user'
+import type { Dashboard } from '@/types/dashboard'
 
 function parseJwt (token: string) {
   const base64Url = token.split('.')[1]
@@ -153,7 +154,14 @@ export const useUserStore = defineStore('user', () => {
     return true
   }
 
-  const dashboard = ref({})
+  const dashboard:Ref<Dashboard> = ref({
+    activities: [],
+    total_distance: 0,
+    total_duration: 0,
+    nb_equipments: 0,
+    nb_activities: 0,
+    activities_calendar: [],
+  })
 
   const refreshDashboard = async (): Promise<void> => {
     console.log('Get dashboard - function')

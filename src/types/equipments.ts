@@ -4,7 +4,7 @@ export interface Equipment {
   brand: string;
   model: string;
   date_of_purchase: string;
-  mileage: number;
+  initial_mileage: number;
   weight: number;
   maintenance_interval: number;
   is_default: boolean;

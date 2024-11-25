@@ -4,7 +4,7 @@
   import { useAppStore } from '@/stores/app'
   const userStore = useUserStore()
   const appStore = useAppStore()
-  const { userIsLoggedIn, session } = storeToRefs(userStore)
+  const { userIsLoggedIn } = storeToRefs(userStore)
   const { drawer } = storeToRefs(appStore)
   const goToPage = (page: string): void => {
     appStore.navigateToPage(page)

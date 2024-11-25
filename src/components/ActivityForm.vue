@@ -2,7 +2,6 @@
   import { useActivitiesStore } from '@/stores/activities'
   import { useAppStore } from '@/stores/app'
   import { useEquipmentsStore } from '@/stores/equipments'
-  import { useUserStore } from '@/stores/user'
 
   import { onMounted, ref } from 'vue'
   import { useRoute } from 'vue-router'
@@ -27,7 +26,6 @@
   const activitiesStore = useActivitiesStore()
   const appStore = useAppStore()
   const equipmentsStore = useEquipmentsStore()
-  const userStore = useUserStore()
 
   const fetchActivity = async () => {
     try {

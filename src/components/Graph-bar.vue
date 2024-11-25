@@ -1,6 +1,5 @@
 <script setup lang="ts">
-  import { ref, onBeforeMount } from 'vue'
-  import type { Ref } from 'vue'
+  import { ref } from 'vue'
 
   import { Bar } from 'vue-chartjs'
   import {
@@ -11,10 +10,8 @@
     BarElement,
     Title,
     Tooltip,
-    Legend,
+    Legend, ChartData, ChartDataset,
   } from 'chart.js'
-
-  import { useActivitiesStore } from '@/stores/activities'
 
   ChartJS.register(
     CategoryScale,
@@ -25,13 +22,22 @@
     Tooltip,
     Legend
   )
-  const activitiesStore = useActivitiesStore()
 
-  const chartData: Ref<GraphData> = ref({ labels: [], datasets: [] })
-
-  const chartOptions = {
+  let chartOptions = {
     responsive: true,
+    scales: { },
   }
+  let chartData: ChartData<'bar'> = {
+    labels: [], // Vos labels ici
+    datasets: [
+      {
+        type: 'bar',
+        label: 'Votre label',
+        data: [],
+      },
+    ] as ChartDataset<'bar', (number | [number, number])[]>[],
+  }
+
   const props = defineProps({
     graph: {
       type: String,
@@ -58,13 +64,12 @@
         data = yaxis.value.map(x => x * 3.6)
         break
     }
-    chartData.value = {
+    chartData = {
       labels,
       datasets: [{
         label: props.graph,
         data,
         backgroundColor: color,
-        pointRadius: 0,
       }],
     }
   } else {
