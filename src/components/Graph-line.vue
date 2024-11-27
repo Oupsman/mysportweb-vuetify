@@ -217,8 +217,10 @@
 
         stepped.value = 'before'
         labels = xaxis.value
+        console.log('Values: ', yaxis.value)
         data = yaxis.value.map((y, i) => {
-          const timestamp = date.getTime() + props.activity.time_stamps[i] * 1000
+          const date = new Date(props.activity.date)
+          const timestamp = date.getTime() + props.activity.lengths[i].timeStamp * 1000
           return { x: timestamp, y }
         })
         color = 'blue'
@@ -262,7 +264,8 @@
         stepped.value = 'before'
         labels = xaxis.value
         data = yaxis.value.map((y, i) => {
-          const timestamp = date.getTime() + props.activity.time_stamps[i] * 1000
+          const date = new Date(props.activity.date)
+          const timestamp = date.getTime() + props.activity.lengths[i].timeStamp * 1000
           return { x: timestamp, y }
         })
         color = 'lightgreen'
@@ -297,7 +300,8 @@
         stepped.value = 'before'
         labels = xaxis.value
         data = yaxis.value.map((y, i) => {
-          const timestamp = date.getTime() + props.activity.time_stamps[i] * 1000
+          const date = new Date(props.activity.date)
+          const timestamp = date.getTime() + props.activity.lengths[i].timeStamp * 1000
           return { x: timestamp, y }
         })
         color = 'orange'

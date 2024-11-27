@@ -57,7 +57,7 @@
 </script>
 
 <template>
-  <v-infinite-scroll :height="600" mode="manual" @load="load">
+  <v-infinite-scroll :height="600" @load="load">
     <template v-if="activitiesDisplay.length > 0">
       <v-container class="d-flex align-start flex-wrap mb-6">
         <ActivityCard v-for="activity in activitiesDisplay" :key="activity.id" :activity="activity" />
