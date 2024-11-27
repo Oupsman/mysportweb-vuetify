@@ -2,14 +2,12 @@
   import axios from 'axios'
   import { ref } from 'vue'
   import { useAppStore } from '@/stores/app'
-  import { useActivitiesStore } from '@/stores/activities'
   import { useUserStore } from '@/stores/user'
 
   const importResults = ref([])
   const files: Ref<File[]> = ref(undefined)
   const uploadedFiles = ref({ completed: 0, count: 0, total: 0 })
   const appStore = useAppStore()
-  const activitiesStore = useActivitiesStore()
   const userStore = useUserStore()
   const uploadActivity = () => {
     if (!files.value || files.value.length === 0) return
@@ -48,7 +46,6 @@
     })
 
     Promise.all(uploadPromises).then(() => {
-      activitiesStore.getActivities()
       userStore.refreshDashboard()
     })
   }
