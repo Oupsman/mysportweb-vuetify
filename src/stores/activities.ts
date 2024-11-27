@@ -31,23 +31,23 @@ export const useActivitiesStore = defineStore('activities', () => {
       throw new Error('get activity failed')
     }
   }
-
-  const getActivities = (): Object => {
-    console.log('Get activities - function')
+  const getActivities = async (pointer: number, count: number): Promise<Activity[]> => {
+    console.log(`Get activities - function : ${pointer}:${count}`)
     const token = localStorage.getItem('msw-token')
     const request = axios.create({
       baseURL: import.meta.env.VITE_BACKEND_URL,
       timeout: 1000,
       headers: { Authorization: `Bearer ${token}` },
     })
-    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/list').then(response => {
-      activities.value = response.data.activities
+
+    try {
+      const response = await request.get(`/api/v1/activity/list/${pointer}/${count}`)
+      console.log('Get activities - function : ', response.data.activities)
       return response.data.activities
-    }).catch(error => {
+    } catch (error) {
       console.error('Get activities error:', error)
       throw new Error('get activities failed')
-    })
-    return {}
+    }
   }
 
   const deleteActivity = async (id: string): Promise<Object | undefined> => {
@@ -64,7 +64,6 @@ export const useActivitiesStore = defineStore('activities', () => {
     })
     request.delete(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/' + id).then(response => {
       console.log('Activity deleted:', response.data)
-      getActivities()
       return true
     }).catch(error => {
       console.error('Delete activity error:', error)
@@ -88,7 +87,6 @@ export const useActivitiesStore = defineStore('activities', () => {
       ...activity,
     }).then(response => {
       console.log('Activity updated:', response.data)
-      getActivities()
       return true
     }).catch(error => {
       console.error('Update activity error:', error)
@@ -97,7 +95,6 @@ export const useActivitiesStore = defineStore('activities', () => {
     return true
   }
 
-  getActivities()
   return {
     activity,
     activities,
