@@ -6,7 +6,9 @@ Last year during the Christmas holidays, I tried the Advent of Code and I challe
 
 So now, I'm rewriting the app in Golang with the Gin framework. I'm also trying to make it more modular and more scalable.
 
-This repository hosts the backend of the application. Frontend is available here : https://github.com/Oupsman/mysportwebgo
+I'm also trying to learn TypeScript, and I'm using Vuetify to create the frontend. 
+
+This repository hosts the frontend of the application. Backend is available here : https://github.com/Oupsman/mysportwebgo
 
 For now the app can :
 
