@@ -5,7 +5,7 @@ import router from '@/router'
 import { api } from '@/api'
 
 import type { UserSession } from '@/types/user'
-import type { Dashboard } from '@/types/dashboard'
+import type { CalendarActivity, Dashboard } from '@/types/dashboard'
 
 function parseJwt (token: string) {
   const base64Url = token.split('.')[1]
@@ -101,16 +101,23 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  const emptyTotals = () => ({ activities: 0, distance: 0, duration: 0, elevation: 0 })
   const dashboard: Ref<Dashboard> = ref({
-    activities: [],
-    total_distance: 0,
-    total_duration: '',
+    totals: {
+      this_week: emptyTotals(),
+      last_week: emptyTotals(),
+      this_month: emptyTotals(),
+      last_month: emptyTotals(),
+      this_year: emptyTotals(),
+      all_time: emptyTotals(),
+    },
+    week_starts: [],
+    weekly: [],
+    sports: [],
+    recent: [],
+    calendar: [],
     nb_equipments: 0,
-    nb_activities: 0,
-    activities_calendar: [],
-    max_distance: 0,
-    max_duration: 0,
-    max_elevation: 0,
+    timezone: '',
   })
 
   const refreshDashboard = async (): Promise<void> => {
@@ -122,8 +129,19 @@ export const useUserStore = defineStore('user', () => {
       throw new Error('get dashboard failed')
     }
   }
+  // activities of a month (YYYY-MM), in the user's timezone
+  const getCalendar = async (month: string): Promise<CalendarActivity[]> => {
+    try {
+      const response = await api.get('/api/v1/user/calendar', { params: { month } })
+      return response.data.activities ?? []
+    } catch (error) {
+      console.error('Get calendar error:', error)
+      throw new Error('get calendar failed')
+    }
+  }
+
   if (localStorage.getItem('msw-token')) {
     refreshDashboard().catch(() => {})
   }
-  return { session, userIsLoggedIn, login, logout, setUserSession, checkToken, signup, dashboard, refreshDashboard, user, getUser, updateUser }
+  return { session, userIsLoggedIn, login, logout, setUserSession, checkToken, signup, dashboard, refreshDashboard, getCalendar, user, getUser, updateUser }
 })

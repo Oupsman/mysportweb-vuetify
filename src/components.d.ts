@@ -10,6 +10,7 @@ declare module 'vue' {
     ActivitiesList: typeof import('./components/ActivitiesList.vue')['default']
     ActivityCard: typeof import('./components/ActivityCard.vue')['default']
     ActivityForm: typeof import('./components/ActivityForm.vue')['default']
+    ActivityMonth: typeof import('./components/ActivityMonth.vue')['default']
     ActivityUpload: typeof import('./components/ActivityUpload.vue')['default']
     ActivityView: typeof import('./components/ActivityView.vue')['default']
     AppMenu: typeof import('./components/AppMenu.vue')['default']
@@ -28,5 +29,6 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']
     SimilarActivities: typeof import('./components/SimilarActivities.vue')['default']
+    WeeklyVolumeChart: typeof import('./components/WeeklyVolumeChart.vue')['default']
   }
 }

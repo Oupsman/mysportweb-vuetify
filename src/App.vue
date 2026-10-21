@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <app-menu />
-    <v-app-bar app style="position: relative">
+    <v-app-bar app>
       <v-app-bar-nav-icon @click="appStore.toggleDrawer()" />
       <v-toolbar-title>MySportWeb - {{ pageTitle }} </v-toolbar-title>
     </v-app-bar>
