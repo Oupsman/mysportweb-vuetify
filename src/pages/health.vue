@@ -21,7 +21,7 @@ const appStore = useAppStore()
         <v-btn color="primary" @click="appStore.navigateToPage('/health/import')">Import Health Datas</v-btn>
       </v-col>
     </v-row>
-    <EquipmentsList />
+
   </v-container>
 </template>
 

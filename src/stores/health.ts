@@ -17,7 +17,7 @@ export const useHealthStore = defineStore('equipments', () => {
       timeout: 1000,
       headers: { Authorization: `Bearer ${token}` },
     })
-    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/health/all').then(response => {
+    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/healthdatas').then(response => {
       healthDatas.value = response.data
       return true
     }).catch(error => {
@@ -37,15 +37,14 @@ export const useHealthStore = defineStore('equipments', () => {
       timeout: 1000,
       headers: { Authorization: `Bearer ${token}` },
     })
-    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/health', {
+    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/healthdatas', {
       ...healthData,
       token,
     }).then(response => {
       console.log('Healthdata created:', response.data)
     }).catch(error => {
       console.error('Create Healthdata error:', error)
-      throw new Error('Create HealthdataA' +
-        ' failed')
+      throw new Error('Create Healthdata failed')
     })
   }
 
