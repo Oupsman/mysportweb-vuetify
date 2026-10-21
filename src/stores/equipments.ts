@@ -1,54 +1,36 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
+import { api } from '@/api'
 import type { Equipment } from '@/types/equipments'
 
 export const useEquipmentsStore = defineStore('equipments', () => {
   const equipments: Ref<Equipment[]> = ref([])
-  const getAllEquipments = async (): Promise<boolean | undefined> => {
-    console.log('Get all equipments - function')
-    const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
-    }
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/equipment/all').then(response => {
-      console.log('Equipments:', response.data)
-      equipments.value = response.data
-      return true
-    }).catch(error => {
+
+  const getAllEquipments = async (): Promise<void> => {
+    try {
+      const response = await api.get('/api/v1/equipment/all')
+      equipments.value = response.data ?? []
+    } catch (error) {
       console.error('Get all equipments error:', error)
       throw new Error('get equipments failed')
-    })
-    return true
-  }
-  console.log('Get all equipments - store')
-  getAllEquipments()
-  const insertEquipment = async (equipment: Equipment): Promise<void> => {
-    const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
     }
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/equipment', {
-      ...equipment,
-      token,
-    }).then(response => {
-      console.log('Equipment created:', response.data)
-    }).catch(error => {
+  }
+
+  const insertEquipment = async (equipment: Equipment): Promise<Equipment> => {
+    try {
+      const response = await api.post('/api/v1/equipment', equipment)
+      await getAllEquipments()
+      return response.data
+    } catch (error) {
       console.error('Create equipment error:', error)
-      throw new Error('Create equipment failed')
-    })
+      throw new Error('create equipment failed')
+    }
+  }
+
+  if (localStorage.getItem('msw-token')) {
+    getAllEquipments().catch(() => {})
   }
 
   return {

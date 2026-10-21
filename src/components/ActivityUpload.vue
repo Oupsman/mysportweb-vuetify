@@ -1,58 +1,49 @@
 <script setup lang="ts">
-  import axios from 'axios'
+  import { mdiUpload } from '@mdi/js'
   import { ref } from 'vue'
+  import type { Ref } from 'vue'
+  import { api } from '@/api'
   import { useAppStore } from '@/stores/app'
-  import { useActivitiesStore } from '@/stores/activities'
   import { useUserStore } from '@/stores/user'
 
-  const importResults = ref([])
-  const files: Ref<File[]> = ref(undefined)
+  const importResults: Ref<{ filename: string, status: string, color: string }[]> = ref([])
+  const files: Ref<File[] | undefined> = ref(undefined)
   const uploadedFiles = ref({ completed: 0, count: 0, total: 0 })
   const appStore = useAppStore()
-  const activitiesStore = useActivitiesStore()
   const userStore = useUserStore()
-  const uploadActivity = () => {
-    if (!files.value || files.value.length === 0) return
 
-    uploadedFiles.value = { completed: 0, total: files.value.length, count: 0 }
-    importResults.value = []
-
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        Authorization: `Bearer ${localStorage.getItem('msw-token')}`,
-      },
-    })
-
-    const uploadPromises = files.value.map((file, index) => {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('item', index.toString())
-      formData.append('count', files.value.length.toString())
-
-      return request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity', formData)
-        .then(response => {
-          uploadedFiles.value.completed++
-          if (files.value.length === 1) {
-            const uuid = response.data.id
-            appStore.navigateToPage(`/activity/${uuid}`)
-          } else {
-            importResults.value.push({ filename: file.name, status: 'Success', color: 'green' })
-          }
-        })
-        .catch(error => {
-          uploadedFiles.value.completed++
-          importResults.value.push({ filename: file.name, status: 'Error: ' + error.toString(), color: 'red' })
-        })
-    })
-
-    Promise.all(uploadPromises).then(() => {
-      activitiesStore.getActivities()
-      userStore.refreshDashboard()
-    })
+  const uploadFile = async (file: File, index: number, count: number): Promise<string | undefined> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('item', index.toString())
+    formData.append('count', count.toString())
+    try {
+      const response = await api.post('/api/v1/activity', formData, { timeout: 120000 })
+      importResults.value.push({ filename: file.name, status: 'Success', color: 'green' })
+      return response.data.id
+    } catch (error) {
+      importResults.value.push({ filename: file.name, status: 'Error: ' + String(error), color: 'red' })
+      return undefined
+    } finally {
+      uploadedFiles.value.completed++
+    }
   }
 
+  const uploadActivity = async () => {
+    const selected = files.value
+    if (!selected || selected.length === 0) return
+    uploadedFiles.value = { completed: 0, total: selected.length, count: 0 }
+    importResults.value = []
+
+    // the first file resets the "last import" flags on the backend: it must be processed before the others
+    const firstID = await uploadFile(selected[0], 0, selected.length)
+    await Promise.all(selected.slice(1).map((file, index) => uploadFile(file, index + 1, selected.length)))
+
+    userStore.refreshDashboard().catch(() => {})
+    if (selected.length === 1 && firstID) {
+      appStore.navigateToPage(`/activity/${firstID}`)
+    }
+  }
 </script>
 
 <template>
@@ -74,7 +65,7 @@
           chips
           label="Select FIT files"
           multiple
-          prepend-icon="mdi-upload"
+          :prepend-icon="mdiUpload"
           @change="uploadActivity"
         />
       </v-col>
@@ -87,7 +78,7 @@
             :key="importResult.filename"
           >
             <td>{{ importResult.filename }}</td>
-            <td color="{{ importResult.color }}">{{ importResult.status }}</td>
+            <td :class="`text-${importResult.color}`">{{ importResult.status }}</td>
           </tr>
         </tbody>
 

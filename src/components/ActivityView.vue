@@ -2,9 +2,8 @@
   import { computed, onMounted, ref } from 'vue'
   import { useAppStore } from '@/stores/app'
   import { useRoute } from 'vue-router'
-  import axios from 'axios'
+  import { api } from '@/api'
 
-  const token = localStorage.getItem('msw-token')
   const appStore = useAppStore()
   const route = useRoute('/activity/[id]')
   const activity = ref(null)
@@ -42,13 +41,7 @@
     try {
       isLoading.value = true
       console.log('Getting activity: ', route.params.id)
-      const request = axios.create({
-        baseURL: import.meta.env.VITE_BACKEND_URL,
-        timeout: 1000,
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      const response = await request.get(`/api/v1/activity/${route.params.id}`)
+      const response = await api.get(`/api/v1/activity/${route.params.id}`)
       console.log('Activity:', response.data.activity)
       activity.value = response.data.activity
       if (activity.value) {

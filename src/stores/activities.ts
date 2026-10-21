@@ -1,98 +1,63 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
-import type { Activity } from '@/types/activities'
+import { api } from '@/api'
+import type { Activity, ActivitySummary, ActivityUpdate } from '@/types/activities'
 
 export const useActivitiesStore = defineStore('activities', () => {
-  const activity: Ref<Object | undefined> = ref({})
-  const activities = ref([])
+  const activity: Ref<Activity | undefined> = ref()
+  const activities: Ref<ActivitySummary[]> = ref([])
 
-  const getActivity = async (id: string): Promise<Object> => {
-    console.log('Get activity - function', id)
-    const token = localStorage.getItem('msw-token')
-    console.log('Token: ', token)
-    if (!token) {
-      throw new Error('No token')
-    }
+  const getActivity = async (id: string): Promise<Activity> => {
     try {
-      const request = axios.create({
-        baseURL: import.meta.env.VITE_BACKEND_URL,
-        timeout: 1000,
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      const response = await request.get(`/api/v1/activity/${id}`)
-      console.log('Activity:', response.data.activity)
+      const response = await api.get(`/api/v1/activity/${id}`)
       return response.data.activity
     } catch (error) {
       console.error('Get activity error:', error)
       throw new Error('get activity failed')
     }
   }
-  const getActivities = async (pointer: number, count: number): Promise<Activity[]> => {
-    console.log(`Get activities - function : ${pointer}:${count}`)
-    const token = localStorage.getItem('msw-token')
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
 
+  const getActivities = async (pointer: number, count: number): Promise<ActivitySummary[]> => {
     try {
-      const response = await request.get(`/api/v1/activity/list/${pointer}/${count}`)
-      console.log('Get activities - function : ', response.data.activities)
-      return response.data.activities
+      const response = await api.get(`/api/v1/activity/list/${pointer}/${count}`)
+      return response.data.activities ?? []
     } catch (error) {
       console.error('Get activities error:', error)
       throw new Error('get activities failed')
     }
   }
 
-  const deleteActivity = async (id: string): Promise<Object | undefined> => {
-    console.log('Delete activity - function')
-    confirm('Are you sure you want to delete this activity?')
-    const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
+  // returns false when the user cancels the deletion
+  const deleteActivity = async (id: string): Promise<boolean> => {
+    if (!confirm('Are you sure you want to delete this activity?')) {
+      return false
     }
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    request.delete(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/' + id).then(response => {
-      console.log('Activity deleted:', response.data)
+    try {
+      await api.delete(`/api/v1/activity/${id}`)
+      activities.value = activities.value.filter(a => a.id !== id)
       return true
-    }).catch(error => {
+    } catch (error) {
       console.error('Delete activity error:', error)
-      throw new Error('delete activity')
-    })
-    return true
+      throw new Error('delete activity failed')
+    }
   }
 
-  const saveActivity = async (activity: Activity):Promise<Object | undefined> => {
-    console.log('Activity to save', activity)
-    const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
-    }
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/activity/' + activity.id, {
-      ...activity,
-    }).then(response => {
-      console.log('Activity updated:', response.data)
-      return true
-    }).catch(error => {
+  // only sends the editable fields, the whole activity weights megabytes
+  const saveActivity = async (update: ActivityUpdate): Promise<void> => {
+    try {
+      await api.post(`/api/v1/activity/${update.id}`, {
+        title: update.title,
+        can_comments: update.can_comments,
+        visibility: update.visibility,
+        is_commute: update.is_commute,
+        equipment_id: update.equipment_id,
+      })
+    } catch (error) {
       console.error('Update activity error:', error)
-      throw new Error('update activity')
-    })
-    return true
+      throw new Error('update activity failed')
+    }
   }
 
   return {

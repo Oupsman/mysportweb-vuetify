@@ -50,11 +50,14 @@ export default defineConfig({
         configFile: 'src/styles/settings.scss',
       },
     }),
+    // self-hosted: no request to Google Fonts, the files are bundled with the app
     Fonts({
-      google: {
-        families: [ {
+      fontsource: {
+        families: [{
           name: 'Roboto',
-          styles: 'wght@100;300;400;500;700;900',
+          weights: [300, 400, 500, 700],
+          styles: ['normal'],
+          subset: 'latin',
         }],
       },
     }),

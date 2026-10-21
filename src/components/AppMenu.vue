@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { mdiAccount, mdiAccountArrowRight, mdiAccountPlus, mdiBicycle, mdiHeart, mdiHomeAnalytics, mdiPodium } from '@mdi/js'
   import { storeToRefs } from 'pinia'
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
@@ -11,27 +12,27 @@
   }
   const menuItems = [
     {
-      icon: 'mdi-home-analytics',
+      icon: mdiHomeAnalytics,
       title: 'Home',
       page: '/',
     },
     {
-      icon: 'mdi-bicycle',
+      icon: mdiBicycle,
       title: 'Equipments',
       page: '/equipments',
     },
     {
-      icon: 'mdi-podium',
+      icon: mdiPodium,
       title: 'Activities',
       page: '/activities',
     },
     {
-      icon: 'mdi-heart',
+      icon: mdiHeart,
       title: 'Health Datas',
       page: '/health',
     },
     {
-      icon: 'mdi-account',
+      icon: mdiAccount,
       title: 'Your profile',
       page: '/profile/view',
     },
@@ -53,7 +54,7 @@
       </v-list-item>
       <v-list-item @click="userStore.logout()">
         <template v-slot:prepend>
-          <v-icon icon="mdi-account-arrow-right" />
+          <v-icon :icon="mdiAccountArrowRight" />
         </template>
         <v-list-item-title>Log out</v-list-item-title>
       </v-list-item>
@@ -61,13 +62,13 @@
     <v-list v-else dense>
       <v-list-item @click="goToPage('/login')">
         <template v-slot:prepend>
-          <v-icon icon="mdi-account" />
+          <v-icon :icon="mdiAccount" />
         </template>
         <v-list-item-title>Login</v-list-item-title>
       </v-list-item>
       <v-list-item @click="goToPage('/signup')">
         <template v-slot:prepend>
-          <v-icon icon="mdi-account-plus" />
+          <v-icon :icon="mdiAccountPlus" />
         </template>
         <v-list-item-title>Sign up</v-list-item-title>
       </v-list-item>

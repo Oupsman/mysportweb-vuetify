@@ -1,56 +1,35 @@
 <script setup lang="ts">
-import axios from 'axios'
-import { ref } from 'vue'
-import { useAppStore } from '@/stores/app'
-import { useHealthStore } from '@/stores/health'
-import { useUserStore } from '@/stores/user'
+  import { mdiUpload } from '@mdi/js'
+  import { ref } from 'vue'
+  import type { Ref } from 'vue'
+  import { api } from '@/api'
+  import { useHealthStore } from '@/stores/health'
 
-const importResults = ref([])
-const files: Ref<File[]> = ref(undefined)
-const uploadedFiles = ref({ completed: 0, count: 0, total: 0 })
-const appStore = useAppStore()
-const userStore = useUserStore()
-const healthStore = useHealthStore()
-const uploadHealthDatas = () => {
-  if (!files.value || files.value.length === 0) return
+  const importResults: Ref<{ filename: string, status: string, color: string }[]> = ref([])
+  const files: Ref<File[] | undefined> = ref(undefined)
+  const uploadedFiles = ref({ completed: 0, count: 0, total: 0 })
+  const healthStore = useHealthStore()
 
-  uploadedFiles.value = { completed: 0, total: files.value.length, count: 0 }
-  importResults.value = []
+  const uploadHealthDatas = async () => {
+    const selected = files.value
+    if (!selected || selected.length === 0) return
+    uploadedFiles.value = { completed: 0, total: selected.length, count: 0 }
+    importResults.value = []
 
-  const request = axios.create({
-    baseURL: import.meta.env.VITE_BACKEND_URL,
-    headers: {
-      'Content-Type': 'multipart/form-data',
-      Authorization: `Bearer ${localStorage.getItem('msw-token')}`,
-    },
-  })
-
-  const uploadPromises = files.value.map((file, index) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('item', index.toString())
-    formData.append('count', files.value.length.toString())
-
-    return request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/health', formData)
-      .then(response => {
+    await Promise.all(selected.map(async file => {
+      const formData = new FormData()
+      formData.append('file', file)
+      try {
+        await api.post('/api/v1/healthdatas/import', formData)
+        importResults.value.push({ filename: file.name, status: 'Success', color: 'green' })
+      } catch (error) {
+        importResults.value.push({ filename: file.name, status: 'Error: ' + String(error), color: 'red' })
+      } finally {
         uploadedFiles.value.completed++
-        if (files.value.length === 1) {
-          appStore.navigateToPage(`/health`)
-        } else {
-          importResults.value.push({ filename: file.name, status: 'Success', color: 'green' })
-        }
-      })
-      .catch(error => {
-        uploadedFiles.value.completed++
-        importResults.value.push({ filename: file.name, status: 'Error: ' + error.toString(), color: 'red' })
-      })
-  })
-
-  Promise.all(uploadPromises).then(() => {
-    userStore.refreshDashboard()
-  })
-}
-
+      }
+    }))
+    healthStore.getAllHealthDatas().catch(() => {})
+  }
 </script>
 
 <template>
@@ -72,7 +51,7 @@ const uploadHealthDatas = () => {
           chips
           label="Select CSV files"
           multiple
-          prepend-icon="mdi-upload"
+          :prepend-icon="mdiUpload"
           @change="uploadHealthDatas"
         />
       </v-col>
@@ -80,13 +59,13 @@ const uploadHealthDatas = () => {
     <v-row class="h-50">
       <v-table>
         <tbody>
-        <tr
-          v-for="importResult in importResults"
-          :key="importResult.filename"
-        >
-          <td>{{ importResult.filename }}</td>
-          <td color="{{ importResult.color }}">{{ importResult.status }}</td>
-        </tr>
+          <tr
+            v-for="importResult in importResults"
+            :key="importResult.filename"
+          >
+            <td>{{ importResult.filename }}</td>
+            <td :class="`text-${importResult.color}`">{{ importResult.status }}</td>
+          </tr>
         </tbody>
 
       </v-table>

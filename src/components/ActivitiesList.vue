@@ -1,14 +1,14 @@
 <script setup lang="ts">
   import { useActivitiesStore } from '@/stores/activities'
   import ActivityCard from '@/components/ActivityCard.vue'
-  import type { Activity } from '@/types/activities'
+  import type { ActivitySummary } from '@/types/activities'
 
   const activitiesStore = useActivitiesStore()
-  const activitiesDisplay = ref<Activity[]>([])
+  const activitiesDisplay = ref<ActivitySummary[]>([])
 
   const pointer = ref(0)
   const number = 100
-  let activities:Activity[] = []
+  let activities:ActivitySummary[] = []
 
   // Define possible scroll sides
   // Taken from documentation https://vuetifyjs.com/en/components/infinite-scroller/
@@ -60,7 +60,12 @@
   <v-infinite-scroll :height="600" mode="manual" @load="load">
     <template v-if="activitiesDisplay.length > 0">
       <v-container class="d-flex align-start flex-wrap mb-6">
-        <ActivityCard v-for="activity in activitiesDisplay" :key="activity.id" :activity="activity" />
+        <ActivityCard
+          v-for="activity in activitiesDisplay"
+          :key="activity.id"
+          :activity="activity"
+          @deleted="id => activitiesDisplay = activitiesDisplay.filter(a => a.id !== id)"
+        />
       </v-container>
     </template>
     <template v-else>

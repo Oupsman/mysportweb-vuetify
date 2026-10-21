@@ -1,57 +1,40 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
+import { api } from '@/api'
 import type { HealthDatas } from '@/types/health'
 
-export const useHealthStore = defineStore('equipments', () => {
+export const useHealthStore = defineStore('health', () => {
   const healthDatas: Ref<HealthDatas[]> = ref([])
-  const getAllHealthDatas = async (): Promise<boolean | undefined> => {
-    const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
+
+  const getAllHealthDatas = async (): Promise<void> => {
+    try {
+      const response = await api.get('/api/v1/healthdatas')
+      healthDatas.value = response.data ?? []
+    } catch (error) {
+      console.error('Get health datas error:', error)
+      throw new Error('get health datas failed')
     }
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/healthdatas').then(response => {
-      healthDatas.value = response.data
-      return true
-    }).catch(error => {
-      throw new Error('get healthdatas failed')
-    })
-    return true
   }
-  console.log('Get all health datas - store')
-  getAllHealthDatas()
+
   const insertHealthData = async (healthData: HealthDatas): Promise<void> => {
-    const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
+    try {
+      await api.post('/api/v1/healthdatas', healthData)
+      await getAllHealthDatas()
+    } catch (error) {
+      console.error('Create health data error:', error)
+      throw new Error('create health data failed')
     }
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      timeout: 1000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/healthdatas', {
-      ...healthData,
-      token,
-    }).then(response => {
-      console.log('Healthdata created:', response.data)
-    }).catch(error => {
-      console.error('Create Healthdata error:', error)
-      throw new Error('Create Healthdata failed')
-    })
+  }
+
+  if (localStorage.getItem('msw-token')) {
+    getAllHealthDatas().catch(() => {})
   }
 
   return {
     healthDatas,
-    getAllHealthDatas: getAllHealthDatas,
-    insertHealthData: insertHealthData,
+    getAllHealthDatas,
+    insertHealthData,
   }
-
 })

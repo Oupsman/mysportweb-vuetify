@@ -24,7 +24,7 @@
             class="py-4"
             color="surface-variant"
             image="https://cdn.vuetifyjs.com/docs/images/one/create/feature.png"
-            prepend-icon="mdi-rocket-launch-outline"
+            :prepend-icon="mdiRocketLaunchOutline"
             rounded="lg"
             variant="outlined"
           >
@@ -54,11 +54,11 @@
 
         <v-col cols="6">
           <v-card
-            append-icon="mdi-open-in-new"
+            :append-icon="mdiOpenInNew"
             class="py-4"
             color="surface-variant"
             href="https://vuetifyjs.com/"
-            prepend-icon="mdi-text-box-outline"
+            :prepend-icon="mdiTextBoxOutline"
             rel="noopener noreferrer"
             rounded="lg"
             subtitle="Learn about all things Vuetify in our documentation."
@@ -78,11 +78,11 @@
 
         <v-col cols="6">
           <v-card
-            append-icon="mdi-open-in-new"
+            :append-icon="mdiOpenInNew"
             class="py-4"
             color="surface-variant"
             href="https://vuetifyjs.com/introduction/why-vuetify/#feature-guides"
-            prepend-icon="mdi-star-circle-outline"
+            :prepend-icon="mdiStarCircleOutline"
             rel="noopener noreferrer"
             rounded="lg"
             subtitle="Explore available framework Features."
@@ -102,11 +102,11 @@
 
         <v-col cols="6">
           <v-card
-            append-icon="mdi-open-in-new"
+            :append-icon="mdiOpenInNew"
             class="py-4"
             color="surface-variant"
             href="https://vuetifyjs.com/components/all"
-            prepend-icon="mdi-widgets-outline"
+            :prepend-icon="mdiWidgetsOutline"
             rel="noopener noreferrer"
             rounded="lg"
             subtitle="Discover components in the API Explorer."
@@ -126,11 +126,11 @@
 
         <v-col cols="6">
           <v-card
-            append-icon="mdi-open-in-new"
+            :append-icon="mdiOpenInNew"
             class="py-4"
             color="surface-variant"
             href="https://discord.vuetifyjs.com"
-            prepend-icon="mdi-account-group-outline"
+            :prepend-icon="mdiAccountGroupOutline"
             rel="noopener noreferrer"
             rounded="lg"
             subtitle="Connect with Vuetify developers."
@@ -153,5 +153,6 @@
 </template>
 
 <script setup lang="ts">
+  import { mdiAccountGroupOutline, mdiOpenInNew, mdiRocketLaunchOutline, mdiStarCircleOutline, mdiTextBoxOutline, mdiWidgetsOutline } from '@mdi/js'
   //
 </script>

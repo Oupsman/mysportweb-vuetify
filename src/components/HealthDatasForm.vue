@@ -1,44 +1,54 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { Ref } from 'vue'
-import { useHealthStore } from '@/stores/health'
-import { HealthDatas } from '@/types/health'
+  import { ref } from 'vue'
+  import type { Ref } from 'vue'
+  import { useHealthStore } from '@/stores/health'
+  import type { HealthDatas } from '@/types/health'
+  import { useAppStore } from '@/stores/app'
 
-const healthStore = useHealthStore()
-const weight:Ref<number> = ref(0)
-const fat:Ref<number> = ref(0)
-const muscle:Ref<number> = ref(0)
-const bone:Ref<number> = ref(0)
-const bodyWater:Ref<number> = ref(0)
-const resthr:Ref<number> = ref(0)
-const date:Ref<Date> = ref(new Date())
-const vo2max:Ref<number> = ref(0)
-const systolic:Ref<number> = ref(0)
-const diastolic:Ref<number> = ref(0)
+  const healthStore = useHealthStore()
+  const weight:Ref<number> = ref(0)
+  const fat:Ref<number> = ref(0)
+  const muscle:Ref<number> = ref(0)
+  const bone:Ref<number> = ref(0)
+  const bodyWater:Ref<number> = ref(0)
+  const resthr:Ref<number> = ref(0)
+  const date:Ref<Date> = ref(new Date())
+  const vo2max:Ref<number> = ref(0)
+  const systolic:Ref<number> = ref(0)
+  const diastolic:Ref<number> = ref(0)
 
-const create = () => {
-  const healthdata: HealthDatas = {
-    id: '',
-    date: date.value.toString(),
-    weight: weight.value,
-    fat: fat.value,
-    muscle: muscle.value,
-    bone: bone.value,
-    bodyWater: bodyWater.value,
-    resthr: resthr.value,
-    vo2max: vo2max.value,
-    systolic: systolic.value,
-    diastolic: diastolic.value,
+  const appStore = useAppStore()
+  const error: Ref<string> = ref('')
+  const create = async () => {
+    // text fields give strings, the backend wants numbers
+    const healthdata: HealthDatas = {
+      date: date.value.toISOString(),
+      weight: +weight.value,
+      fat: +fat.value,
+      muscle: +muscle.value,
+      bone: +bone.value,
+      body_water: +bodyWater.value,
+      rest_hr: +resthr.value,
+      vo2max: +vo2max.value,
+      systolic: +systolic.value,
+      diastolic: +diastolic.value,
+    }
+    error.value = ''
+    try {
+      await healthStore.insertHealthData(healthdata)
+      appStore.navigateToPage('/health')
+    } catch {
+      error.value = 'The health data could not be saved'
+    }
   }
-  healthStore.insertHealthData(healthdata)
-}
 </script>
 
 <template>
   <v-container>
     <v-card>
-      <v-card-title>Equipment</v-card-title>
+      <v-card-title>Health data</v-card-title>
       <v-card-text>
+        <v-alert v-if="error" class="mb-4" type="error">{{ error }}</v-alert>
         <v-form @submit.prevent="create">
           <v-date-picker v-model="date" label="Date of measure" />
           <v-text-field v-model="weight" label="weight" type="number" />

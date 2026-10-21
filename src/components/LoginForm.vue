@@ -6,8 +6,15 @@
   const username: Ref<string> = ref('')
   const password: Ref<string> = ref('')
 
-  const login = () => {
-    userStore.login(username.value, password.value)
+  const error: Ref<string> = ref('')
+
+  const login = async () => {
+    error.value = ''
+    try {
+      await userStore.login(username.value, password.value)
+    } catch {
+      error.value = 'Wrong username or password'
+    }
   }
 </script>
 
@@ -16,6 +23,7 @@
     <v-card>
       <v-card-title>Login</v-card-title>
       <v-card-text>
+        <v-alert v-if="error" class="mb-4" type="error">{{ error }}</v-alert>
         <v-form @submit.prevent="login">
           <v-text-field
             v-model="username"

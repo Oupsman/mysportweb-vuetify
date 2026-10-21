@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { mdiEye, mdiEyeOff, mdiLock } from '@mdi/js'
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
   import { useVuelidate } from '@vuelidate/core'
@@ -88,29 +89,31 @@
       <v-form @submit.prevent="save">
         <v-text-field
           v-model="userForm.oldPassword"
-          :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+          :append-inner-icon="showPassword ? mdiEyeOff : mdiEye"
           :error-messages="v$.oldPassword.$errors.map(e => unref(e.$message))"
           label="Current Password"
-          prepend-icon="mdi-lock"
+          :prepend-icon="mdiLock"
           required
-          type="password"
+          :type="showPassword ? 'text' : 'password'"
+          @click:append-inner="showPassword = !showPassword"
         />
         <v-text-field
           v-model="userForm.newPassword"
-          :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+          :append-inner-icon="showPassword ? mdiEyeOff : mdiEye"
           :error-messages="v$.newPassword.$errors.map(e => unref(e.$message))"
           label="New Password"
-          prepend-icon="mdi-lock"
-          type="password"
+          :prepend-icon="mdiLock"
+          :type="showPassword ? 'text' : 'password'"
+          @click:append-inner="showPassword = !showPassword"
         />
         <v-text-field
           v-model="userForm.newPasswordConfirmation"
-          :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+          :append-inner-icon="showPassword ? mdiEyeOff : mdiEye"
           :error-messages="v$.newPasswordConfirmation.$errors.map(e => unref(e.$message))"
           label="Confirm Password"
-          prepend-icon="mdi-lock"
-          type="password"
-          @click:append="showPassword = !showPassword"
+          :prepend-icon="mdiLock"
+          :type="showPassword ? 'text' : 'password'"
+          @click:append-inner="showPassword = !showPassword"
         />
         <v-row>
           <v-select v-model="userForm.birthmonth" :items="months" label="Birth Month" />
@@ -118,10 +121,10 @@
           <v-select v-model="userForm.birthyear" :items="years" label="Birth year" />
         </v-row>
         <v-select v-model="userForm.gender" :items="genders" label="Gender" />
-        <v-text-field v-model="userForm.weight" label="Weight" type="number" />
-        <v-text-field v-model="userForm.height" label="Height (cm)" type="number" />
-        <v-text-field v-model="userForm.max_hr" label="Max HR" type="number" />
-        <v-text-field v-model="userForm.security_distance" label="Security Distance (m)" type="number" />
+        <v-text-field v-model.number="userForm.weight" label="Weight" type="number" />
+        <v-text-field v-model.number="userForm.height" label="Height (cm)" type="number" />
+        <v-text-field v-model.number="userForm.max_hr" label="Max HR" type="number" />
+        <v-text-field v-model.number="userForm.security_distance" label="Security Distance (m)" type="number" />
         <v-btn color="primary" :disabled="v$.$invalid" type="submit">Save</v-btn>
       </v-form>
     </v-container>

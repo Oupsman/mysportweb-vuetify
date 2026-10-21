@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 import router from '@/router'
-import axios from 'axios'
+import { api } from '@/api'
 
 import type { UserSession } from '@/types/user'
 import type { Dashboard } from '@/types/dashboard'
@@ -20,59 +20,38 @@ function parseJwt (token: string) {
 export const useUserStore = defineStore('user', () => {
   const session: Ref<UserSession | null> = ref(null)
 
-  const login = async (username: string, password:string, callback?: Function): Promise<void> => {
-    axios.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/user/login', {
-      username,
-      password,
-    }).then(response => {
+  const login = async (username: string, password: string): Promise<void> => {
+    try {
+      const response = await api.post('/api/v1/user/login', { username, password })
       if (response.data.token) {
         localStorage.setItem('msw-token', response.data.token)
-        const data = parseJwt(response.data.token)
         setUserSession({
-          ...data,
+          ...parseJwt(response.data.token),
           token: response.data.token,
         })
+        await refreshDashboard()
         router.push('/')
       }
-    }).catch(error => {
+    } catch (error) {
       console.error('Login error:', error)
       throw new Error('Login failed')
-    })
+    }
   }
 
-  const logout = async (): Promise<void> => {
-    const token = localStorage.getItem('msw-token')
-    axios.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/user/logout', {
-      token,
-    }).then(response => {
-      if (response.data.token) {
-        localStorage.removeItem('msw-token')
-        session.value = null
-        router.push('/')
-      }
-    }).catch(error => {
-      console.error('Login error:', error)
-      throw new Error('Login failed')
-    })
+  // tokens are stateless JWTs: logging out is forgetting the token
+  const logout = (): void => {
+    localStorage.removeItem('msw-token')
+    session.value = null
+    router.push('/')
   }
+
   const signup = async (username: string, password: string, email: string): Promise<void> => {
-    const request = axios.create(
-      {
-        baseURL: import.meta.env.VITE_BACKEND_URL,
-        timeout: 1000,
-        withCredentials: false,
-      }
-    )
-    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/user/register', {
-      username,
-      password,
-      email,
-    }).then(response => {
-      console.log('Signup response:', response)
-    }).catch(error => {
+    try {
+      await api.post('/api/v1/user/register', { username, password, email })
+    } catch (error) {
       console.error('Signup error:', error)
       throw new Error('Signup failed')
-    })
+    }
   }
 
   const setUserSession = (data: UserSession | any): void => {
@@ -80,12 +59,8 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const userIsLoggedIn = computed(() => {
-    if (session.value?.exp) {
-      const expiresAt = new Date(0).setUTCSeconds(session.value.exp)
-      const now = new Date().getSeconds()
-      return now < expiresAt
-    }
-    return false
+    // exp is in seconds since epoch
+    return session.value?.exp !== undefined && Date.now() / 1000 < session.value.exp
   })
   // checks if the JWT token is still valid
   const checkToken = computed((): boolean => {
@@ -106,82 +81,49 @@ export const useUserStore = defineStore('user', () => {
 
   const user = ref({})
 
-  const getUser = async () : Promise<Object> => {
-    console.log('Get user - function')
-    const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
-    }
-
+  const getUser = async (): Promise<Object> => {
     try {
-      const request = axios.create({
-        baseURL: import.meta.env.VITE_BACKEND_URL,
-        timeout: 1000,
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      const response = await request.get(`/api/v1/user`)
-      console.log('Response : ', response.data)
+      const response = await api.get('/api/v1/user')
       user.value = response.data
-      console.log('user:', response.data)
-      return response.data.activity
+      return response.data
     } catch (error) {
       console.error('Get user error:', error)
       throw new Error('get user failed')
     }
   }
 
-  const updateUser = async (user: Object) : Promise<Object> => {
-    console.log('user to save', user)
-    const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
-    }
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      timeout: 30000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    request.post(import.meta.env.VITE_BACKEND_URL + '/api/v1/user', {
-      ...user,
-    }).then(response => {
-      console.log('User updated:', response.data)
-      return true
-    }).catch(error => {
+  const updateUser = async (user: Object): Promise<void> => {
+    try {
+      await api.post('/api/v1/user', user)
+    } catch (error) {
       console.error('Update user error:', error)
-      throw new Error('update user')
-    })
-    return true
+      throw new Error('update user failed')
+    }
   }
 
-  const dashboard:Ref<Dashboard> = ref({
+  const dashboard: Ref<Dashboard> = ref({
     activities: [],
     total_distance: 0,
-    total_duration: 0,
+    total_duration: '',
     nb_equipments: 0,
     nb_activities: 0,
     activities_calendar: [],
+    max_distance: 0,
+    max_duration: 0,
+    max_elevation: 0,
   })
 
   const refreshDashboard = async (): Promise<void> => {
-    console.log('Get dashboard - function')
-    const token = localStorage.getItem('msw-token')
-    if (!token) {
-      throw new Error('No token')
-    }
-    const request = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL,
-      timeout: 30000,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    request.get(import.meta.env.VITE_BACKEND_URL + '/api/v1/user/dashboard').then(response => {
+    try {
+      const response = await api.get('/api/v1/user/dashboard')
       dashboard.value = response.data
-      console.log('Dashboard:', response.data)
-    }).catch(error => {
+    } catch (error) {
       console.error('Get dashboard error:', error)
       throw new Error('get dashboard failed')
-    })
+    }
   }
-  refreshDashboard()
+  if (localStorage.getItem('msw-token')) {
+    refreshDashboard().catch(() => {})
+  }
   return { session, userIsLoggedIn, login, logout, setUserSession, checkToken, signup, dashboard, refreshDashboard, user, getUser, updateUser }
 })

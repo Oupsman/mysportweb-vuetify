@@ -1,13 +1,12 @@
 export interface HealthDatas {
-  id: string;
   date: string;
   weight: number;
   fat: number;
-  muscle:    number;
-  bone:      number;
-  bodyWater: number;
-  resthr:    number;
-  vo2max:    number;
-  systolic:  number;
+  muscle: number;
+  bone: number;
+  body_water: number;
+  rest_hr: number;
+  vo2max: number;
+  systolic: number;
   diastolic: number;
 }

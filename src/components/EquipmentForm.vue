@@ -2,7 +2,8 @@
   import { ref } from 'vue'
   import type { Ref } from 'vue'
   import { useEquipmentsStore } from '@/stores/equipments'
-  import { Equipment } from '@/types/equipments'
+  import type { Equipment } from '@/types/equipments'
+  import { useAppStore } from '@/stores/app'
 
   const equipmentStore = useEquipmentsStore()
   // const equipment:Ref<Equipment> = ref({
@@ -14,19 +15,26 @@
   const isDefault:Ref<boolean> = ref(false)
   const dateOfPurchase:Ref<Date> = ref(new Date())
   const maintenanceInterval:Ref<number> = ref(0)
-  const create = () => {
+  const appStore = useAppStore()
+  const error: Ref<string> = ref('')
+  const create = async () => {
     const equipment: Equipment = {
-      id: '',
       name: name.value,
       brand: brand.value,
       model: model.value,
       initial_mileage: +initialMileage.value,
-      date_of_purchase: dateOfPurchase.value.toString(),
+      date_of_purchase: dateOfPurchase.value.toISOString(),
       weight: +weight.value,
       is_default: isDefault.value,
-      maintenance_interval: maintenanceInterval.value,
+      maintenance_interval: +maintenanceInterval.value,
     }
-    equipmentStore.insertEquipment(equipment)
+    error.value = ''
+    try {
+      await equipmentStore.insertEquipment(equipment)
+      appStore.navigateToPage('/equipments')
+    } catch {
+      error.value = 'The equipment could not be created'
+    }
   }
 </script>
 
@@ -35,6 +43,7 @@
     <v-card>
       <v-card-title>Equipment</v-card-title>
       <v-card-text>
+        <v-alert v-if="error" class="mb-4" type="error">{{ error }}</v-alert>
         <v-form @submit.prevent="create">
           <v-text-field
             v-model="name"

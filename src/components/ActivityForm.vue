@@ -5,8 +5,9 @@
 
   import { onMounted, ref } from 'vue'
   import { useRoute } from 'vue-router'
+  import type { Activity } from '@/types/activities'
 
-  const activity = ref(null)
+  const activity = ref<Activity | null>(null)
   const isLoading = ref(true)
 
   const visibilities = [
@@ -19,8 +20,8 @@
   const title = ref('')
   const commute = ref(false)
   const canComments = ref(false)
-  const visibility = ref()
-  const equipmentID = ref()
+  const visibility = ref(0)
+  const equipmentID = ref<string | null>(null)
 
   const route = useRoute('/activity/[id]/edit')
 
@@ -33,7 +34,7 @@
       isLoading.value = true
       activity.value = await activitiesStore.getActivity(route.params.id)
       title.value = activity.value.title
-      commute.value = activity.value.commute
+      commute.value = activity.value.is_commute
       canComments.value = activity.value.can_comments
       visibility.value = activity.value.visibility
       equipmentID.value = activity.value.equipment_id
@@ -49,16 +50,22 @@
   }
   onMounted(fetchActivity)
 
+  const error = ref('')
   const save = async () => {
-    activity.value = {
-      ...activity.value,
-      title: title.value,
-      can_comments: canComments.value,
-      visibility: visibility.value,
-      is_commute: commute.value,
-      equipmentID: equipmentID.value,
+    error.value = ''
+    try {
+      await activitiesStore.saveActivity({
+        id: route.params.id,
+        title: title.value,
+        can_comments: canComments.value,
+        visibility: visibility.value,
+        is_commute: commute.value,
+        equipment_id: equipmentID.value ?? null,
+      })
+      appStore.navigateToPage(`/activity/${route.params.id}`)
+    } catch {
+      error.value = 'The activity could not be saved'
     }
-    await activitiesStore.saveActivity(activity.value)
   }
 </script>
 
@@ -67,6 +74,7 @@
   <div v-else-if="activity">
     <v-container>
       <h2>Activity Edit</h2>
+      <v-alert v-if="error" class="mb-4" type="error">{{ error }}</v-alert>
       <v-form @submit.prevent="save">
         <v-text-field
           v-model="title"
@@ -83,8 +91,9 @@
         />
         <v-select
           v-model="equipmentID"
+          clearable
           item-title="name"
-          item-value="ID"
+          item-value="id"
           :items="equipmentsStore.equipments"
           label="Equipment"
         />

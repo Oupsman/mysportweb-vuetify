@@ -12,6 +12,16 @@
       required: true,
     },
   })
+  const emit = defineEmits<{ deleted: [id: string] }>()
+  const remove = async () => {
+    try {
+      if (await activitiesStore.deleteActivity(props.activity.id)) {
+        emit('deleted', props.activity.id)
+      }
+    } catch {
+      alert('The activity could not be deleted')
+    }
+  }
   const thumbnailUrl = ref('')
   const hover = ref(false)
   const formatedDate = computed(() => {
@@ -23,8 +33,7 @@
     const minutes = date.getMinutes().toString().padStart(2, '0')
     return `${month}/${day}/${year} ${hours}:${minutes}`
   })
-  thumbnailUrl.value = `${import.meta.env.VITE_BACKEND_URL}/MEDIA/${userStore.session.uuid}/thumbnails/${props.activity.id}.png`
-  console.log(thumbnailUrl.value)
+  thumbnailUrl.value = `${import.meta.env.VITE_BACKEND_URL}/MEDIA/${userStore.session?.uuid}/thumbnails/${props.activity.id}.png`
 </script>
 
 <template>
@@ -39,7 +48,7 @@
       <v-card-actions>
         <v-btn color="primary" @click="appStore.navigateToPage(`/activity/${props.activity.id}`)">View</v-btn>
         <router-link :to="'/activity/' + props.activity.id + '/edit'"><v-btn color="primary">Edit</v-btn></router-link>
-        <v-btn color="primary" @click="activitiesStore.deleteActivity(props.activity.id)">Delete</v-btn>
+        <v-btn color="primary" @click="remove">Delete</v-btn>
       </v-card-actions>
     </v-card>
     <v-card v-if="hover" style="height: 250px; width:300px; ">
@@ -49,7 +58,7 @@
       <v-card-actions>
         <v-btn color="primary" @click="appStore.navigateToPage(`/activity/${props.activity.id}`)">View</v-btn>
         <router-link :to="'/activity/' + props.activity.id + '/edit'"><v-btn color="primary">Edit</v-btn></router-link>
-        <v-btn color="primary" @click="activitiesStore.deleteActivity(props.activity.id)">Delete</v-btn>
+        <v-btn color="primary" @click="remove">Delete</v-btn>
       </v-card-actions>
     </v-card>
   </v-container>

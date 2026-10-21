@@ -10,7 +10,7 @@
   const calendar = ref()
 
   const formattedActivitiesCalendar = computed(() => {
-    if (userStore.dashboard.activities_calendar.length > 0) {
+    if (userStore.dashboard.activities_calendar && userStore.dashboard.activities_calendar.length > 0) {
       return userStore.dashboard.activities_calendar.map(event => {
         const startDate = new Date(event.start)
         const endDate = new Date(startDate.getTime() + Number(event.duration) * 1000)
@@ -83,7 +83,12 @@
         <h5>10 last activities</h5>
         <v-container>
           <v-sheet class="d-flex align-start flex-wrap mb-6 w-100 h-auto">
-            <ActivityCard v-for="activity in userStore.dashboard.activities" :key="activity.id" :activity="activity" />
+            <ActivityCard
+              v-for="activity in userStore.dashboard.activities"
+              :key="activity.id"
+              :activity="activity"
+              @deleted="userStore.refreshDashboard()"
+            />
           </v-sheet>
         </v-container>
       </v-col>
