@@ -2,6 +2,7 @@
   import { mdiUpload } from '@mdi/js'
   import { ref } from 'vue'
   import type { Ref } from 'vue'
+  import axios from 'axios'
   import { api } from '@/api'
   import { useAppStore } from '@/stores/app'
   import { useUserStore } from '@/stores/user'
@@ -22,7 +23,13 @@
       importResults.value.push({ filename: file.name, status: 'Success', color: 'green' })
       return response.data.id
     } catch (error) {
-      importResults.value.push({ filename: file.name, status: 'Error: ' + String(error), color: 'red' })
+      // already imported: not an error, the upload leads to the existing activity
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        importResults.value.push({ filename: file.name, status: 'Already imported', color: 'orange' })
+        return error.response.data?.id
+      }
+      const reason = axios.isAxiosError(error) ? error.response?.data?.error ?? error.message : String(error)
+      importResults.value.push({ filename: file.name, status: 'Error: ' + reason, color: 'red' })
       return undefined
     } finally {
       uploadedFiles.value.completed++

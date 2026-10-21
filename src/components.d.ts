@@ -7,8 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    ActivitiesList: typeof import('./components/ActivitiesList.vue')['default']
-    ActivityCard: typeof import('./components/ActivityCard.vue')['default']
+    ActivitiesTable: typeof import('./components/ActivitiesTable.vue')['default']
     ActivityForm: typeof import('./components/ActivityForm.vue')['default']
     ActivityMonth: typeof import('./components/ActivityMonth.vue')['default']
     ActivityUpload: typeof import('./components/ActivityUpload.vue')['default']

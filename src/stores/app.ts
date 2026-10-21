@@ -27,9 +27,8 @@ export const useAppStore = defineStore('app', () => {
 
   const pageTitle: Ref<string> = ref('Home')
 
+  // the title is set by the router, for every navigation
   const navigateToPage = (page: string): void => {
-    const title: string = page.slice(1).charAt(0).toUpperCase() + page.slice(2)
-    pageTitle.value = title || 'Home'
     toggleDrawer(false)
     router.push(page)
   }

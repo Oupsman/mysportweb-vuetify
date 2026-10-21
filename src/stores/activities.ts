@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api } from '@/api'
-import type { Activity, ActivitySummary, ActivityUpdate, SimilarActivity } from '@/types/activities'
+import type { Activity, ActivitySearch, ActivitySummary, ActivityUpdate, SimilarActivity } from '@/types/activities'
 
 export const useActivitiesStore = defineStore('activities', () => {
   const activity: Ref<Activity | undefined> = ref()
@@ -26,6 +26,24 @@ export const useActivitiesStore = defineStore('activities', () => {
     } catch (error) {
       console.error('Get activities error:', error)
       throw new Error('get activities failed')
+    }
+  }
+
+  // a page of activities matching the filters, see the backend SearchActivities for the parameters;
+  // repeated parameters (sport) are sent as sport=a&sport=b
+  const searchActivities = async (params: Record<string, string | string[]>): Promise<ActivitySearch> => {
+    const query = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) {
+      for (const v of Array.isArray(value) ? value : [value]) {
+        query.append(key, v)
+      }
+    }
+    try {
+      const response = await api.get(`/api/v1/activity/search?${query}`)
+      return response.data
+    } catch (error) {
+      console.error('Search activities error:', error)
+      throw new Error('search activities failed')
     }
   }
 
@@ -76,6 +94,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     activities,
     getActivity,
     getActivities,
+    searchActivities,
     getSimilarActivities,
     deleteActivity,
     saveActivity,

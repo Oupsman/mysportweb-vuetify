@@ -2,6 +2,7 @@
   import { useUserStore } from '@/stores/user'
 
   const userStore = useUserStore()
+  const route = useRoute()
 
   const username: Ref<string> = ref('')
   const password: Ref<string> = ref('')
@@ -11,7 +12,7 @@
   const login = async () => {
     error.value = ''
     try {
-      await userStore.login(username.value, password.value)
+      await userStore.login(username.value, password.value, route.query.redirect)
     } catch {
       error.value = 'Wrong username or password'
     }

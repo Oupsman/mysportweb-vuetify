@@ -1,25 +1,18 @@
 <script setup lang="ts">
+  import { mdiUpload } from '@mdi/js'
+  import ActivitiesTable from '@/components/ActivitiesTable.vue'
   import { useAppStore } from '@/stores/app'
-  // const userStore = useUserStore();
+
   const appStore = useAppStore()
 </script>
 
 <template>
-  <v-container class="h-auto w-100">
-    <v-row>
-      <v-col>
-        <h2 class="text-h2">Activities</h2>
-      </v-col>
-      <v-col>
-        <v-btn color="primary" @click="appStore.navigateToPage('/activity/add')">Upload an activity</v-btn>
-      </v-col>
-    </v-row>
-    <v-row>
-      <ActivitiesList />
-    </v-row>
+  <v-container class="pa-4" fluid>
+    <div class="d-flex align-center mb-4">
+      <h1 class="text-h5">Activities</h1>
+      <v-spacer />
+      <v-btn color="primary" :prepend-icon="mdiUpload" @click="appStore.navigateToPage('/activity/add')">Upload activities</v-btn>
+    </div>
+    <ActivitiesTable />
   </v-container>
 </template>
-
-<style scoped lang="sass">
-
-</style>

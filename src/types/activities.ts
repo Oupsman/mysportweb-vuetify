@@ -51,3 +51,26 @@ export interface SimilarActivity {
   duration: number
   avg_speed: number
 }
+
+// a row of the activities table, from /activity/search
+export interface ActivityRow {
+  id: string
+  title: string
+  date: string
+  sport: string
+  distance: number
+  duration: number
+  avg_speed: number
+  elevation: number
+  is_commute: boolean
+  equipment_id: string | null
+  equipment_name: string | null
+}
+
+export interface ActivitySearch {
+  activities: ActivityRow[]
+  total: number
+  totals: { activities: number, distance: number, duration: number, elevation: number }
+  sports: string[]
+  years: number[]
+}

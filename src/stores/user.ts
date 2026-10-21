@@ -3,24 +3,16 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 import router from '@/router'
 import { api } from '@/api'
+import { parseJwt, safeRedirect, storedSession } from '@/auth'
 
 import type { UserSession } from '@/types/user'
 import type { CalendarActivity, Dashboard } from '@/types/dashboard'
 
-function parseJwt (token: string) {
-  const base64Url = token.split('.')[1]
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-  }).join(''))
-
-  return JSON.parse(jsonPayload)
-}
-
 export const useUserStore = defineStore('user', () => {
   const session: Ref<UserSession | null> = ref(null)
 
-  const login = async (username: string, password: string): Promise<void> => {
+  // redirect: the page asked before being sent to the login page
+  const login = async (username: string, password: string, redirect?: unknown): Promise<void> => {
     try {
       const response = await api.post('/api/v1/user/login', { username, password })
       if (response.data.token) {
@@ -30,7 +22,7 @@ export const useUserStore = defineStore('user', () => {
           token: response.data.token,
         })
         await refreshDashboard()
-        router.push('/')
+        router.push(safeRedirect(redirect))
       }
     } catch (error) {
       console.error('Login error:', error)
@@ -62,22 +54,11 @@ export const useUserStore = defineStore('user', () => {
     // exp is in seconds since epoch
     return session.value?.exp !== undefined && Date.now() / 1000 < session.value.exp
   })
-  // checks if the JWT token is still valid
-  const checkToken = computed((): boolean => {
-    const token = localStorage.getItem('msw-token')
-    if (token) {
-      const decoded = parseJwt(token)
-      if (decoded.exp < Date.now() / 1000) {
-        // Token is expired
-        localStorage.removeItem('msw-token')
-        session.value = null
-        return false
-      } else {
-        session.value = decoded
-      }
-    }
-    return true
-  })
+  // restores the session from the stored token, false when there is no valid one (called on each navigation)
+  const restoreSession = (): boolean => {
+    session.value = storedSession()
+    return session.value !== null
+  }
 
   const user = ref({})
 
@@ -143,5 +124,5 @@ export const useUserStore = defineStore('user', () => {
   if (localStorage.getItem('msw-token')) {
     refreshDashboard().catch(() => {})
   }
-  return { session, userIsLoggedIn, login, logout, setUserSession, checkToken, signup, dashboard, refreshDashboard, getCalendar, user, getUser, updateUser }
+  return { session, userIsLoggedIn, login, logout, setUserSession, restoreSession, signup, dashboard, refreshDashboard, getCalendar, user, getUser, updateUser }
 })

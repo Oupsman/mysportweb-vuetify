@@ -26,21 +26,11 @@
 </template>
 
 <script lang="ts" setup>
-  import { onMounted } from 'vue'
-  import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
   import { storeToRefs } from 'pinia'
   import AppMenu from './components/AppMenu.vue'
-  const userStore = useUserStore()
   const appStore = useAppStore()
   const { pageTitle, dialog } = storeToRefs(appStore)
   const currentYear = new Date().getFullYear()
-  onMounted(async () => {
-    // check validity of the token
-    if (!userStore.checkToken) {
-      appStore.navigateToPage('/login')
-    } else {
-      appStore.navigateToPage('/')
-    }
-  })
+  // the session is checked by the router, which keeps the requested page (see router/index.ts)
 </script>
