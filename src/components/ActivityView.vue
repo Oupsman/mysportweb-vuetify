@@ -1,12 +1,18 @@
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, provide, ref, shallowRef, watch } from 'vue'
   import { useAppStore } from '@/stores/app'
+  import { useUserStore } from '@/stores/user'
   import { useRoute } from 'vue-router'
   import { api } from '@/api'
+  import { activityCursorKey } from '@/composables/activityCursor'
 
   const appStore = useAppStore()
   const route = useRoute('/activity/[id]')
-  const activity = ref(null)
+  // shallow: the activity holds every record of the FIT file, Vue doesn't need to track them
+  const activity = shallowRef(null)
+  // time hovered on a chart, shared with the other charts and the map
+  const cursor = ref<number | null>(null)
+  provide(activityCursorKey, cursor)
   const isLoading = ref(true)
   const panel = ref(0)
   const graphs = ['speed', 'hr', 'cadence', 'altitude', 'power']
@@ -40,6 +46,7 @@
   const fetchActivity = async () => {
     try {
       isLoading.value = true
+      cursor.value = null
       console.log('Getting activity: ', route.params.id)
       const response = await api.get(`/api/v1/activity/${route.params.id}`)
       console.log('Activity:', response.data.activity)
@@ -54,11 +61,18 @@
     }
   }
   onMounted(fetchActivity)
+  // the router reuses this component when going from an activity to another one
+  watch(() => route.params.id, fetchActivity)
+
+  const userStore = useUserStore()
+  // the list of activities on the same route is only available to the owner
+  const isOwner = computed(() => activity.value !== null && userStore.session?.sub === activity.value.user_id)
+  const showSimilar = computed(() => isOwner.value && !!activity.value?.route_id)
 </script>
 
 <template>
   <div v-if="isLoading">Loading...</div>
-  <div v-else-if="activity">
+  <div v-else-if="activity" :key="activity.id">
     <v-container>
       <v-row>
         <h5 class="text-h5"> {{ activity.title }}</h5>
@@ -111,26 +125,32 @@
       <v-row>
         <Map v-if="activity.public_gps_points !== null " :activity="activity" />
       </v-row>
+      <!-- graphs on the left, activities on the same route on the right third; stacked on small screens -->
       <v-row>
-        <v-expansion-panels v-model="panel" accordion>
-          <v-expansion-panel
-            v-if="activity.sport === 'walking' || activity.sport === 'cycling' || activity.sport === 'running' || activity.sport === 'rowing'"
-          >
-            <Graph-line
-              v-for="graph in graphs"
-              :key="graph"
-              :activity="activity"
-              :graph="graph"
-              style="height: 200px;  "
-            />
-            <Graph-bar v-if="activity.means !== null && activity.means.length >0" :activity="activity" :graph="means" />
-          </v-expansion-panel>
-          <v-expansion-panel
-            v-if="activity.sport === 'swimming'"
-          >
-            <Graph-line v-for="graph in graphsSwimming" :key="graph" :activity="activity" :graph="graph" />
-          </v-expansion-panel>
-        </v-expansion-panels>
+        <v-col cols="12" :md="showSimilar ? 8 : 12">
+          <v-expansion-panels v-model="panel" accordion>
+            <v-expansion-panel
+              v-if="activity.sport === 'walking' || activity.sport === 'cycling' || activity.sport === 'running' || activity.sport === 'rowing'"
+            >
+              <Graph-line
+                v-for="graph in graphs"
+                :key="graph"
+                :activity="activity"
+                :graph="graph"
+                style="height: 200px;  "
+              />
+              <Graph-bar v-if="activity.means !== null && activity.means.length >0" :activity="activity" :graph="means" />
+            </v-expansion-panel>
+            <v-expansion-panel
+              v-if="activity.sport === 'swimming'"
+            >
+              <Graph-line v-for="graph in graphsSwimming" :key="graph" :activity="activity" :graph="graph" />
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </v-col>
+        <v-col v-if="showSimilar" cols="12" md="4">
+          <SimilarActivities :activity="activity" />
+        </v-col>
       </v-row>
     </v-container>
   </div>

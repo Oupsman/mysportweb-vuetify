@@ -27,5 +27,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']
+    SimilarActivities: typeof import('./components/SimilarActivities.vue')['default']
   }
 }

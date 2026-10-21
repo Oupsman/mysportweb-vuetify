@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api } from '@/api'
-import type { Activity, ActivitySummary, ActivityUpdate } from '@/types/activities'
+import type { Activity, ActivitySummary, ActivityUpdate, SimilarActivity } from '@/types/activities'
 
 export const useActivitiesStore = defineStore('activities', () => {
   const activity: Ref<Activity | undefined> = ref()
@@ -26,6 +26,17 @@ export const useActivitiesStore = defineStore('activities', () => {
     } catch (error) {
       console.error('Get activities error:', error)
       throw new Error('get activities failed')
+    }
+  }
+
+  // the other activities on the same route, only available to the owner
+  const getSimilarActivities = async (id: string): Promise<SimilarActivity[]> => {
+    try {
+      const response = await api.get(`/api/v1/activity/${id}/similar`)
+      return response.data.activities ?? []
+    } catch (error) {
+      console.error('Get similar activities error:', error)
+      throw new Error('get similar activities failed')
     }
   }
 
@@ -65,6 +76,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     activities,
     getActivity,
     getActivities,
+    getSimilarActivities,
     deleteActivity,
     saveActivity,
   }

@@ -1,12 +1,14 @@
 <script setup lang="ts">
-  import { defineProps, ref } from 'vue'
+  import { computed, defineProps, inject, ref } from 'vue'
   import 'leaflet/dist/leaflet.css'
   import StartIcon from '@/assets/start.svg'
   import StopIcon from '@/assets/stop.svg'
   import type { Point } from '@/types/activities'
+  import { activityCursorKey, nearestIndex } from '@/composables/activityCursor'
   import { LatLngExpression, LatLngTuple, Map as LeafletMap, PointTuple } from 'leaflet'
 
   import {
+    LCircleMarker,
     LControlScale,
     LIcon,
     LMap,
@@ -81,6 +83,25 @@
     }
     console.log('Map is ready')
   }
+  // position at the time hovered on the charts. Only for the owner: other users get neither the
+  // full trace nor its time stamps
+  const cursor = inject(activityCursorKey, ref(null))
+  const gpsPoints: Point[] = props.activity.gps_points ?? []
+  const gpsStamps: number[] = props.activity.gps_time_stamps ?? []
+  const activityStart = new Date(props.activity.date).getTime()
+  const cursorPosition = computed((): LatLngTuple | null => {
+    if (cursor.value === null || gpsStamps.length !== gpsPoints.length) {
+      return null
+    }
+    const offset = (cursor.value - activityStart) / 1000
+    const index = nearestIndex(gpsStamps, offset, s => s)
+    // no position when there is no GPS fix around this time
+    if (index < 0 || Math.abs(gpsStamps[index] - offset) > 60) {
+      return null
+    }
+    return [gpsPoints[index].lat, gpsPoints[index].lon]
+  })
+
   const handleMapError = (error: any) => {
     console.error('Error loading map:', error)
   }
@@ -114,6 +135,15 @@
         <LPolyline
           color="blue"
           :lat-lngs="publicPoints"
+        />
+        <LCircleMarker
+          v-if="cursorPosition"
+          color="white"
+          fill-color="#257800"
+          :fill-opacity="1"
+          :lat-lng="cursorPosition"
+          :radius="7"
+          :weight="2"
         />
         <LMarker
           v-for="marker in markers"
