@@ -6,6 +6,13 @@ export interface PeriodTotals {
   elevation: number
 }
 
+// co2: grams saved compared to driving
+export interface CommuteTotals {
+  activities: number
+  distance: number
+  co2: number
+}
+
 export interface WeeklyVolume {
   week: string // its Monday, YYYY-MM-DD
   sport: string
@@ -57,6 +64,10 @@ export interface Dashboard {
     last_month: PeriodTotals
     this_year: PeriodTotals
     all_time: PeriodTotals
+  }
+  commutes: {
+    this_year: CommuteTotals
+    all_time: CommuteTotals
   }
   week_starts: string[]
   weekly: WeeklyVolume[]

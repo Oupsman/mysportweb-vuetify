@@ -23,6 +23,7 @@
     height: 0,
     max_hr: 170,
     security_distance: 500,
+    timezone: '',
   })
 
   const rules = computed(() => ({
@@ -40,6 +41,10 @@
   const days = [...Array(31)].map((_, i) => ({ value: i + 1, title: (i + 1).toString() }))
   const currentYear = new Date().getFullYear()
   const years = [...Array(101)].map((_, i) => ({ value: currentYear - i, title: (currentYear - i).toString() }))
+  // the browser's timezones, the backend checks the chosen one
+  const timezones = Intl.supportedValuesOf('timeZone')
+  const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
   const genders = [
     { title: 'Male', value: 0 },
     { title: 'Female', value: 1 },
@@ -59,6 +64,8 @@
       if (user.value) {
         appStore.pageTitle = user.value.username
         Object.assign(userForm.value, user.value)
+        // accounts created without one: suggest the browser's, saved with the form
+        userForm.value.timezone ||= browserTimezone
       }
     } catch (error) {
       console.error('Error while loading user', error)
@@ -125,6 +132,13 @@
         <v-text-field v-model.number="userForm.height" label="Height (cm)" type="number" />
         <v-text-field v-model.number="userForm.max_hr" label="Max HR" type="number" />
         <v-text-field v-model.number="userForm.security_distance" label="Security Distance (m)" type="number" />
+        <v-autocomplete
+          v-model="userForm.timezone"
+          hint="Weeks, months and the time of the day in activity titles are in this timezone"
+          :items="timezones"
+          label="Timezone"
+          persistent-hint
+        />
         <v-btn color="primary" :disabled="v$.$invalid" type="submit">Save</v-btn>
       </v-form>
     </v-container>

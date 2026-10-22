@@ -68,6 +68,19 @@
   // the list of activities on the same route is only available to the owner
   const isOwner = computed(() => activity.value !== null && userStore.session?.sub === activity.value.user_id)
   const showSimilar = computed(() => isOwner.value && !!activity.value?.route_id)
+
+  // the route's commute flag changed: the backend may have computed the CO2 of this activity
+  const onRouteCommute = async () => {
+    try {
+      const updated = (await api.get(`/api/v1/activity/${route.params.id}`)).data.activity
+      if (activity.value && activity.value.id === updated.id) {
+        activity.value.is_commute = updated.is_commute
+        activity.value.co2 = updated.co2
+      }
+    } catch (error) {
+      console.error('Refresh commute error:', error)
+    }
+  }
 </script>
 
 <template>
@@ -149,7 +162,7 @@
           </v-expansion-panels>
         </v-col>
         <v-col v-if="showSimilar" cols="12" md="4">
-          <SimilarActivities :activity="activity" />
+          <SimilarActivities :activity="activity" @commute="onRouteCommute" />
         </v-col>
       </v-row>
     </v-container>

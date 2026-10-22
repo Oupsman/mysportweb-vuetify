@@ -42,6 +42,16 @@ export interface Activity extends ActivityUpdate {
   route_id: string | null
 }
 
+// the route of an activity; the activities of a commute route, including the ones imported later, are commutes
+export interface Route {
+  id: string
+  name: string
+  sport: string
+  distance: number
+  activity_count: number
+  is_commute: boolean
+}
+
 // an activity on the same route, as returned by /activity/:id/similar
 export interface SimilarActivity {
   id: string

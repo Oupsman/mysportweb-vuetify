@@ -3,7 +3,7 @@
   import type { PropType } from 'vue'
   import { useActivitiesStore } from '@/stores/activities'
   import { useAppStore } from '@/stores/app'
-  import type { Activity, SimilarActivity } from '@/types/activities'
+  import type { Activity, Route, SimilarActivity } from '@/types/activities'
 
   const props = defineProps({
     activity: {
@@ -12,15 +12,23 @@
     },
   })
 
+  const emit = defineEmits<{
+    // the commute flag of the route's activities, this one included, changed
+    commute: [isCommute: boolean]
+  }>()
+
   const activitiesStore = useActivitiesStore()
   const appStore = useAppStore()
   const others = ref<SimilarActivity[]>([])
+  const route = ref<Route | null>(null)
   const isLoading = ref(true)
   const error = ref('')
 
   onMounted(async () => {
     try {
-      others.value = await activitiesStore.getSimilarActivities(props.activity.id)
+      const similar = await activitiesStore.getSimilarActivities(props.activity.id)
+      others.value = similar.activities
+      route.value = similar.route
     } catch {
       error.value = 'The activities on this route could not be loaded'
     } finally {
@@ -45,6 +53,34 @@
     seconds % 60,
   ].map(n => String(n).padStart(2, '0')).join(':')
 
+  const isSaving = ref(false)
+  const commuteError = ref('')
+  const nbActivities = computed(() => others.value.length + 1)
+
+  // it overwrites the commute flag set on each activity of the route
+  const setCommute = async (isCommute: boolean | null) => {
+    if (!route.value || isCommute === null) {
+      return
+    }
+    const question = isCommute
+      ? `Mark the ${nbActivities.value} activities of this route, and the ones imported later, as commutes?`
+      : `Unmark the ${nbActivities.value} activities of this route as commutes?`
+    if (!confirm(question)) {
+      return
+    }
+    isSaving.value = true
+    commuteError.value = ''
+    try {
+      await activitiesStore.setRouteCommute(route.value.id, isCommute)
+      route.value.is_commute = isCommute
+      emit('commute', isCommute)
+    } catch {
+      commuteError.value = 'The route could not be updated'
+    } finally {
+      isSaving.value = false
+    }
+  }
+
   const open = (id: string) => {
     if (id !== props.activity.id) {
       appStore.navigateToPage(`/activity/${id}`)
@@ -58,37 +94,59 @@
     <v-card-text>
       <div v-if="isLoading">Loading...</div>
       <v-alert v-else-if="error" type="error">{{ error }}</v-alert>
-      <div v-else-if="others.length === 0">This is the only activity on this route for now.</div>
-      <v-table v-else class="similar-table" density="compact" hover>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th class="text-right">Distance</th>
-            <th class="text-right">Duration</th>
-            <th class="text-right">Speed</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="row in rows"
-            :key="row.id"
-            :class="row.id === props.activity.id ? 'font-weight-bold' : 'cursor-pointer'"
-            @click="open(row.id)"
-          >
-            <!-- the list takes a third of the page: the title goes under the date -->
-            <td class="py-1">
-              <div class="text-no-wrap">{{ formatDate(row.date) }}</div>
+      <template v-else>
+        <v-switch
+          v-if="route"
+          color="primary"
+          density="compact"
+          :disabled="isSaving"
+          hide-details
+          :loading="isSaving"
+          :model-value="route.is_commute"
+          @update:model-value="setCommute"
+        >
+          <template #label>
+            <div>
+              Commute route
               <div class="text-caption text-medium-emphasis">
-                {{ row.id === props.activity.id ? 'This activity' : row.title }}
-                <v-chip v-if="row.id === fastestID" class="ml-1" color="primary" size="x-small">Fastest</v-chip>
+                Its activities, and the next ones on this route, are commutes
               </div>
-            </td>
-            <td class="text-right text-no-wrap">{{ (row.distance / 1000).toFixed(2) }} km</td>
-            <td class="text-right">{{ formatDuration(row.duration) }}</td>
-            <td class="text-right text-no-wrap">{{ (row.avg_speed * 3.6).toFixed(1) }} km/h</td>
-          </tr>
-        </tbody>
-      </v-table>
+            </div>
+          </template>
+        </v-switch>
+        <v-alert v-if="commuteError" class="mb-2" density="compact" type="error">{{ commuteError }}</v-alert>
+        <div v-if="others.length === 0">This is the only activity on this route for now.</div>
+        <v-table v-else class="similar-table" density="compact" hover>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="text-right">Distance</th>
+              <th class="text-right">Duration</th>
+              <th class="text-right">Speed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="row in rows"
+              :key="row.id"
+              :class="row.id === props.activity.id ? 'font-weight-bold' : 'cursor-pointer'"
+              @click="open(row.id)"
+            >
+              <!-- the list takes a third of the page: the title goes under the date -->
+              <td class="py-1">
+                <div class="text-no-wrap">{{ formatDate(row.date) }}</div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ row.id === props.activity.id ? 'This activity' : row.title }}
+                  <v-chip v-if="row.id === fastestID" class="ml-1" color="primary" size="x-small">Fastest</v-chip>
+                </div>
+              </td>
+              <td class="text-right text-no-wrap">{{ (row.distance / 1000).toFixed(2) }} km</td>
+              <td class="text-right">{{ formatDuration(row.duration) }}</td>
+              <td class="text-right text-no-wrap">{{ (row.avg_speed * 3.6).toFixed(1) }} km/h</td>
+            </tr>
+          </tbody>
+        </v-table>
+      </template>
     </v-card-text>
   </v-card>
 </template>

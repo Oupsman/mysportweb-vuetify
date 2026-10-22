@@ -3,6 +3,7 @@
   import {
     mdiCalendarCheck,
     mdiImageFilterHdr,
+    mdiLeaf,
     mdiMapMarkerDistance,
     mdiTimerOutline,
     mdiTrophyOutline,
@@ -14,6 +15,7 @@
   import { useAppStore } from '@/stores/app'
   import type { PeriodTotals, SportRecord, SportSummary } from '@/types/dashboard'
   import {
+    formatCo2,
     formatDate,
     formatDistance,
     formatDuration,
@@ -196,8 +198,39 @@
             </v-table>
           </v-card>
         </v-col>
-        <v-col cols="12" lg="4">
-          <v-card class="h-100">
+        <v-col class="d-flex flex-column ga-2" cols="12" lg="4">
+          <!-- CO2 saved by commuting instead of driving -->
+          <v-card>
+            <v-card-item>
+              <template #prepend>
+                <v-icon color="green" :icon="mdiLeaf" />
+              </template>
+              <v-card-title>CO₂ saved</v-card-title>
+              <v-card-subtitle>Commutes instead of driving</v-card-subtitle>
+            </v-card-item>
+            <v-card-text v-if="dashboard.commutes.all_time.activities === 0">
+              Mark your activities as commutes to count the CO₂ you save.
+            </v-card-text>
+            <v-card-text v-else>
+              <div class="text-h4 font-weight-medium">{{ formatCo2(dashboard.commutes.this_year.co2) }}</div>
+              <div class="text-caption text-medium-emphasis mb-2">
+                this year · {{ dashboard.commutes.this_year.activities }} commutes,
+                {{ formatDistance(dashboard.commutes.this_year.distance) }}
+              </div>
+              <v-divider class="mb-2" />
+              <div class="d-flex justify-space-between text-body-2">
+                <span>All time</span>
+                <span>
+                  <strong>{{ formatCo2(dashboard.commutes.all_time.co2) }}</strong>
+                  <span class="text-medium-emphasis">
+                    · {{ dashboard.commutes.all_time.activities }} commutes,
+                    {{ formatDistance(dashboard.commutes.all_time.distance) }}
+                  </span>
+                </span>
+              </div>
+            </v-card-text>
+          </v-card>
+          <v-card class="flex-grow-1">
             <v-card-title>By sport</v-card-title>
             <v-card-text>
               <div v-for="(sport, index) in dashboard.sports" :key="sport.sport" :class="{ 'mt-4': index > 0 }">

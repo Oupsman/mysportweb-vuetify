@@ -92,6 +92,10 @@ export const useUserStore = defineStore('user', () => {
       this_year: emptyTotals(),
       all_time: emptyTotals(),
     },
+    commutes: {
+      this_year: { activities: 0, distance: 0, co2: 0 },
+      all_time: { activities: 0, distance: 0, co2: 0 },
+    },
     week_starts: [],
     weekly: [],
     sports: [],

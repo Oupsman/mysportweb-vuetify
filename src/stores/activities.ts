@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api } from '@/api'
-import type { Activity, ActivitySearch, ActivitySummary, ActivityUpdate, SimilarActivity } from '@/types/activities'
+import type { Activity, ActivitySearch, ActivitySummary, ActivityUpdate, Route, SimilarActivity } from '@/types/activities'
 
 export const useActivitiesStore = defineStore('activities', () => {
   const activity: Ref<Activity | undefined> = ref()
@@ -47,14 +47,26 @@ export const useActivitiesStore = defineStore('activities', () => {
     }
   }
 
-  // the other activities on the same route, only available to the owner
-  const getSimilarActivities = async (id: string): Promise<SimilarActivity[]> => {
+  // the route of an activity and its other activities, only available to the owner
+  const getSimilarActivities = async (id: string): Promise<{ route: Route | null, activities: SimilarActivity[] }> => {
     try {
       const response = await api.get(`/api/v1/activity/${id}/similar`)
-      return response.data.activities ?? []
+      return { route: response.data.route ?? null, activities: response.data.activities ?? [] }
     } catch (error) {
       console.error('Get similar activities error:', error)
       throw new Error('get similar activities failed')
+    }
+  }
+
+  // marks all the activities of a route, and the ones imported later, as commutes or not;
+  // returns the number of activities updated
+  const setRouteCommute = async (routeID: string, isCommute: boolean): Promise<number> => {
+    try {
+      const response = await api.post(`/api/v1/route/${routeID}/commute`, { is_commute: isCommute })
+      return response.data.updated
+    } catch (error) {
+      console.error('Set route commute error:', error)
+      throw new Error('set route commute failed')
     }
   }
 
@@ -96,6 +108,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     getActivities,
     searchActivities,
     getSimilarActivities,
+    setRouteCommute,
     deleteActivity,
     saveActivity,
   }
