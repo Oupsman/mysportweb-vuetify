@@ -12,6 +12,7 @@ declare module 'vue' {
     ActivityMonth: typeof import('./components/ActivityMonth.vue')['default']
     ActivityUpload: typeof import('./components/ActivityUpload.vue')['default']
     ActivityView: typeof import('./components/ActivityView.vue')['default']
+    ApiTokens: typeof import('./components/ApiTokens.vue')['default']
     AppMenu: typeof import('./components/AppMenu.vue')['default']
     Dashboard: typeof import('./components/Dashboard.vue')['default']
     DuplicateActivities: typeof import('./components/DuplicateActivities.vue')['default']
