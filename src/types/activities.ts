@@ -30,6 +30,25 @@ export interface ActivityUpdate {
   equipment_id: string | null
 }
 
+// a session of a multi-session activity (triathlon...); the transitions are in the leg after them
+export interface Leg {
+  sport: string
+  start_offset: number // seconds since the start of the activity
+  duration: number // seconds
+  distance: number // meters
+  avg_speed: number // m/s
+  max_speed: number
+  avg_hr: number
+  max_hr: number
+  avg_cadence: number
+  avg_power: number
+  power_estimated: boolean // from the speed and the slope, without power meter
+  kcal: number
+  ascent: number
+  descent: number
+  transition_time: number // seconds of the transitions just before the leg
+}
+
 export interface Activity extends ActivityUpdate {
   user_id: number
   date: string
@@ -40,6 +59,7 @@ export interface Activity extends ActivityUpdate {
   public_gps_points: Point[] | null
   gps_points: Point[] | null
   route_id: string | null
+  legs: Leg[] | null // null or empty for a single-session activity
 }
 
 // the route of an activity; the activities of a commute route, including the ones imported later, are commutes

@@ -1,4 +1,4 @@
-import { mdiBike, mdiHeartPulse, mdiHiking, mdiRun, mdiSwim, mdiWalk } from '@mdi/js'
+import { mdiBike, mdiFlagCheckered, mdiHeartPulse, mdiHiking, mdiRun, mdiSwim, mdiWalk } from '@mdi/js'
 
 // distance in meters
 export const formatDistance = (meters: number): string =>
@@ -32,6 +32,11 @@ const sportIcons: Record<string, string> = {
   swimming: mdiSwim,
   walking: mdiWalk,
   hiking: mdiHiking,
+  // multi-session activities, named after the sports of their legs by the backend
+  triathlon: mdiFlagCheckered,
+  duathlon: mdiFlagCheckered,
+  aquathlon: mdiFlagCheckered,
+  multisport: mdiFlagCheckered,
 }
 export const sportIcon = (sport: string): string => sportIcons[sport] ?? mdiHeartPulse
 
@@ -42,6 +47,10 @@ const sportColors: Record<string, string> = {
   swimming: '#0277bd',
   walking: '#6d4c41',
   hiking: '#8e24aa',
+  triathlon: '#5e35b1',
+  duathlon: '#5e35b1',
+  aquathlon: '#5e35b1',
+  multisport: '#5e35b1',
 }
 const otherColors = ['#546e7a', '#c2185b', '#00897b', '#f9a825']
 export const sportColor = (sport: string, index = 0): string => sportColors[sport] ?? otherColors[index % otherColors.length]

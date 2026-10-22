@@ -5,6 +5,7 @@
   import { useRoute } from 'vue-router'
   import { api } from '@/api'
   import { activityCursorKey } from '@/composables/activityCursor'
+  import MultisportLegs from '@/components/MultisportLegs.vue'
 
   const appStore = useAppStore()
   const route = useRoute('/activity/[id]')
@@ -68,6 +69,8 @@
   // the list of activities on the same route is only available to the owner
   const isOwner = computed(() => activity.value !== null && userStore.session?.sub === activity.value.user_id)
   const showSimilar = computed(() => isOwner.value && !!activity.value?.route_id)
+  // a triathlon...: one activity made of the sessions of the FIT file
+  const hasLegs = computed(() => (activity.value?.legs?.length ?? 0) > 1)
 
   // the route's commute flag changed: the backend may have computed the CO2 of this activity
   const onRouteCommute = async () => {
@@ -135,6 +138,11 @@
           </v-card>
         </v-sheet>
       </v-row>
+      <v-row v-if="hasLegs">
+        <v-col cols="12">
+          <MultisportLegs :legs="activity.legs" />
+        </v-col>
+      </v-row>
       <v-row>
         <Map v-if="activity.public_gps_points !== null " :activity="activity" />
       </v-row>
@@ -143,7 +151,7 @@
         <v-col cols="12" :md="showSimilar ? 8 : 12">
           <v-expansion-panels v-model="panel" accordion>
             <v-expansion-panel
-              v-if="activity.sport === 'walking' || activity.sport === 'cycling' || activity.sport === 'running' || activity.sport === 'rowing'"
+              v-if="hasLegs || activity.sport === 'walking' || activity.sport === 'cycling' || activity.sport === 'running' || activity.sport === 'rowing'"
             >
               <Graph-line
                 v-for="graph in graphs"
