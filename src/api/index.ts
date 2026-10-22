@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { isAxiosError } from 'axios'
 
 // Shared client for the backend API: sends the token when there is one
 export const api = axios.create({
@@ -14,3 +14,7 @@ api.interceptors.request.use(config => {
   }
   return config
 })
+
+// the message of the backend when there is one, it explains a refused request, else fallback
+export const errorMessage = (error: unknown, fallback: string): string =>
+  isAxiosError(error) && typeof error.response?.data?.error === 'string' ? error.response.data.error : fallback

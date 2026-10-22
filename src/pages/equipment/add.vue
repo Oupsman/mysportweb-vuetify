@@ -4,12 +4,7 @@
 
 <template>
   <v-container>
-    <h1>Add Equipment</h1>
+    <h2 class="text-h4 mb-4">New equipment</h2>
     <EquipmentForm />
   </v-container>
-
 </template>
-
-<style scoped lang="sass">
-
-</style>

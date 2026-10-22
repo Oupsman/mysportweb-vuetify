@@ -1,14 +1,9 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
-import { isAxiosError } from 'axios'
 
-import { api } from '@/api'
+import { api, errorMessage } from '@/api'
 import type { DeviceToken, NewDeviceToken } from '@/types/tokens'
-
-// the message of the backend when there is one, it explains a refused token (expiry, too many tokens...)
-const errorMessage = (error: unknown, fallback: string): string =>
-  isAxiosError(error) && typeof error.response?.data?.error === 'string' ? error.response.data.error : fallback
 
 export const useTokensStore = defineStore('tokens', () => {
   const tokens: Ref<DeviceToken[]> = ref([])

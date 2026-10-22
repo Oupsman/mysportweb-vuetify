@@ -1,27 +1,20 @@
 <script setup lang="ts">
-  // import EquipmentsList from '@/components/EquipmentsList.vue'
+  import { mdiPlus } from '@mdi/js'
+  import EquipmentsList from '@/components/EquipmentsList.vue'
   import { useAppStore } from '@/stores/app'
-  // const userStore = useUserStore();
-  const appStore = useAppStore()
 
+  const appStore = useAppStore()
 </script>
 
 <template>
   <v-container>
-    <v-row>
-      <v-col cols="12">
-        <h2 class="text-h2">Equipments</h2>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <v-btn color="primary" @click="appStore.navigateToPage('/equipment/add')">Add Equipment</v-btn>
-      </v-col>
-    </v-row>
+    <div class="d-flex align-center mb-4">
+      <h2 class="text-h4">Equipments</h2>
+      <v-spacer />
+      <v-btn color="primary" :prepend-icon="mdiPlus" @click="appStore.navigateToPage('/equipment/add')">
+        Add
+      </v-btn>
+    </div>
     <EquipmentsList />
   </v-container>
 </template>
-
-<style scoped lang="sass">
-
-</style>
