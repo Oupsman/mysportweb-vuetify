@@ -3,7 +3,15 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api } from '@/api'
-import type { Activity, ActivitySearch, ActivitySummary, ActivityUpdate, Route, SimilarActivity } from '@/types/activities'
+import type {
+  Activity,
+  ActivitySearch,
+  ActivitySummary,
+  ActivityUpdate,
+  DuplicateGroup,
+  Route,
+  SimilarActivity,
+} from '@/types/activities'
 
 export const useActivitiesStore = defineStore('activities', () => {
   const activity: Ref<Activity | undefined> = ref()
@@ -70,9 +78,20 @@ export const useActivitiesStore = defineStore('activities', () => {
     }
   }
 
-  // returns false when the user cancels the deletion
-  const deleteActivity = async (id: string): Promise<boolean> => {
-    if (!confirm('Are you sure you want to delete this activity?')) {
+  // the user's groups of duplicate activities, most recent first
+  const findDuplicates = async (): Promise<DuplicateGroup[]> => {
+    try {
+      const response = await api.get('/api/v1/activity/duplicates')
+      return response.data.groups ?? []
+    } catch (error) {
+      console.error('Find duplicates error:', error)
+      throw new Error('find duplicates failed')
+    }
+  }
+
+  // returns false when the user cancels the deletion; ask is false when the caller already asked
+  const deleteActivity = async (id: string, ask = true): Promise<boolean> => {
+    if (ask && !confirm('Are you sure you want to delete this activity?')) {
       return false
     }
     try {
@@ -109,6 +128,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     searchActivities,
     getSimilarActivities,
     setRouteCommute,
+    findDuplicates,
     deleteActivity,
     saveActivity,
   }

@@ -14,6 +14,7 @@ declare module 'vue' {
     ActivityView: typeof import('./components/ActivityView.vue')['default']
     AppMenu: typeof import('./components/AppMenu.vue')['default']
     Dashboard: typeof import('./components/Dashboard.vue')['default']
+    DuplicateActivities: typeof import('./components/DuplicateActivities.vue')['default']
     EquipmentForm: typeof import('./components/EquipmentForm.vue')['default']
     EquipmentsList: typeof import('./components/EquipmentsList.vue')['default']
     GraphBar: typeof import('./components/Graph-bar.vue')['default']

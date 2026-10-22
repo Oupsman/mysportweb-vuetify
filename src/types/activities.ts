@@ -84,3 +84,15 @@ export interface ActivitySearch {
   sports: string[]
   years: number[]
 }
+
+// an activity of a group of duplicates, imported_at telling which copy came first
+export interface DuplicateActivity extends ActivityRow {
+  imported_at: string
+}
+
+// activities of the same sport recorded at the same time; identical ones start at the same second
+// (the same file imported twice), the others may be the same activity recorded by two devices
+export interface DuplicateGroup {
+  identical: boolean
+  activities: DuplicateActivity[]
+}
