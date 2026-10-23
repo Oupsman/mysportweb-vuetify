@@ -2,7 +2,7 @@
 # for the default branch (latest + short sha) and the version tags (X.Y.Z, X.Y, X), see ci/image-tags.sh.
 #
 # Secrets: docker_registry (the host of the registry, to log in), docker_repo (the image,
-# registry/namespace/mysportweb-vuetify), docker_username, docker_password.
+# registry/namespace/mysportweb-frontend), docker_username, docker_password.
 # The server must run the plugin privileged:
 #   WOODPECKER_PLUGINS_PRIVILEGED=docker.io/woodpeckerci/plugin-docker-buildx:6.1.2
 when:
@@ -44,7 +44,7 @@ steps:
   - name: build
     image: docker.io/woodpeckerci/plugin-docker-buildx:6.1.2
     settings:
-      repo: mysportweb-vuetify
+      repo: mysportweb-frontend
       platforms: linux/amd64
       tags_file: .tags
       dry_run: true

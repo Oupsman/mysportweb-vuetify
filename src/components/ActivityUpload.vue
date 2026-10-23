@@ -19,7 +19,8 @@
     formData.append('item', index.toString())
     formData.append('count', count.toString())
     try {
-      const response = await api.post('/api/v1/activity', formData, { timeout: 120000 })
+      // not /api/v1/activity: the ad blockers refuse it (EasyPrivacy)
+      const response = await api.post('/api/v1/activities/upload', formData, { timeout: 120000 })
       importResults.value.push({ filename: file.name, status: 'Success', color: 'green' })
       return response.data.id
     } catch (error) {
