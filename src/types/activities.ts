@@ -60,6 +60,9 @@ export interface Activity extends ActivityUpdate {
   gps_points: Point[] | null
   route_id: string | null
   legs: Leg[] | null // null or empty for a single-session activity
+  // the recording device, as its FIT file tells; device_name is empty when it doesn't
+  device: { brand: string, model: string, serial_number: string, software: string }
+  device_name: string
 }
 
 // the route of an activity; the activities of a commute route, including the ones imported later, are commutes
@@ -95,6 +98,7 @@ export interface ActivityRow {
   is_commute: boolean
   equipment_id: string | null
   equipment_name: string | null
+  device_name: string // the recording device, empty when its file doesn't tell
 }
 
 export interface ActivitySearch {
@@ -103,6 +107,8 @@ export interface ActivitySearch {
   totals: { activities: number, distance: number, duration: number, elevation: number }
   sports: string[]
   years: number[]
+  // the user's recording devices, most used first
+  devices: { name: string, activities: number }[]
 }
 
 // an activity of a group of duplicates, imported_at telling which copy came first

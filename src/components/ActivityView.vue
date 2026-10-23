@@ -103,6 +103,16 @@
             <v-card-title> Date: </v-card-title>
             <v-card-text> {{ formattedActivityDate }}</v-card-text>
           </v-card>
+          <!-- hidden when the FIT file doesn't tell the device (an activity entered by hand) -->
+          <v-card v-if="activity.device_name" class="h-auto w-20 ma-2">
+            <v-card-title> Device: </v-card-title>
+            <v-card-text>
+              {{ activity.device_name }}
+              <div v-if="activity.device?.software" class="text-caption text-medium-emphasis">
+                firmware {{ activity.device.software }}
+              </div>
+            </v-card-text>
+          </v-card>
           <v-card class="h-auto w-20 ma-2">
             <v-card-title> Duration: </v-card-title>
             <v-card-text> {{ formattedActivityDuration }}</v-card-text>

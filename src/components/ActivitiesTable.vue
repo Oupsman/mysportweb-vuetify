@@ -35,6 +35,7 @@
     from: first(route.query.from),
     to: first(route.query.to),
     equipment: first(route.query.equipment),
+    device: first(route.query.device), // a device name, 'none' or '' for all
     commute: first(route.query.commute), // 'true', 'false' or '' for all the activities
     sort: first(route.query.sort) || defaults.sort,
     order: first(route.query.order) || defaults.order,
@@ -111,6 +112,16 @@
     ...equipmentsStore.equipments.map(e => ({ title: e.name, value: e.id ?? '' })),
   ])
 
+  // the number of activities on a second line of the menu: the field only shows the name
+  const devices = computed(() => [
+    { title: 'No device', value: 'none', subtitle: 'Entered by hand, or not told by the file' },
+    ...(result.value?.devices ?? []).map(d => ({
+      title: d.name,
+      value: d.name,
+      subtitle: `${d.activities} ${d.activities > 1 ? 'activities' : 'activity'}`,
+    })),
+  ])
+
   const commuteFilters = [
     { title: 'Commutes only', value: 'true' },
     { title: 'Without commutes', value: 'false' },
@@ -118,12 +129,12 @@
 
   const hasFilters = computed(() => {
     const q = query.value
-    return !!(q.q || q.sport.length || q.from || q.to || q.equipment || q.commute)
+    return !!(q.q || q.sport.length || q.from || q.to || q.equipment || q.device || q.commute)
   })
   const resetFilters = () => {
     search.value = ''
     customDates.value = false
-    update({ q: null, sport: null, from: null, to: null, equipment: null, commute: null })
+    update({ q: null, sport: null, from: null, to: null, equipment: null, device: null, commute: null })
   }
 
   // the search, again on every change of the URL
@@ -140,6 +151,7 @@
     if (q.from) params.from = q.from
     if (q.to) params.to = q.to
     if (q.equipment) params.equipment = q.equipment
+    if (q.device) params.device = q.device
     if (q.commute) params.commute = q.commute
     const request = ++latest
     isLoading.value = true
@@ -269,6 +281,20 @@
           :model-value="query.equipment || null"
           variant="outlined"
           @update:model-value="v => update({ equipment: v })"
+        />
+      </v-col>
+      <!-- wider: device names are long (Hammerhead Karoo 2) -->
+      <v-col cols="12" md="3" sm="6">
+        <v-select
+          clearable
+          density="compact"
+          hide-details
+          :item-props="true"
+          :items="devices"
+          label="Device"
+          :model-value="query.device || null"
+          variant="outlined"
+          @update:model-value="v => update({ device: v })"
         />
       </v-col>
       <v-col cols="12" md="2" sm="6">
