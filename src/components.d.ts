@@ -37,5 +37,6 @@ declare module 'vue' {
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']
     SimilarActivities: typeof import('./components/SimilarActivities.vue')['default']
     WeeklyVolumeChart: typeof import('./components/WeeklyVolumeChart.vue')['default']
+    WeightTarget: typeof import('./components/WeightTarget.vue')['default']
   }
 }

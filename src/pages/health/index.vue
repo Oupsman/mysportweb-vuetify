@@ -4,6 +4,7 @@
   import HealthChart from '@/components/HealthChart.vue'
   import HealthDatasTable from '@/components/HealthDatasTable.vue'
   import HealthSummary from '@/components/HealthSummary.vue'
+  import WeightTarget from '@/components/WeightTarget.vue'
   import { useAppStore } from '@/stores/app'
   import { useHealthStore } from '@/stores/health'
   import type { HealthData } from '@/types/health'
@@ -19,7 +20,7 @@
 
   onMounted(async () => {
     try {
-      await healthStore.getAllHealthDatas()
+      await Promise.all([healthStore.getAllHealthDatas(), healthStore.getWeightTarget()])
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -72,7 +73,14 @@
     </v-card>
     <template v-else>
       <HealthSummary class="mb-2" :datas="healthStore.healthDatas" />
-      <HealthChart class="mb-6" :datas="healthStore.healthDatas" />
+      <v-row class="mb-2">
+        <v-col cols="12" md="8">
+          <HealthChart class="h-100" :datas="healthStore.healthDatas" :target="healthStore.weightTarget?.target" />
+        </v-col>
+        <v-col cols="12" md="4">
+          <WeightTarget />
+        </v-col>
+      </v-row>
       <HealthDatasTable :busy="busy" :datas="healthStore.healthDatas" @delete="remove" @edit="edit" />
     </template>
   </v-container>
