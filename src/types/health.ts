@@ -27,4 +27,7 @@ export interface WeightEstimate {
   per_week: number // kg per week, negative when losing
   date: string | null // only on track
   measures: number // the weight measures of the last 60 days
+  // not enough data: the days these measures cover, and from when a measure makes 2 weeks
+  days: number
+  available: string | null
 }

@@ -58,23 +58,38 @@ router.afterEach(async to => {
   useAppStore().pageTitle = section ? section.charAt(0).toUpperCase() + section.slice(1) : 'Home'
 })
 
-// Workaround for https://github.com/vitejs/vite/issues/11804
-router.onError((err, to) => {
-  if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
-    if (!localStorage.getItem('vuetify:dynamic-reload')) {
-      console.log('Reloading page to fix dynamic import error')
-      localStorage.setItem('vuetify:dynamic-reload', 'true')
-      location.assign(to.fullPath)
-    } else {
-      console.error('Dynamic import error, reloading page did not fix it', err)
-    }
-  } else {
-    console.error(err)
-  }
-})
+// After a deployment, a page opened before it still runs the previous build: the files of its lazy pages
+// have new names and the old ones are gone. Loading the page again gets the new build.
+// The browsers word the error differently: Chrome, Firefox (and Waterfox), Safari.
+const outdatedBuild = [
+  'Failed to fetch dynamically imported module',
+  'error loading dynamically imported module',
+  'Importing a module script failed',
+]
+const reloadKey = 'msw-outdated-build-reload'
 
-router.isReady().then(() => {
-  localStorage.removeItem('vuetify:dynamic-reload')
+router.onError((err, to) => {
+  const message = String(err?.message ?? '')
+  if (!outdatedBuild.some(text => message.includes(text))) {
+    console.error(err)
+    return
+  }
+  // once: if the file is still missing after a reload, reloading again won't help
+  let last = 0
+  try {
+    last = Number(sessionStorage.getItem(reloadKey) ?? 0)
+    sessionStorage.setItem(reloadKey, String(Date.now()))
+  } catch {
+    // no storage: reload anyway, the guard is only against a loop
+  }
+  if (Date.now() - last < 10_000) {
+    console.error('The page could not be loaded, even after a reload', err)
+    return
+  }
+  console.log('New version of the app: reloading')
+  // the URL of the page asked (#/health): changing only the hash would not reload the page
+  history.replaceState(history.state, '', router.resolve(to).href)
+  location.reload()
 })
 
 export default router

@@ -120,9 +120,18 @@
         </div>
 
         <template v-else-if="estimate.status === 'not_enough_data'">
-          <div class="mt-2 text-medium-emphasis">
+          <div v-if="estimate.measures < 3" class="mt-2 text-medium-emphasis">
             Not enough recent measures to estimate a date: it takes at least 3 weight measures over 2 weeks,
-            in the last 60 days ({{ estimate.measures }} so far).
+            in the last 60 days. {{ estimate.measures }} so far.
+          </div>
+          <!-- enough measures, too close together: a few days can't tell a trend from daily ups and downs -->
+          <div v-else class="mt-2 text-medium-emphasis">
+            Your {{ estimate.measures }} weight measures cover
+            {{ Math.round(estimate.days) === 1 ? '1 day' : `${Math.round(estimate.days)} days` }}: a trend needs
+            2 weeks.
+            <template v-if="estimate.available">
+              Keep measuring: a date can be estimated from {{ day(estimate.available) }}.
+            </template>
           </div>
         </template>
 
