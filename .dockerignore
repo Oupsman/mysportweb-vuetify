@@ -1,0 +1,9 @@
+node_modules
+dist
+# its VITE_BACKEND_URL is the one of development
+.env
+.env.*
+.git
+.idea
+.vscode
+Dockerfile
