@@ -1,0 +1,57 @@
+# Builds the image on every push and pull request (type check and Vite build included), and pushes it
+# for the default branch (latest + short sha) and the version tags (X.Y.Z, X.Y, X), see ci/image-tags.sh.
+#
+# Secrets: docker_registry (the host of the registry, to log in), docker_repo (the image,
+# registry/namespace/mysportweb-vuetify), docker_username, docker_password.
+# The server must run the plugin privileged:
+#   WOODPECKER_PLUGINS_PRIVILEGED=docker.io/woodpeckerci/plugin-docker-buildx:6.1.2
+when:
+  - event: [push, pull_request, tag, manual]
+
+steps:
+  # reported, not blocking: some files predate the lint rules
+  - name: lint
+    image: node:22-bookworm-slim
+    failure: ignore
+    commands:
+      - npm install -g pnpm@12.14.0
+      - pnpm install --frozen-lockfile
+      - pnpm exec eslint . --ignore-path .gitignore
+
+  - name: tags
+    image: debian:bookworm-slim
+    commands:
+      - sh ci/image-tags.sh
+
+  - name: publish
+    image: docker.io/woodpeckerci/plugin-docker-buildx:6.1.2
+    settings:
+      registry:
+        from_secret: docker_registry
+      repo:
+        from_secret: docker_repo
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      platforms: linux/amd64
+      tags_file: .tags
+    when:
+      # a manual run publishes only from the default branch: elsewhere it would replace latest
+      - event: [push, manual]
+        branch: ${CI_REPO_DEFAULT_BRANCH}
+      - event: tag
+
+  # the other branches and the pull requests: the image must still build, nothing is pushed
+  - name: build
+    image: docker.io/woodpeckerci/plugin-docker-buildx:6.1.2
+    settings:
+      repo: mysportweb-vuetify
+      platforms: linux/amd64
+      tags_file: .tags
+      dry_run: true
+    when:
+      - event: [push, manual]
+        branch:
+          exclude: ${CI_REPO_DEFAULT_BRANCH}
+      - event: pull_request

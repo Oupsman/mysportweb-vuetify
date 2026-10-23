@@ -1,5 +1,5 @@
 # Frontend of MySportWeb, served by nginx with the API on the same origin
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS build
 # pnpm-lock.yaml is the lockfile in use, package-lock.json is out of date
 RUN npm install -g pnpm@12.14.0
 WORKDIR /src
@@ -11,7 +11,7 @@ ARG VITE_BACKEND_URL=""
 ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 RUN pnpm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.27-bookworm
 # a template: BACKEND_URL is set at start by the entrypoint of the nginx image
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /src/dist /usr/share/nginx/html
