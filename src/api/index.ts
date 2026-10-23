@@ -18,3 +18,6 @@ api.interceptors.request.use(config => {
 // the message of the backend when there is one, it explains a refused request, else fallback
 export const errorMessage = (error: unknown, fallback: string): string =>
   isAxiosError(error) && typeof error.response?.data?.error === 'string' ? error.response.data.error : fallback
+
+// the URL of a file the backend serves under /MEDIA, from the path it returns
+export const mediaUrl = (path: string): string => `${import.meta.env.VITE_BACKEND_URL}${path}`

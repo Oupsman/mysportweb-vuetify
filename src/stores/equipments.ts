@@ -30,14 +30,17 @@ export const useEquipmentsStore = defineStore('equipments', () => {
   }
 
   // the list is reloaded after each change: setting a default one changes the others
-  const insertEquipment = async (equipment: EquipmentFields): Promise<void> => {
+  // returns the id of the new equipment
+  const insertEquipment = async (equipment: EquipmentFields): Promise<string> => {
+    let id: string
     try {
-      await api.post('/api/v1/equipment', equipment)
+      id = (await api.post('/api/v1/equipment', equipment)).data.id
     } catch (error) {
       console.error('Create equipment error:', error)
       throw new Error(errorMessage(error, 'The equipment could not be created'))
     }
     await getAllEquipments()
+    return id
   }
 
   const updateEquipment = async (id: string, equipment: EquipmentFields): Promise<void> => {
@@ -52,6 +55,42 @@ export const useEquipmentsStore = defineStore('equipments', () => {
 
   const setDefault = (equipment: Equipment): Promise<void> =>
     updateEquipment(equipment.id, { ...equipment, is_default: true })
+
+  // gives the commute equipment to the commute rides recorded before, returns how many changed
+  const assignToCommutes = async (id: string): Promise<number> => {
+    let updated: number
+    try {
+      updated = (await api.post(`/api/v1/equipment/${id}/commutes`)).data.updated
+    } catch (error) {
+      console.error('Assign commute equipment error:', error)
+      throw new Error(errorMessage(error, 'The commute rides could not be updated'))
+    }
+    await getAllEquipments()
+    return updated
+  }
+
+  // the backend turns the picture upright, scales it down and drops its metadata (where the photo was taken)
+  const uploadPicture = async (id: string, file: File): Promise<void> => {
+    const form = new FormData()
+    form.append('file', file)
+    try {
+      await api.post(`/api/v1/equipment/${id}/picture`, form)
+    } catch (error) {
+      console.error('Upload equipment picture error:', error)
+      throw new Error(errorMessage(error, 'The picture could not be uploaded'))
+    }
+    await getAllEquipments()
+  }
+
+  const deletePicture = async (id: string): Promise<void> => {
+    try {
+      await api.delete(`/api/v1/equipment/${id}/picture`)
+    } catch (error) {
+      console.error('Delete equipment picture error:', error)
+      throw new Error(errorMessage(error, 'The picture could not be removed'))
+    }
+    await getAllEquipments()
+  }
 
   // its activities are kept, without equipment
   const deleteEquipment = async (id: string): Promise<void> => {
@@ -75,6 +114,9 @@ export const useEquipmentsStore = defineStore('equipments', () => {
     insertEquipment,
     updateEquipment,
     setDefault,
+    assignToCommutes,
+    uploadPicture,
+    deletePicture,
     deleteEquipment,
   }
 })

@@ -4,11 +4,7 @@
 
 <template>
   <v-container>
-    <h1>Add Health datas</h1>
+    <h2 class="text-h4 mb-4">New measure</h2>
     <HealthDatasForm />
   </v-container>
 </template>
-
-<style scoped lang="sass">
-
-</style>

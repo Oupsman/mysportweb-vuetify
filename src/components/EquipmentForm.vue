@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
+  import EquipmentPicture from '@/components/EquipmentPicture.vue'
   import { useEquipmentsStore } from '@/stores/equipments'
   import { useAppStore } from '@/stores/app'
   import type { Equipment, EquipmentFields } from '@/types/equipments'
@@ -25,7 +26,13 @@
     maintenance_interval: props.equipment?.maintenance_interval ?? 0,
     // the first equipment becomes the default one
     is_default: props.equipment?.is_default ?? equipmentsStore.equipments.length === 0,
+    is_commute: props.equipment?.is_commute ?? false,
   })
+
+  // the picture of a new equipment, uploaded once it is created
+  const pendingPicture = ref<File | null>(null)
+  // the edited equipment from the store: its picture changes as soon as one is uploaded
+  const current = computed(() => equipmentsStore.equipments.find(e => e.id === props.equipment?.id) ?? props.equipment)
 
   const valid = ref(false)
   const saving = ref(false)
@@ -52,10 +59,26 @@
     saving.value = true
     error.value = ''
     try {
-      if (props.equipment) {
-        await equipmentsStore.updateEquipment(props.equipment.id, fields)
+      let id = props.equipment?.id
+      if (id) {
+        await equipmentsStore.updateEquipment(id, fields)
       } else {
-        await equipmentsStore.insertEquipment(fields)
+        id = await equipmentsStore.insertEquipment(fields)
+        if (pendingPicture.value) {
+          try {
+            await equipmentsStore.uploadPicture(id, pendingPicture.value)
+          } catch (e) {
+            // the equipment exists: the picture can be added again from its edit page
+            alert(`The equipment is created, but ${(e as Error).message.toLowerCase()}.`)
+            appStore.navigateToPage(`/equipment/${id}/edit`)
+            return
+          }
+        }
+      }
+      // the new commutes get it automatically, the ones already recorded only if the user wants
+      if (fields.is_commute && !props.equipment?.is_commute &&
+        confirm(`Also give "${fields.name}" to the commute rides you already recorded?`)) {
+        await equipmentsStore.assignToCommutes(id)
       }
       appStore.navigateToPage('/equipments')
     } catch (e) {
@@ -79,6 +102,12 @@
           label="Name"
           maxlength="100"
           :rules="[required]"
+        />
+        <EquipmentPicture
+          v-model:pending="pendingPicture"
+          class="mb-4"
+          :equipment-id="equipment?.id"
+          :picture="current?.picture"
         />
         <v-row>
           <v-col cols="12" sm="6">
@@ -135,6 +164,14 @@
           color="primary"
           hint="Given to the activities you upload; only one equipment is the default one"
           label="Default equipment"
+          persistent-hint
+        />
+        <v-switch
+          v-model="form.is_commute"
+          class="mt-2"
+          color="primary"
+          hint="Given to your commute rides instead of the default equipment, whether they are recognized from their route or marked by hand"
+          label="Commute bike"
           persistent-hint
         />
         <div class="d-flex ga-2 mt-6">

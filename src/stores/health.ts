@@ -2,11 +2,12 @@ import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
-import { api } from '@/api'
-import type { HealthDatas } from '@/types/health'
+import { api, errorMessage } from '@/api'
+import type { HealthData, HealthDataFields } from '@/types/health'
 
 export const useHealthStore = defineStore('health', () => {
-  const healthDatas: Ref<HealthDatas[]> = ref([])
+  // most recent first
+  const healthDatas: Ref<HealthData[]> = ref([])
 
   const getAllHealthDatas = async (): Promise<void> => {
     try {
@@ -14,27 +15,45 @@ export const useHealthStore = defineStore('health', () => {
       healthDatas.value = response.data ?? []
     } catch (error) {
       console.error('Get health datas error:', error)
-      throw new Error('get health datas failed')
+      throw new Error(errorMessage(error, 'The health data could not be loaded'))
     }
   }
 
-  const insertHealthData = async (healthData: HealthDatas): Promise<void> => {
+  const insertHealthData = async (healthData: HealthDataFields): Promise<void> => {
     try {
       await api.post('/api/v1/healthdatas', healthData)
-      await getAllHealthDatas()
     } catch (error) {
       console.error('Create health data error:', error)
-      throw new Error('create health data failed')
+      throw new Error(errorMessage(error, 'The measure could not be saved'))
     }
+    await getAllHealthDatas()
   }
 
-  if (localStorage.getItem('msw-token')) {
-    getAllHealthDatas().catch(() => {})
+  const updateHealthData = async (id: number, healthData: HealthDataFields): Promise<void> => {
+    try {
+      await api.post(`/api/v1/healthdatas/${id}`, healthData)
+    } catch (error) {
+      console.error('Update health data error:', error)
+      throw new Error(errorMessage(error, 'The measure could not be saved'))
+    }
+    await getAllHealthDatas()
+  }
+
+  const deleteHealthData = async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/api/v1/healthdatas/${id}`)
+    } catch (error) {
+      console.error('Delete health data error:', error)
+      throw new Error(errorMessage(error, 'The measure could not be deleted'))
+    }
+    healthDatas.value = healthDatas.value.filter(d => d.id !== id)
   }
 
   return {
     healthDatas,
     getAllHealthDatas,
     insertHealthData,
+    updateHealthData,
+    deleteHealthData,
   }
 })

@@ -1,4 +1,8 @@
+# install scripts pnpm may run (a build refuses to install while one is unanswered)
 allowBuilds:
-  core-js: set this to true or false
-  esbuild: set this to true or false
-  vue-demi: set this to true or false
+  # only prints a funding message
+  core-js: false
+  # checks its platform binary
+  esbuild: true
+  # switches between its Vue 2 and 3 builds: never run so far, the default one is right
+  vue-demi: false

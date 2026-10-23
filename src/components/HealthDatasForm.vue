@@ -1,72 +1,168 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
-  import type { Ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { useHealthStore } from '@/stores/health'
-  import type { HealthDatas } from '@/types/health'
   import { useAppStore } from '@/stores/app'
+  import type { HealthData, HealthDataFields, HealthValue } from '@/types/health'
+
+  // without measure, the form creates one
+  const props = defineProps<{ healthData?: HealthData }>()
 
   const healthStore = useHealthStore()
-  const weight:Ref<number> = ref(0)
-  const fat:Ref<number> = ref(0)
-  const muscle:Ref<number> = ref(0)
-  const bone:Ref<number> = ref(0)
-  const bodyWater:Ref<number> = ref(0)
-  const resthr:Ref<number> = ref(0)
-  const date:Ref<Date> = ref(new Date())
-  const vo2max:Ref<number> = ref(0)
-  const systolic:Ref<number> = ref(0)
-  const diastolic:Ref<number> = ref(0)
-
   const appStore = useAppStore()
-  const error: Ref<string> = ref('')
-  const create = async () => {
-    // text fields give strings, the backend wants numbers
-    const healthdata: HealthDatas = {
-      date: date.value.toISOString(),
-      weight: +weight.value,
-      fat: +fat.value,
-      muscle: +muscle.value,
-      bone: +bone.value,
-      body_water: +bodyWater.value,
-      rest_hr: +resthr.value,
-      vo2max: +vo2max.value,
-      systolic: +systolic.value,
-      diastolic: +diastolic.value,
+
+  // the day of the measure, in the local calendar; saved at midnight UTC so it is the same day everywhere
+  const localToday = () => {
+    const now = new Date()
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+  }
+  const today = localToday()
+
+  // empty: not measured, saved as 0
+  const value = (field: HealthValue) => props.healthData && props.healthData[field] > 0 ? String(props.healthData[field]) : ''
+  const form = ref({
+    date: props.healthData ? new Date(props.healthData.date).toISOString().slice(0, 10) : today,
+    weight: value('weight'),
+    fat: value('fat'),
+    muscle: value('muscle'),
+    bone: value('bone'),
+    body_water: value('body_water'),
+    rest_hr: value('rest_hr'),
+    vo2max: value('vo2max'),
+    systolic: value('systolic'),
+    diastolic: value('diastolic'),
+  })
+
+  // the limits of the backend
+  const range = (max: number, integer = false) => (v: string) => {
+    if (v === '') return true
+    const n = Number(v)
+    if (Number.isNaN(n) || n <= 0 || n > max) return `Between 0 and ${max}`
+    return !integer || Number.isInteger(n) || 'A whole number'
+  }
+  const pressureRule = () => {
+    const { systolic, diastolic } = form.value
+    if ((systolic === '') !== (diastolic === '')) return 'Both values or none'
+    return systolic === '' || Number(systolic) > Number(diastolic) || 'Systolic is above diastolic'
+  }
+  const fields: { key: HealthValue, label: string, unit: string, rule: (v: string) => true | string }[][] = [
+    [
+      { key: 'weight', label: 'Weight', unit: 'kg', rule: range(500) },
+      { key: 'fat', label: 'Body fat', unit: '%', rule: range(100) },
+      { key: 'muscle', label: 'Muscle', unit: '%', rule: range(100) },
+      { key: 'body_water', label: 'Body water', unit: '%', rule: range(100) },
+      { key: 'bone', label: 'Bone mass', unit: 'kg', rule: range(50) },
+    ],
+    [
+      { key: 'rest_hr', label: 'Resting heart rate', unit: 'bpm', rule: range(250, true) },
+      { key: 'vo2max', label: 'VO2max', unit: 'ml/kg/min', rule: range(100, true) },
+    ],
+  ]
+  const sections = ['Body composition', 'Heart']
+
+  const anyValue = computed(() => Object.entries(form.value).some(([key, v]) => key !== 'date' && v !== ''))
+
+  const valid = ref(false)
+  const saving = ref(false)
+  const error = ref('')
+
+  const save = async () => {
+    if (!valid.value || !anyValue.value) {
+      return
     }
+    const number = (field: HealthValue) => form.value[field] === '' ? 0 : Number(form.value[field])
+    const measure: HealthDataFields = {
+      date: new Date(form.value.date).toISOString(),
+      weight: number('weight'),
+      fat: number('fat'),
+      muscle: number('muscle'),
+      bone: number('bone'),
+      body_water: number('body_water'),
+      rest_hr: number('rest_hr'),
+      vo2max: number('vo2max'),
+      systolic: number('systolic'),
+      diastolic: number('diastolic'),
+    }
+    saving.value = true
     error.value = ''
     try {
-      await healthStore.insertHealthData(healthdata)
+      if (props.healthData) {
+        await healthStore.updateHealthData(props.healthData.id, measure)
+      } else {
+        await healthStore.insertHealthData(measure)
+      }
       appStore.navigateToPage('/health')
-    } catch {
-      error.value = 'The health data could not be saved'
+    } catch (e) {
+      error.value = (e as Error).message
+    } finally {
+      saving.value = false
     }
   }
 </script>
 
 <template>
-  <v-container>
-    <v-card>
-      <v-card-title>Health data</v-card-title>
-      <v-card-text>
-        <v-alert v-if="error" class="mb-4" type="error">{{ error }}</v-alert>
-        <v-form @submit.prevent="create">
-          <v-date-picker v-model="date" label="Date of measure" />
-          <v-text-field v-model="weight" label="weight" type="number" />
-          <v-text-field v-model="fat" label="Fat percentage" type="number" />
-          <v-text-field v-model="muscle" label="Muscle percentage" type="number" />
-          <v-text-field v-model="bone" label="Bone" type="number" />
-          <v-text-field v-model="bodyWater" label="Body Water" type="number" />
-          <v-text-field v-model="resthr" label="Rest Heart Rate" type="number" />
-          <v-text-field v-model="vo2max" label="Vo2max" type="number" />
-          <v-text-field v-model="systolic" label="Blood pressure Systolic" type="number" />
-          <v-text-field v-model="diastolic" label="Blood pressure Diastolic" type="number" />
-          <v-btn color="primary" type="submit">Create</v-btn>
-        </v-form>
-      </v-card-text>
-    </v-card>
-  </v-container>
+  <v-card max-width="720">
+    <v-card-text>
+      <v-alert v-if="error" class="mb-4" type="error">{{ error }}</v-alert>
+      <v-form v-model="valid" @submit.prevent="save">
+        <v-text-field
+          v-model="form.date"
+          label="Date"
+          :max="today"
+          :rules="[v => !!v || 'Required']"
+          type="date"
+        />
+        <div class="text-medium-emphasis text-body-2 mb-2">Fill in what you measured, leave the rest empty.</div>
+
+        <template v-for="(group, index) in fields" :key="sections[index]">
+          <div class="text-subtitle-2 mt-2 mb-1">{{ sections[index] }}</div>
+          <v-row dense>
+            <v-col v-for="field in group" :key="field.key" cols="12" sm="6">
+              <v-text-field
+                v-model="form[field.key]"
+                :label="`${field.label} (${field.unit})`"
+                min="0"
+                :rules="[field.rule]"
+                step="any"
+                :suffix="field.unit"
+                type="number"
+              />
+            </v-col>
+          </v-row>
+        </template>
+
+        <div class="text-subtitle-2 mt-2 mb-1">Blood pressure</div>
+        <v-row dense>
+          <v-col cols="6">
+            <v-text-field
+              v-model="form.systolic"
+              label="Systolic (mmHg)"
+              min="0"
+              :rules="[range(300, true), pressureRule]"
+              suffix="mmHg"
+              type="number"
+            />
+          </v-col>
+          <v-col cols="6">
+            <v-text-field
+              v-model="form.diastolic"
+              label="Diastolic (mmHg)"
+              min="0"
+              :rules="[range(300, true), pressureRule]"
+              suffix="mmHg"
+              type="number"
+            />
+          </v-col>
+        </v-row>
+
+        <div class="d-flex align-center ga-2 mt-4">
+          <span v-if="!anyValue" class="text-caption text-medium-emphasis">Enter at least one value</span>
+          <v-spacer />
+          <v-btn variant="text" @click="appStore.navigateToPage('/health')">Cancel</v-btn>
+          <v-btn color="primary" :disabled="!valid || !anyValue" :loading="saving" type="submit">
+            {{ healthData ? 'Save' : 'Add' }}
+          </v-btn>
+        </div>
+      </v-form>
+    </v-card-text>
+  </v-card>
 </template>
-
-<style scoped lang="sass">
-
-</style>
