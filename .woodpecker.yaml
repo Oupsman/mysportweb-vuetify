@@ -9,10 +9,8 @@ when:
   - event: [push, pull_request, tag, manual]
 
 steps:
-  # reported, not blocking: some files predate the lint rules
   - name: lint
     image: node:22-bookworm-slim
-    failure: ignore
     commands:
       - npm install -g pnpm@12.14.0
       - pnpm install --frozen-lockfile

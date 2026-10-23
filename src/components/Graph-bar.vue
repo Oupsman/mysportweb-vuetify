@@ -3,14 +3,14 @@
 
   import { Bar } from 'vue-chartjs'
   import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
     BarController,
     BarElement,
-    Title,
-    Tooltip,
-    Legend, ChartData, ChartDataset,
+    CategoryScale,
+    ChartData,
+    ChartDataset,
+    Chart as ChartJS,
+    Legend,
+    LinearScale, Title, Tooltip,
   } from 'chart.js'
 
   ChartJS.register(
@@ -23,7 +23,7 @@
     Legend
   )
 
-  let chartOptions = {
+  const chartOptions = {
     responsive: true,
     scales: { },
   }
@@ -50,9 +50,9 @@
   })
   const xaxis = ref<number[]>([])
   const yaxis = ref<number[]>([])
-  let labels: string[] = []
+  const labels: string[] = []
   let data: number[] = []
-  let color = 'lightgreen'
+  const color = 'lightgreen'
   if (props.graph) {
     switch (props.graph) {
       case 'means':
@@ -80,7 +80,7 @@
 <template>
   <Bar
     v-if="xaxis && yaxis"
-    id='bar-chart-id'
+    id="bar-chart-id"
     class="graphbar"
     :data="chartData"
     :options="chartOptions"

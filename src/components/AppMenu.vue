@@ -47,13 +47,13 @@
         :key="item.title"
         @click="goToPage(item.page)"
       >
-        <template v-slot:prepend>
+        <template #prepend>
           <v-icon :icon="item.icon" />
         </template>
         <v-list-item-title>{{ item.title }}</v-list-item-title>
       </v-list-item>
       <v-list-item @click="userStore.logout()">
-        <template v-slot:prepend>
+        <template #prepend>
           <v-icon :icon="mdiAccountArrowRight" />
         </template>
         <v-list-item-title>Log out</v-list-item-title>
@@ -61,13 +61,13 @@
     </v-list>
     <v-list v-else dense>
       <v-list-item @click="goToPage('/login')">
-        <template v-slot:prepend>
+        <template #prepend>
           <v-icon :icon="mdiAccount" />
         </template>
         <v-list-item-title>Login</v-list-item-title>
       </v-list-item>
       <v-list-item @click="goToPage('/signup')">
-        <template v-slot:prepend>
+        <template #prepend>
           <v-icon :icon="mdiAccountPlus" />
         </template>
         <v-list-item-title>Sign up</v-list-item-title>

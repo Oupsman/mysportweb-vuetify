@@ -29,7 +29,7 @@ export default defineConfig({
         VueRouterAutoImports,
         {
           'unplugin-vue-router/data-loaders/basic': ['defineBasicLoader'],
-        },*/
+        }, */
       ],
       dts: 'src/auto-imports.d.ts',
       eslintrc: {
