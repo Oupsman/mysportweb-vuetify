@@ -158,7 +158,8 @@
         </v-col>
       </v-row>
       <v-row>
-        <Map v-if="activity.public_gps_points !== null " :activity="activity" />
+        <!-- the owner gets the whole trace; the public trace, without the privacy zones, is empty for a short loop -->
+        <Map v-if="activity.gps_points?.length || activity.public_gps_points?.length" :activity="activity" />
       </v-row>
       <!-- graphs on the left, activities on the same route on the right third; stacked on small screens -->
       <v-row>

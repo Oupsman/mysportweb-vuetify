@@ -33,7 +33,7 @@
   const publicActivity = ref(true)
   // iterate over activitiesStore.activity.gps_points to create an 2 dimensions array of Float wanted by leaflet
   let transformedPoints: LatLngExpression[]
-  if (props.activity.gps_points !== null) {
+  if (props.activity.gps_points?.length) {
     transformedPoints = props.activity.gps_points.map((point: Point) => [point.lat, point.lon])
     publicActivity.value = false
     const pointsNumbers = props.activity.gps_points.length
@@ -50,9 +50,9 @@
       },
     ]
   }
-  const publicPoints: LatLngExpression[] = props.activity.public_gps_points.map((point: Point) => [point.lat, point.lon])
+  const publicPoints: LatLngExpression[] = (props.activity.public_gps_points ?? []).map((point: Point) => [point.lat, point.lon])
   const gpsCenter: PointTuple = [props.activity.gps_center.lat, props.activity.gps_center.lon]
-  const gpsBounds: LatLngExpression[] = props.activity.gps_bounds.map((point: Point) => [point.lat, point.lon])
+  const gpsBounds: LatLngExpression[] = (props.activity.gps_bounds ?? []).map((point: Point) => [point.lat, point.lon])
 
   const mapIsReady = async () => {
     showMap.value = true
