@@ -47,6 +47,7 @@
     cadence: () => ({ values: numbers(activity.cadences), stamps: stampsOf(activity.cadence_time_stamps), color: 'blue' }),
     altitude: () => ({ values: numbers(activity.altitudes), stamps: numbers(activity.time_stamps), color: 'lightblue' }),
     power: () => ({ values: numbers(activity.powers), stamps: numbers(activity.power_ts), color: 'darksalmon' }),
+    temperature: () => ({ values: numbers(activity.temperatures), stamps: stampsOf(activity.temperature_time_stamps), color: 'orchid' }),
     swolf: () => ({ values: lengths.map(l => l.swolf), stamps: lengthStamps, color: 'blue', stepped: 'before' }),
     pace: () => ({ values: lengths.map(l => l.pace), stamps: lengthStamps, color: 'lightgreen', stepped: 'before' }),
     strokes: () => ({ values: lengths.map(l => l.strokes === 65535 ? 0 : l.strokes), stamps: lengthStamps, color: 'orange', stepped: 'before' }),
@@ -61,7 +62,8 @@
       points.push({ x: start + serie.stamps[i] * 1000, y: serie.values[i] })
     }
   }
-  const display = points.length > 0
+  // the backend fills the missing speeds and altitudes with 0: a serie of zeros is no data
+  const display = points.some(p => p.y !== 0)
 
   // the chart data is big and never changes: keep Vue from making it reactive
   const chartData: ChartData<'line', DataPoint[]> = markRaw({

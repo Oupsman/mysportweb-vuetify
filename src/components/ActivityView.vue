@@ -6,6 +6,7 @@
   import { api } from '@/api'
   import { activityCursorKey } from '@/composables/activityCursor'
   import MultisportLegs from '@/components/MultisportLegs.vue'
+  import { sportLabel } from '@/utils/format'
 
   const appStore = useAppStore()
   const route = useRoute('/activity/[id]')
@@ -16,7 +17,8 @@
   provide(activityCursorKey, cursor)
   const isLoading = ref(true)
   const panel = ref(0)
-  const graphs = ['speed', 'hr', 'cadence', 'altitude', 'power']
+  // every sport but swimming: each graph shows only when the activity has its data
+  const graphs = ['speed', 'hr', 'cadence', 'altitude', 'power', 'temperature']
   const graphsSwimming = ['hr', 'swolf', 'pace', 'strokes']
   const means = 'means'
   const formattedActivityDate = computed(() => {
@@ -71,6 +73,8 @@
   const showSimilar = computed(() => isOwner.value && !!activity.value?.route_id)
   // a triathlon...: one activity made of the sessions of the FIT file
   const hasLegs = computed(() => (activity.value?.legs?.length ?? 0) > 1)
+  // the speed per km, of the activities with a distance
+  const hasMeans = computed(() => (activity.value?.means ?? []).some((m: number) => m > 0))
 
   // the route's commute flag changed: the backend may have computed the CO2 of this activity
   const onRouteCommute = async () => {
@@ -97,7 +101,7 @@
         <v-sheet class="d-flex flex-wrap">
           <v-card class="h-auto w-20 ma-2">
             <v-card-title> Sport:</v-card-title>
-            <v-card-text> {{ activity.sport }}</v-card-text>
+            <v-card-text> {{ sportLabel(activity.sport) }}</v-card-text>
           </v-card>
           <v-card class="h-auto w-20 ma-2">
             <v-card-title> Date: </v-card-title>
@@ -160,9 +164,7 @@
       <v-row>
         <v-col cols="12" :md="showSimilar ? 8 : 12">
           <v-expansion-panels v-model="panel" accordion>
-            <v-expansion-panel
-              v-if="hasLegs || activity.sport === 'walking' || activity.sport === 'cycling' || activity.sport === 'running' || activity.sport === 'rowing'"
-            >
+            <v-expansion-panel v-if="hasLegs || activity.sport !== 'swimming'">
               <Graph-line
                 v-for="graph in graphs"
                 :key="graph"
@@ -170,7 +172,7 @@
                 :graph="graph"
                 style="height: 200px;  "
               />
-              <Graph-bar v-if="activity.means !== null && activity.means.length >0" :activity="activity" :graph="means" />
+              <Graph-bar v-if="hasMeans" :activity="activity" :graph="means" />
             </v-expansion-panel>
             <v-expansion-panel
               v-if="activity.sport === 'swimming'"
