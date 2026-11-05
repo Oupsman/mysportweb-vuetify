@@ -11,7 +11,7 @@
   import { sportLabel } from '@/utils/format'
 
   const appStore = useAppStore()
-  const route = useRoute('/activity/[id]')
+  const route = useRoute('/activity/[id]/')
   // shallow: the activity holds every record of the FIT file, Vue doesn't need to track them
   const activity = shallowRef(null)
   // time hovered on a chart, shared with the other charts and the map
