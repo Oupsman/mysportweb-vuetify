@@ -2,8 +2,9 @@
   import { computed, onMounted, provide, ref, shallowRef, watch } from 'vue'
   import { useAppStore } from '@/stores/app'
   import { useUserStore } from '@/stores/user'
-  import { useRoute } from 'vue-router'
-  import { useDisplay } from 'vuetify'
+  import { useRoute, useRouter } from 'vue-router'
+  import { mdiDeleteOutline, mdiPencilOutline } from '@mdi/js'
+  import { useActivitiesStore } from '@/stores/activities'
   import { api } from '@/api'
   import { activityCursorKey } from '@/composables/activityCursor'
   import MultisportLegs from '@/components/MultisportLegs.vue'
@@ -77,10 +78,27 @@
   const hasMeans = computed(() => (activity.value?.means ?? []).some((m: number) => m > 0))
   // the owner gets the whole trace; the public trace, without the privacy zones, is empty for a short loop
   const hasMap = computed(() => !!(activity.value?.gps_points?.length || activity.value?.public_gps_points?.length))
+  // the same route list is as high as the map next to it, and scrolls
+  const mapHeight = '60vh'
 
-  // large screens: the map on the left half, as high as the screen, next to the graphs
-  const { lgAndUp } = useDisplay()
-  const mapHeight = computed(() => lgAndUp.value ? 'calc(100vh - 64px - 48px - 32px)' : '50vh')
+  const router = useRouter()
+  const activitiesStore = useActivitiesStore()
+  const deleting = ref(false)
+  const deleteError = ref('')
+  const deleteActivity = async () => {
+    deleteError.value = ''
+    deleting.value = true
+    try {
+      // the store asks for a confirmation
+      if (await activitiesStore.deleteActivity(activity.value.id)) {
+        await router.push('/activities')
+      }
+    } catch {
+      deleteError.value = 'The activity could not be deleted.'
+    } finally {
+      deleting.value = false
+    }
+  }
 
   // the route's commute flag changed: the backend may have computed the CO2 of this activity
   const onRouteCommute = async () => {
@@ -100,7 +118,40 @@
   <div v-if="isLoading">Loading...</div>
   <div v-else-if="activity" :key="activity.id">
     <v-container class="pa-4" fluid>
-      <h5 class="text-h5 mb-2">{{ activity.title }}</h5>
+      <div class="d-flex align-center mb-2">
+        <h5 class="text-h5">{{ activity.title }}</h5>
+        <v-spacer />
+        <template v-if="isOwner">
+          <v-btn
+            class="mr-2"
+            :disabled="deleting"
+            :prepend-icon="mdiPencilOutline"
+            :to="`/activity/${activity.id}/edit`"
+            variant="tonal"
+          >
+            Edit
+          </v-btn>
+          <v-btn
+            color="error"
+            :loading="deleting"
+            :prepend-icon="mdiDeleteOutline"
+            variant="tonal"
+            @click="deleteActivity"
+          >
+            Delete
+          </v-btn>
+        </template>
+      </div>
+      <v-alert
+        v-if="deleteError"
+        class="mb-2"
+        closable
+        density="compact"
+        type="error"
+        @click:close="deleteError = ''"
+      >
+        {{ deleteError }}
+      </v-alert>
       <!-- the figures fill the width, as many per line as the screen holds -->
       <div class="stats mb-4">
         <v-card density="compact">
@@ -159,12 +210,20 @@
           <MultisportLegs :legs="activity.legs" />
         </v-col>
       </v-row>
-      <!-- large screens: the map stays in view on the left while the graphs scroll on the right; stacked otherwise -->
-      <v-row>
-        <v-col v-if="hasMap" class="map-col" cols="12" lg="6">
+      <!-- the map and the activities on the same route side by side, stacked on small screens -->
+      <v-row v-if="hasMap || showSimilar">
+        <v-col v-if="hasMap" cols="12" :md="showSimilar ? 8 : 12">
           <Map :activity="activity" :height="mapHeight" />
         </v-col>
-        <v-col cols="12" :lg="hasMap ? 6 : 12">
+        <v-col v-if="showSimilar" cols="12" :md="hasMap ? 4 : 12">
+          <div class="similar" :style="hasMap ? { height: mapHeight } : undefined">
+            <SimilarActivities :activity="activity" @commute="onRouteCommute" />
+          </div>
+        </v-col>
+      </v-row>
+      <!-- the graphs below, the whole width -->
+      <v-row>
+        <v-col cols="12">
           <v-card>
             <template v-if="hasLegs || activity.sport !== 'swimming'">
               <Graph-line v-for="graph in graphs" :key="graph" :activity="activity" :graph="graph" />
@@ -174,11 +233,6 @@
               <Graph-line v-for="graph in graphsSwimming" :key="graph" :activity="activity" :graph="graph" />
             </template>
           </v-card>
-        </v-col>
-      </v-row>
-      <v-row v-if="showSimilar">
-        <v-col cols="12">
-          <SimilarActivities :activity="activity" @commute="onRouteCommute" />
         </v-col>
       </v-row>
     </v-container>
@@ -192,10 +246,6 @@
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr))
   gap: 8px
 
-// below the app bar (64px) and the container padding
-@media (min-width: 1280px)
-  .map-col
-    position: sticky
-    top: 80px
-    align-self: flex-start
+.similar
+  overflow-y: auto
 </style>
