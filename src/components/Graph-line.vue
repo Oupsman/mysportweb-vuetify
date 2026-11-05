@@ -96,6 +96,8 @@
 
   const options: ChartOptions<'line'> = {
     responsive: true,
+    // the height comes from the wrapper: on a wide screen the 2:1 ratio would make each chart huge
+    maintainAspectRatio: false,
     // performance: no animation, data already parsed and sorted, no point drawn, decimated to the chart width
     animation: false,
     parsing: false,
@@ -176,18 +178,20 @@
 </script>
 
 <template>
-  <Line
-    v-if="display"
-    ref="chartRef"
-    class="graphline"
-    :data="chartData"
-    :options="options"
-    :plugins="[cursorLine]"
-  />
+  <div v-if="display" class="graphline">
+    <Line
+      ref="chartRef"
+      :data="chartData"
+      :options="options"
+      :plugins="[cursorLine]"
+    />
+  </div>
 </template>
 
 <style scoped lang="css">
+  /* Chart.js sizes the canvas from its parent, which must be positioned */
   .graphline {
-    height: 50px;
+    position: relative;
+    height: 200px;
   }
 </style>

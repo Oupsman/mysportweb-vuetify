@@ -25,6 +25,8 @@
 
   const chartOptions = {
     responsive: true,
+    // the height comes from the wrapper, see Graph-line
+    maintainAspectRatio: false,
     scales: { },
   }
   let chartData: ChartData<'bar'> = {
@@ -78,17 +80,18 @@
 </script>
 
 <template>
-  <Bar
-    v-if="xaxis && yaxis"
-    id="bar-chart-id"
-    class="graphbar"
-    :data="chartData"
-    :options="chartOptions"
-  />
+  <div v-if="xaxis && yaxis" class="graphbar">
+    <Bar
+      id="bar-chart-id"
+      :data="chartData"
+      :options="chartOptions"
+    />
+  </div>
 </template>
 
 <style scoped lang="css">
 .graphbar {
-  height: 150px;
+  position: relative;
+  height: 220px;
 }
 </style>

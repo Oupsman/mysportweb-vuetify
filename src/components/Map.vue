@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, defineProps, inject, ref } from 'vue'
+  import { computed, defineProps, inject, nextTick, onBeforeUnmount, ref } from 'vue'
   import 'leaflet/dist/leaflet.css'
   import StartIcon from '@/assets/start.svg'
   import StopIcon from '@/assets/stop.svg'
@@ -21,6 +21,11 @@
     activity: {
       type: Object,
       required: true,
+    },
+    // any CSS height: the activity page gives the map the height of the screen
+    height: {
+      type: String,
+      default: '400px',
     },
   })
   const showMap = ref(false)
@@ -54,10 +59,19 @@
   const gpsCenter: PointTuple = [props.activity.gps_center.lat, props.activity.gps_center.lon]
   const gpsBounds: LatLngExpression[] = (props.activity.gps_bounds ?? []).map((point: Point) => [point.lat, point.lon])
 
+  // Leaflet only measures its container at creation: without this, a resized map shows grey tiles
+  const container = ref<HTMLElement>()
+  let resizeObserver: ResizeObserver | undefined
+  onBeforeUnmount(() => resizeObserver?.disconnect())
+
   const mapIsReady = async () => {
     showMap.value = true
     await nextTick()
     leafletObject.value = gpsMap.value.leafletObject
+    if (container.value && !resizeObserver) {
+      resizeObserver = new ResizeObserver(() => leafletObject.value?.invalidateSize?.())
+      resizeObserver.observe(container.value)
+    }
 
     if (leafletObject.value !== undefined && leafletObject.value !== null) {
       // set default map view port
@@ -108,7 +122,7 @@
 </script>
 
 <template>
-  <div style="height: 400px; width: 100%;">
+  <div ref="container" :style="{ height, width: '100%' }">
     <l-map
       ref="gpsMap"
       v-model="zoom"
