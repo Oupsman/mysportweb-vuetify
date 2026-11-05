@@ -63,6 +63,14 @@ export interface Activity extends ActivityUpdate {
   // the recording device, as its FIT file tells; device_name is empty when it doesn't
   device: { brand: string, model: string, serial_number: string, software: string }
   device_name: string
+  // seconds since the start of every record
+  time_stamps: string[] | null
+  dist_array: number[] | null
+  gps_time_stamps: number[] | null
+  // seconds since the start after which the recording is ignored, 0 when the activity isn't trimmed
+  trim_end: number
+  // seconds of the whole recording, trimmed or not; 0 for the activities imported before it was stored
+  recorded_duration: number
 }
 
 // the route of an activity; the activities of a commute route, including the ones imported later, are commutes

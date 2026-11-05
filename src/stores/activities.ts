@@ -104,6 +104,16 @@ export const useActivitiesStore = defineStore('activities', () => {
     }
   }
 
+  // ignores what was recorded after end seconds since the start (the device wasn't stopped), 0 for the whole recording
+  const trimActivity = async (id: string, end: number): Promise<void> => {
+    try {
+      await api.post(`/api/v1/activity/${id}/trim`, { end })
+    } catch (error: any) {
+      console.error('Trim activity error:', error)
+      throw new Error(error?.response?.data?.error ?? 'trim activity failed')
+    }
+  }
+
   // only sends the editable fields, the whole activity weights megabytes
   const saveActivity = async (update: ActivityUpdate): Promise<void> => {
     try {
@@ -124,6 +134,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     activity,
     activities,
     getActivity,
+    trimActivity,
     getActivities,
     searchActivities,
     getSimilarActivities,
