@@ -9,6 +9,7 @@
   const emit = defineEmits<{
     activities: [equipment: Equipment]
     edit: [equipment: Equipment]
+    services: [equipment: Equipment]
     setDefault: [equipment: Equipment]
     delete: [equipment: Equipment]
   }>()
@@ -25,16 +26,23 @@
       : ''
   })
 
-  // there is no service log: the next one is counted from the mileage, every interval
+  // the next service is due an interval after the latest one, or after the first activity without one
   const maintenance = computed(() => {
     const interval = props.equipment.maintenance_interval
     if (interval <= 0) {
       return null
     }
-    const since = props.equipment.mileage % interval
-    const left = interval - since
-    return { left, progress: (since / interval) * 100, soon: left <= interval * 0.1 }
+    const left = interval - props.equipment.km_since_service
+    return {
+      left,
+      overdue: left < 0,
+      progress: Math.min(100, (props.equipment.km_since_service / interval) * 100),
+      soon: left <= interval * 0.1,
+    }
   })
+
+  const maintenanceColor = computed(() =>
+    maintenance.value?.overdue ? 'error' : (maintenance.value?.soon ? 'warning' : undefined))
 </script>
 
 <template>
@@ -97,6 +105,10 @@
           <div class="text-caption text-medium-emphasis">Last used</div>
           <div>{{ equipment.last_used ? formatDate(equipment.last_used) : 'Never' }}</div>
         </div>
+        <div v-if="equipment.last_service">
+          <div class="text-caption text-medium-emphasis">Last service</div>
+          <div>{{ formatDate(equipment.last_service) }}</div>
+        </div>
         <div v-if="purchased">
           <div class="text-caption text-medium-emphasis">Purchased</div>
           <div>{{ purchased }}</div>
@@ -109,13 +121,14 @@
 
       <div v-if="maintenance" class="mt-4">
         <div class="d-flex align-center text-body-2 mb-1">
-          <v-icon class="mr-1" :color="maintenance.soon ? 'warning' : undefined" :icon="mdiWrenchOutline" size="small" />
-          <span>Service in {{ km(maintenance.left) }}</span>
+          <v-icon class="mr-1" :color="maintenanceColor" :icon="mdiWrenchOutline" size="small" />
+          <span v-if="maintenance.overdue" class="text-error">Service overdue by {{ km(-maintenance.left) }}</span>
+          <span v-else>Service in {{ km(maintenance.left) }}</span>
           <v-spacer />
           <span class="text-caption text-medium-emphasis">every {{ km(equipment.maintenance_interval) }}</span>
         </div>
         <v-progress-linear
-          :color="maintenance.soon ? 'warning' : 'primary'"
+          :color="maintenanceColor ?? 'primary'"
           height="6"
           :model-value="maintenance.progress"
           rounded
@@ -136,6 +149,14 @@
         title="Make it the default equipment"
         variant="text"
         @click="emit('setDefault', equipment)"
+      />
+      <v-btn
+        :disabled="busy"
+        :icon="mdiWrenchOutline"
+        size="small"
+        title="Services"
+        variant="text"
+        @click="emit('services', equipment)"
       />
       <v-btn
         :disabled="busy"

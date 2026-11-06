@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api, errorMessage } from '@/api'
-import type { Equipment, EquipmentFields } from '@/types/equipments'
+import type { Equipment, EquipmentFields, EquipmentService, EquipmentServiceFields } from '@/types/equipments'
 
 export const useEquipmentsStore = defineStore('equipments', () => {
   // with their totals, the default one first
@@ -103,6 +103,47 @@ export const useEquipmentsStore = defineStore('equipments', () => {
     equipments.value = equipments.value.filter(e => e.id !== id)
   }
 
+  // the services of an equipment, the latest first
+  const getServices = async (equipmentId: string): Promise<EquipmentService[]> => {
+    try {
+      return (await api.get(`/api/v1/equipment/${equipmentId}/services`)).data ?? []
+    } catch (error) {
+      console.error('Get services error:', error)
+      throw new Error(errorMessage(error, 'The services could not be loaded'))
+    }
+  }
+
+  // the equipments are reloaded after each change: their distance since the latest service changes
+  const insertService = async (equipmentId: string, service: EquipmentServiceFields): Promise<void> => {
+    try {
+      await api.post(`/api/v1/equipment/${equipmentId}/services`, service)
+    } catch (error) {
+      console.error('Create service error:', error)
+      throw new Error(errorMessage(error, 'The service could not be saved'))
+    }
+    await getAllEquipments()
+  }
+
+  const updateService = async (equipmentId: string, id: string, service: EquipmentServiceFields): Promise<void> => {
+    try {
+      await api.post(`/api/v1/equipment/${equipmentId}/services/${id}`, service)
+    } catch (error) {
+      console.error('Update service error:', error)
+      throw new Error(errorMessage(error, 'The service could not be saved'))
+    }
+    await getAllEquipments()
+  }
+
+  const deleteService = async (equipmentId: string, id: string): Promise<void> => {
+    try {
+      await api.delete(`/api/v1/equipment/${equipmentId}/services/${id}`)
+    } catch (error) {
+      console.error('Delete service error:', error)
+      throw new Error(errorMessage(error, 'The service could not be deleted'))
+    }
+    await getAllEquipments()
+  }
+
   if (localStorage.getItem('msw-token')) {
     getAllEquipments().catch(() => {})
   }
@@ -118,5 +159,9 @@ export const useEquipmentsStore = defineStore('equipments', () => {
     uploadPicture,
     deletePicture,
     deleteEquipment,
+    getServices,
+    insertService,
+    updateService,
+    deleteService,
   }
 })

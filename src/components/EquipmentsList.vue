@@ -50,6 +50,7 @@
   // the activities page filters on the equipment of its query
   const showActivities = (equipment: Equipment) => appStore.navigateToPage(`/activities?equipment=${equipment.id}`)
   const edit = (equipment: Equipment) => appStore.navigateToPage(`/equipment/${equipment.id}/edit`)
+  const services = (equipment: Equipment) => appStore.navigateToPage(`/equipment/${equipment.id}/edit#services`)
 </script>
 
 <template>
@@ -87,6 +88,7 @@
           @activities="showActivities"
           @delete="remove"
           @edit="edit"
+          @services="services"
           @set-default="setDefault"
         />
       </v-col>
