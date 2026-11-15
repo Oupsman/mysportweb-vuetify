@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 import router from '@/router'
 import { api } from '@/api'
-import { parseJwt, safeRedirect, storedSession } from '@/auth'
+import { parseJwt, safeRedirect, storedSession, tokenKey } from '@/auth'
 
 import type { UserSession } from '@/types/user'
 import type { CalendarActivity, Dashboard } from '@/types/dashboard'
@@ -30,9 +30,15 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // tokens are stateless JWTs: logging out is forgetting the token
-  const logout = (): void => {
-    localStorage.removeItem('msw-token')
+  // the backend revokes the token, a copy of it stops working too; it is forgotten here even when the
+  // backend can't be reached or already refuses it (expired, revoked)
+  const logout = async (): Promise<void> => {
+    try {
+      await api.get('/api/v1/user/logout')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+    localStorage.removeItem(tokenKey)
     session.value = null
     router.push('/')
   }
@@ -75,7 +81,15 @@ export const useUserStore = defineStore('user', () => {
 
   const updateUser = async (user: Object): Promise<void> => {
     try {
-      await api.post('/api/v1/user', user)
+      const response = await api.post('/api/v1/user', user)
+      // a new password ends the sessions, this one included: the backend sends the token to go on with
+      if (response.data?.token) {
+        localStorage.setItem(tokenKey, response.data.token)
+        setUserSession({
+          ...parseJwt(response.data.token),
+          token: response.data.token,
+        })
+      }
     } catch (error) {
       console.error('Update user error:', error)
       throw new Error('update user failed')

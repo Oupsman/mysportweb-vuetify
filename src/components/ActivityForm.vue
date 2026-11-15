@@ -255,7 +255,7 @@
       </v-card-text>
     </v-card>
   </div>
-  <div v-else>Activité non trouvée</div>
+  <div v-else>Activity not found</div>
 </template>
 
 <style scoped lang="sass">
