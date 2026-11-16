@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { mdiAccount, mdiAccountArrowRight, mdiAccountPlus, mdiBicycle, mdiHeart, mdiHomeAnalytics, mdiPodium } from '@mdi/js'
+  import { mdiAccount, mdiAccountArrowRight, mdiAccountPlus, mdiBicycle, mdiHeart, mdiHomeAnalytics, mdiPodium, mdiWatch } from '@mdi/js'
   import { storeToRefs } from 'pinia'
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
@@ -20,6 +20,11 @@
       icon: mdiBicycle,
       title: 'Equipments',
       page: '/equipments',
+    },
+    {
+      icon: mdiWatch,
+      title: 'Devices',
+      page: '/devices',
     },
     {
       icon: mdiPodium,
