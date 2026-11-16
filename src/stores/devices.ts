@@ -30,5 +30,30 @@ export const useDevicesStore = defineStore('devices', () => {
     devices.value = devices.value.map(d => (d.id === id ? updated : d))
   }
 
-  return { devices, getAllDevices, setAltitudeCorrection }
+  // the same unit, that its files named differently: the activities of id, past and future, go to into.
+  // The list is reloaded: id is gone, into has its activities
+  const mergeDevice = async (id: string, into: string): Promise<void> => {
+    try {
+      await api.post(`/api/v1/device/${id}/merge`, { into })
+    } catch (error) {
+      console.error('Merge device error:', error)
+      throw new Error(errorMessage(error, 'The devices could not be merged'))
+    }
+    await getAllDevices()
+  }
+
+  // analyses again the activities of a device with its altitudes setting, in the background: its recompute
+  // tells the progress, getAllDevices reads it again
+  const recompute = async (id: string): Promise<void> => {
+    let updated: Device
+    try {
+      updated = (await api.post(`/api/v1/device/${id}/recompute`)).data
+    } catch (error) {
+      console.error('Recompute device error:', error)
+      throw new Error(errorMessage(error, 'The activities could not be recomputed'))
+    }
+    devices.value = devices.value.map(d => (d.id === id ? updated : d))
+  }
+
+  return { devices, getAllDevices, setAltitudeCorrection, mergeDevice, recompute }
 })

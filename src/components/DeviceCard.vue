@@ -1,34 +1,27 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { mdiImageFilterHdr, mdiWatch } from '@mdi/js'
+  import { mdiCallMerge, mdiImageFilterHdr, mdiRefresh, mdiWatch } from '@mdi/js'
   import type { AltitudeCorrection, Device } from '@/types/devices'
+  import { altitudeCorrections, unitLabel } from '@/utils/devices'
   import { formatDate } from '@/utils/format'
 
-  const props = defineProps<{ device: Device, busy?: boolean }>()
+  // canMerge: the user has another device to merge this one into
+  const props = defineProps<{ device: Device, busy?: boolean, canMerge?: boolean }>()
   const emit = defineEmits<{
     activities: [device: Device]
     correction: [device: Device, correction: AltitudeCorrection]
+    merge: [device: Device]
+    recompute: [device: Device]
   }>()
 
-  const corrections: { value: AltitudeCorrection, title: string, subtitle: string }[] = [
-    {
-      value: 'none',
-      title: 'Recorded altitudes',
-      subtitle: 'Kept as the device recorded them',
-    },
-    {
-      value: 'calibrate',
-      title: 'Calibrated on the terrain',
-      subtitle: 'The barometer\'s profile, shifted to the ground elevation',
-    },
-    {
-      value: 'replace',
-      title: 'Terrain elevation',
-      subtitle: 'The ground elevation under the GPS positions: without barometer, or a defective one',
-    },
-  ]
-
+  const corrections = altitudeCorrections
   const correction = computed(() => corrections.find(c => c.value === props.device.altitude_correction))
+
+  const recomputing = computed(() => props.device.recompute?.running ?? false)
+  const progress = computed(() => {
+    const r = props.device.recompute
+    return r && r.total > 0 ? ((r.done + r.failed) / r.total) * 100 : 0
+  })
 </script>
 
 <template>
@@ -83,13 +76,58 @@
         @update:model-value="v => emit('correction', device, v)"
       />
       <div class="text-caption text-medium-emphasis mt-1">
-        {{ correction?.subtitle }}. Applies to the activities imported after the change.
+        {{ correction?.subtitle }}. Applies to the activities imported after the change; recompute to apply
+        it to the ones recorded before.
+      </div>
+
+      <div v-if="device.recompute" class="mt-3 text-body-2">
+        <template v-if="recomputing">
+          <div class="d-flex mb-1">
+            <span>Recomputing the activities…</span>
+            <v-spacer />
+            <span class="text-medium-emphasis">{{ device.recompute.done + device.recompute.failed }} / {{ device.recompute.total }}</span>
+          </div>
+          <v-progress-linear color="primary" height="6" :model-value="progress" rounded />
+        </template>
+        <div v-else class="text-medium-emphasis">
+          {{ device.recompute.done }} {{ device.recompute.done > 1 ? 'activities' : 'activity' }} recomputed
+          <span v-if="device.recompute.finished_at">on {{ formatDate(device.recompute.finished_at) }}</span>
+          <span v-if="device.recompute.failed > 0" class="text-error">
+            · {{ device.recompute.failed }} failed: their FIT file is missing or can't be read
+          </span>
+        </div>
+      </div>
+
+      <div v-if="device.aliases.length > 0" class="mt-4">
+        <div class="text-caption text-medium-emphasis">Also recorded as</div>
+        <div v-for="alias in device.aliases" :key="`${alias.brand}/${alias.model}/${alias.serial_number}`" class="text-body-2">
+          {{ alias.name }} <span class="text-medium-emphasis">· {{ unitLabel(alias) }}</span>
+        </div>
       </div>
     </v-card-text>
 
     <v-card-actions>
       <v-btn :disabled="device.activities === 0" variant="text" @click="emit('activities', device)">
         Activities
+      </v-btn>
+      <v-btn
+        :disabled="busy || recomputing || device.activities === 0"
+        :prepend-icon="mdiRefresh"
+        title="Analyse its activities again with its altitudes setting"
+        variant="text"
+        @click="emit('recompute', device)"
+      >
+        Recompute
+      </v-btn>
+      <v-spacer />
+      <v-btn
+        :disabled="busy || recomputing || !canMerge"
+        :prepend-icon="mdiCallMerge"
+        title="The same unit as another device, that its files named differently"
+        variant="text"
+        @click="emit('merge', device)"
+      >
+        Merge…
       </v-btn>
     </v-card-actions>
   </v-card>
