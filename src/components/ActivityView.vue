@@ -21,6 +21,13 @@
   // every sport but swimming: each graph shows only when the activity has its data
   const graphs = ['speed', 'hr', 'cadence', 'altitude', 'power', 'temperature']
   const graphsSwimming = ['hr', 'swolf', 'pace', 'strokes']
+  // running dynamics, shown only when a sensor recorded them
+  const graphsRunning = [
+    'vertical_oscillation', 'vertical_ratio', 'ground_contact', 'ground_contact_percent', 'ground_contact_balance',
+    'step_length',
+  ]
+  // averages of the running dynamics, absent ones are 0 or missing
+  const running = computed(() => activity.value?.metrics?.running ?? null)
   const means = 'means'
   const formattedActivityDate = computed(() => {
     if (!activity.value?.date) return ''
@@ -200,6 +207,30 @@
           <v-card-subtitle class="pt-2">Average power</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ (activity.power_avg).toFixed(1) }} W</v-card-text>
         </v-card>
+        <template v-if="running">
+          <v-card v-if="running.avg_vertical_oscillation > 0" density="compact">
+            <v-card-subtitle class="pt-2">Vertical oscillation</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ (running.avg_vertical_oscillation / 10).toFixed(1) }} cm</v-card-text>
+          </v-card>
+          <v-card v-if="running.avg_vertical_ratio > 0" density="compact">
+            <v-card-subtitle class="pt-2">Vertical ratio</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ running.avg_vertical_ratio.toFixed(1) }} %</v-card-text>
+          </v-card>
+          <v-card v-if="running.avg_stance_time > 0" density="compact">
+            <v-card-subtitle class="pt-2">Ground contact time</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ Math.round(running.avg_stance_time) }} ms</v-card-text>
+          </v-card>
+          <v-card v-if="running.avg_stance_time_balance > 0" density="compact">
+            <v-card-subtitle class="pt-2">Ground contact balance</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">
+              {{ running.avg_stance_time_balance.toFixed(1) }} % L / {{ (100 - running.avg_stance_time_balance).toFixed(1) }} % R
+            </v-card-text>
+          </v-card>
+          <v-card v-if="running.avg_step_length > 0" density="compact">
+            <v-card-subtitle class="pt-2">Step length</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ (running.avg_step_length / 1000).toFixed(2) }} m</v-card-text>
+          </v-card>
+        </template>
         <v-card v-if="activity.is_commute" density="compact">
           <v-card-subtitle class="pt-2">CO2</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ (activity.co2 / 1000).toFixed(1) }} kg</v-card-text>
@@ -227,6 +258,9 @@
           <v-card>
             <template v-if="hasLegs || activity.sport !== 'swimming'">
               <Graph-line v-for="graph in graphs" :key="graph" :activity="activity" :graph="graph" />
+              <template v-if="running">
+                <Graph-line v-for="graph in graphsRunning" :key="graph" :activity="activity" :graph="graph" />
+              </template>
               <Graph-bar v-if="hasMeans" :activity="activity" :graph="means" />
             </template>
             <template v-if="activity.sport === 'swimming'">

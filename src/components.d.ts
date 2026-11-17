@@ -19,6 +19,7 @@ declare module 'vue' {
     EquipmentCard: typeof import('./components/EquipmentCard.vue')['default']
     EquipmentForm: typeof import('./components/EquipmentForm.vue')['default']
     EquipmentPicture: typeof import('./components/EquipmentPicture.vue')['default']
+    EquipmentServices: typeof import('./components/EquipmentServices.vue')['default']
     EquipmentsList: typeof import('./components/EquipmentsList.vue')['default']
     GraphBar: typeof import('./components/Graph-bar.vue')['default']
     GraphLine: typeof import('./components/Graph-line.vue')['default']
