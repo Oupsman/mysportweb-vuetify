@@ -15,6 +15,8 @@ declare module 'vue' {
     ApiTokens: typeof import('./components/ApiTokens.vue')['default']
     AppMenu: typeof import('./components/AppMenu.vue')['default']
     Dashboard: typeof import('./components/Dashboard.vue')['default']
+    DeviceCard: typeof import('./components/DeviceCard.vue')['default']
+    DevicesList: typeof import('./components/DevicesList.vue')['default']
     DuplicateActivities: typeof import('./components/DuplicateActivities.vue')['default']
     EquipmentCard: typeof import('./components/EquipmentCard.vue')['default']
     EquipmentForm: typeof import('./components/EquipmentForm.vue')['default']

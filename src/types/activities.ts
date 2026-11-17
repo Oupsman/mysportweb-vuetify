@@ -115,8 +115,8 @@ export interface ActivitySearch {
   totals: { activities: number, distance: number, duration: number, elevation: number }
   sports: string[]
   years: number[]
-  // the user's recording devices, most used first
-  devices: { name: string, activities: number }[]
+  // the user's recording devices, most used first; serial_number tells apart the units of a model
+  devices: { id: string, name: string, serial_number: string, activities: number }[]
 }
 
 // an activity of a group of duplicates, imported_at telling which copy came first

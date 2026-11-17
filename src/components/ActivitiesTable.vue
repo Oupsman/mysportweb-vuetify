@@ -36,6 +36,7 @@
     to: first(route.query.to),
     equipment: first(route.query.equipment),
     device: first(route.query.device), // a device name, 'none' or '' for all
+    deviceId: first(route.query.device_id), // a unit, '' for all
     commute: first(route.query.commute), // 'true', 'false' or '' for all the activities
     sort: first(route.query.sort) || defaults.sort,
     order: first(route.query.order) || defaults.order,
@@ -112,15 +113,26 @@
     ...equipmentsStore.equipments.map(e => ({ title: e.name, value: e.id ?? '' })),
   ])
 
-  // the number of activities on a second line of the menu: the field only shows the name
-  const devices = computed(() => [
-    { title: 'No device', value: 'none', subtitle: 'Entered by hand, or not told by the file' },
-    ...(result.value?.devices ?? []).map(d => ({
-      title: d.name,
-      value: d.name,
-      subtitle: `${d.activities} ${d.activities > 1 ? 'activities' : 'activity'}`,
-    })),
-  ])
+  // the number of activities on a second line of the menu: the field only shows the name, followed by the
+  // end of the serial number when the user has several units of the model
+  const devices = computed(() => {
+    const units = result.value?.devices ?? []
+    const shared = (name: string) => units.filter(d => d.name === name).length > 1
+    return [
+      { title: 'No device', value: 'none', subtitle: 'Entered by hand, or not told by the file' },
+      ...units.map(d => ({
+        title: shared(d.name) ? `${d.name} (${d.serial_number ? `…${d.serial_number.slice(-4)}` : 'no serial'})` : d.name,
+        value: d.id,
+        subtitle: [
+          `${d.activities} ${d.activities > 1 ? 'activities' : 'activity'}`,
+          d.serial_number ? `serial ${d.serial_number}` : '',
+        ].filter(Boolean).join(' · '),
+      })),
+    ]
+  })
+  // the menu chooses a unit, or the activities without device; a device name comes from older links
+  const chooseDevice = (value: string | null) =>
+    update(value === 'none' ? { device: 'none', device_id: null } : { device: null, device_id: value })
 
   const commuteFilters = [
     { title: 'Commutes only', value: 'true' },
@@ -129,12 +141,12 @@
 
   const hasFilters = computed(() => {
     const q = query.value
-    return !!(q.q || q.sport.length || q.from || q.to || q.equipment || q.device || q.commute)
+    return !!(q.q || q.sport.length || q.from || q.to || q.equipment || q.device || q.deviceId || q.commute)
   })
   const resetFilters = () => {
     search.value = ''
     customDates.value = false
-    update({ q: null, sport: null, from: null, to: null, equipment: null, device: null, commute: null })
+    update({ q: null, sport: null, from: null, to: null, equipment: null, device: null, device_id: null, commute: null })
   }
 
   // the search, again on every change of the URL
@@ -152,6 +164,7 @@
     if (q.to) params.to = q.to
     if (q.equipment) params.equipment = q.equipment
     if (q.device) params.device = q.device
+    if (q.deviceId) params.device_id = q.deviceId
     if (q.commute) params.commute = q.commute
     const request = ++latest
     isLoading.value = true
@@ -292,9 +305,9 @@
           :item-props="true"
           :items="devices"
           label="Device"
-          :model-value="query.device || null"
+          :model-value="query.deviceId || query.device || null"
           variant="outlined"
-          @update:model-value="v => update({ device: v })"
+          @update:model-value="chooseDevice"
         />
       </v-col>
       <v-col cols="12" md="2" sm="6">
