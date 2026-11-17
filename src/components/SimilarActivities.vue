@@ -15,6 +15,8 @@
   const emit = defineEmits<{
     // the commute flag of the route's activities, this one included, changed
     commute: [isCommute: boolean]
+    // the activities of the route, this one included, once loaded
+    loaded: [activities: SimilarActivity[]]
   }>()
 
   const activitiesStore = useActivitiesStore()
@@ -29,6 +31,7 @@
       const similar = await activitiesStore.getSimilarActivities(props.activity.id)
       others.value = similar.activities
       route.value = similar.route
+      emit('loaded', rows.value)
     } catch {
       error.value = 'The activities on this route could not be loaded'
     } finally {

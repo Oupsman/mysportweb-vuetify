@@ -35,6 +35,7 @@ declare module 'vue' {
     Map: typeof import('./components/Map.vue')['default']
     MultisportLegs: typeof import('./components/MultisportLegs.vue')['default']
     ProfileForm: typeof import('./components/ProfileForm.vue')['default']
+    RouteProgress: typeof import('./components/RouteProgress.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']

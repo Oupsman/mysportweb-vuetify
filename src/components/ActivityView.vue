@@ -8,6 +8,8 @@
   import { api } from '@/api'
   import { activityCursorKey } from '@/composables/activityCursor'
   import MultisportLegs from '@/components/MultisportLegs.vue'
+  import RouteProgress from '@/components/RouteProgress.vue'
+  import type { SimilarActivity } from '@/types/activities'
   import { sportLabel } from '@/utils/format'
 
   const appStore = useAppStore()
@@ -79,6 +81,11 @@
   // the list of activities on the same route is only available to the owner
   const isOwner = computed(() => activity.value !== null && userStore.session?.sub === activity.value.user_id)
   const showSimilar = computed(() => isOwner.value && !!activity.value?.route_id)
+  // the activities of the route, this one included, loaded by the same route list
+  const routeActivities = ref<SimilarActivity[]>([])
+  watch(() => route.params.id, () => {
+    routeActivities.value = []
+  })
   // a triathlon...: one activity made of the sessions of the FIT file
   const hasLegs = computed(() => (activity.value?.legs?.length ?? 0) > 1)
   // the speed per km, of the activities with a distance
@@ -248,8 +255,19 @@
         </v-col>
         <v-col v-if="showSimilar" cols="12" :md="hasMap ? 4 : 12">
           <div class="similar" :style="hasMap ? { height: mapHeight } : undefined">
-            <SimilarActivities :activity="activity" @commute="onRouteCommute" />
+            <SimilarActivities
+              :key="activity.id"
+              :activity="activity"
+              @commute="onRouteCommute"
+              @loaded="routeActivities = $event"
+            />
           </div>
+        </v-col>
+      </v-row>
+      <!-- the average speed of every activity on the route, once there are two to compare -->
+      <v-row v-if="showSimilar && routeActivities.length > 1">
+        <v-col cols="12">
+          <RouteProgress :activities="routeActivities" :current="activity.id" />
         </v-col>
       </v-row>
       <!-- the graphs below, the whole width -->
