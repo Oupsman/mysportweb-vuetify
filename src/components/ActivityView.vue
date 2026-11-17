@@ -10,7 +10,7 @@
   import MultisportLegs from '@/components/MultisportLegs.vue'
   import RouteProgress from '@/components/RouteProgress.vue'
   import type { SimilarActivity } from '@/types/activities'
-  import { sportLabel } from '@/utils/format'
+  import { formatSpeedFor, sportLabel, usesPace } from '@/utils/format'
 
   const appStore = useAppStore()
   const route = useRoute('/activity/[id]/')
@@ -195,8 +195,8 @@
           <v-card-text class="text-h6 pt-1">{{ (activity.distance / 1000).toFixed(2) }} km</v-card-text>
         </v-card>
         <v-card v-if="activity.avg_speed > 0" density="compact">
-          <v-card-subtitle class="pt-2">Average speed</v-card-subtitle>
-          <v-card-text class="text-h6 pt-1">{{ (activity.avg_speed * 3.6).toFixed(2) }} km/h</v-card-text>
+          <v-card-subtitle class="pt-2">Average {{ usesPace(activity.sport) ? 'pace' : 'speed' }}</v-card-subtitle>
+          <v-card-text class="text-h6 pt-1">{{ formatSpeedFor(activity.sport, activity.avg_speed) }}</v-card-text>
         </v-card>
         <v-card v-if="activity.kcal > 0" density="compact">
           <v-card-subtitle class="pt-2">Calories</v-card-subtitle>
@@ -267,7 +267,7 @@
       <!-- the average speed of every activity on the route, once there are two to compare -->
       <v-row v-if="showSimilar && routeActivities.length > 1">
         <v-col cols="12">
-          <RouteProgress :activities="routeActivities" :current="activity.id" />
+          <RouteProgress :activities="routeActivities" :current="activity.id" :sport="activity.sport" />
         </v-col>
       </v-row>
       <!-- the graphs below, the whole width -->

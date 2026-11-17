@@ -14,6 +14,7 @@
   import type { ChartData, ChartOptions, TooltipItem } from 'chart.js'
   import { useAppStore } from '@/stores/app'
   import type { SimilarActivity } from '@/types/activities'
+  import { formatPace, formatSpeedFor, paceOf, usesPace } from '@/utils/format'
 
   ChartJS.register(LinearScale, TimeScale, PointElement, LineElement, Tooltip)
 
@@ -27,7 +28,14 @@
       type: String,
       required: true,
     },
+    // the sport of the route: running and walking show the pace
+    sport: {
+      type: String,
+      default: '',
+    },
   })
+
+  const pace = computed(() => usesPace(props.sport))
 
   const appStore = useAppStore()
 
@@ -35,7 +43,7 @@
   const slowest = '#e53935'
   const other = '#90a4ae'
 
-  type DataPoint = { x: number, y: number }
+  type DataPoint = { x: number, y: number | null }
 
   // oldest first, the line goes forward in time
   const sorted = computed(() => [...props.activities]
@@ -59,8 +67,11 @@
     const isCurrent = activities.map(a => a.id === props.current)
     return {
       datasets: [{
-        label: 'Average speed',
-        data: activities.map(a => ({ x: new Date(a.date).getTime(), y: a.avg_speed * 3.6 })),
+        label: pace.value ? 'Average pace' : 'Average speed',
+        data: activities.map(a => ({
+          x: new Date(a.date).getTime(),
+          y: pace.value ? paceOf(a.avg_speed) : a.avg_speed * 3.6,
+        })),
         borderColor: other,
         borderWidth: 1,
         pointBackgroundColor: activities.map(colorOf),
@@ -77,7 +88,7 @@
     day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(new Date(time))
 
-  const options: ChartOptions<'line'> = {
+  const options = computed((): ChartOptions<'line'> => ({
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
@@ -87,7 +98,10 @@
         type: 'time',
         time: { tooltipFormat: 'dd/MM/yyyy', displayFormats: { day: 'dd/MM', week: 'dd/MM', month: 'MM/yyyy' } },
       },
-      y: { title: { display: true, text: 'km/h' } },
+      // the faster at the top: a pace is lower when faster
+      y: pace.value
+        ? { reverse: true, title: { display: true, text: 'min/km' }, ticks: { callback: value => formatPace(Number(value)) } }
+        : { title: { display: true, text: 'km/h' } },
     },
     plugins: {
       tooltip: {
@@ -97,7 +111,7 @@
             return activity.id === props.current ? 'This activity' : activity.title
           },
           label: (item: TooltipItem<'line'>) =>
-            `${formatDate((item.raw as DataPoint).x)}: ${(item.raw as DataPoint).y.toFixed(1)} km/h`,
+            `${formatDate((item.raw as DataPoint).x)}: ${formatSpeedFor(props.sport, sorted.value[item.dataIndex].avg_speed)}`,
         },
       },
     },
@@ -114,12 +128,12 @@
         target.style.cursor = elements.length ? 'pointer' : 'default'
       }
     },
-  }
+  }))
 </script>
 
 <template>
   <v-card>
-    <v-card-title>Average speed on this route</v-card-title>
+    <v-card-title>Average {{ pace ? 'pace' : 'speed' }} on this route</v-card-title>
     <v-card-text>
       <div class="route-progress">
         <Line :data="chartData" :options="options" />

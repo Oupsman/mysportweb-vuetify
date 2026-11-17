@@ -4,6 +4,7 @@
   import { useActivitiesStore } from '@/stores/activities'
   import { useAppStore } from '@/stores/app'
   import type { Activity, Route, SimilarActivity } from '@/types/activities'
+  import { formatSpeedFor, usesPace } from '@/utils/format'
 
   const props = defineProps({
     activity: {
@@ -125,7 +126,7 @@
               <th>Date</th>
               <th class="text-right">Distance</th>
               <th class="text-right">Duration</th>
-              <th class="text-right">Speed</th>
+              <th class="text-right">{{ usesPace(props.activity.sport) ? 'Pace' : 'Speed' }}</th>
             </tr>
           </thead>
           <tbody>
@@ -145,7 +146,7 @@
               </td>
               <td class="text-right text-no-wrap">{{ (row.distance / 1000).toFixed(2) }} km</td>
               <td class="text-right">{{ formatDuration(row.duration) }}</td>
-              <td class="text-right text-no-wrap">{{ (row.avg_speed * 3.6).toFixed(1) }} km/h</td>
+              <td class="text-right text-no-wrap">{{ formatSpeedFor(props.activity.sport, row.avg_speed) }}</td>
             </tr>
           </tbody>
         </v-table>
