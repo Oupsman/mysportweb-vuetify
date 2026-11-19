@@ -9,7 +9,6 @@
   import { activityCursorKey } from '@/composables/activityCursor'
   import MultisportLegs from '@/components/MultisportLegs.vue'
   import ActivityHrZones from '@/components/ActivityHrZones.vue'
-  import { sportLabel } from '@/utils/format'
   import RouteProgress from '@/components/RouteProgress.vue'
   import type { SimilarActivity } from '@/types/activities'
   import { formatSpeedFor, sportLabel, usesPace } from '@/utils/format'
