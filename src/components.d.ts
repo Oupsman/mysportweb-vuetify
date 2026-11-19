@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ActivitiesTable: typeof import('./components/ActivitiesTable.vue')['default']
     ActivityForm: typeof import('./components/ActivityForm.vue')['default']
+    ActivityHrZones: typeof import('./components/ActivityHrZones.vue')['default']
     ActivityMonth: typeof import('./components/ActivityMonth.vue')['default']
     ActivityUpload: typeof import('./components/ActivityUpload.vue')['default']
     ActivityView: typeof import('./components/ActivityView.vue')['default']
@@ -35,10 +36,13 @@ declare module 'vue' {
     Map: typeof import('./components/Map.vue')['default']
     MultisportLegs: typeof import('./components/MultisportLegs.vue')['default']
     ProfileForm: typeof import('./components/ProfileForm.vue')['default']
+    ReadinessCard: typeof import('./components/ReadinessCard.vue')['default']
+    ReadinessChart: typeof import('./components/ReadinessChart.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']
     SimilarActivities: typeof import('./components/SimilarActivities.vue')['default']
+    WeeklyHrZonesChart: typeof import('./components/WeeklyHrZonesChart.vue')['default']
     WeeklyVolumeChart: typeof import('./components/WeeklyVolumeChart.vue')['default']
     WeightTarget: typeof import('./components/WeightTarget.vue')['default']
   }

@@ -71,6 +71,12 @@ export interface Activity extends ActivityUpdate {
   trim_end: number
   // seconds of the whole recording, trimmed or not; 0 for the activities imported before it was stored
   recorded_duration: number
+  // training score: the device's (training load, TSS), else the TRIMP of the heart rates; null until computed
+  trimp: number | null
+  // seconds in each heart rate reserve zone (Z1 to Z5), zeros without heart rate, null until computed;
+  // the heart rates bounding them: rest, lower limits of the zones 2 to 5, max; null without heart rate
+  hr_zones: number[] | null
+  hr_zone_bounds: number[] | null
 }
 
 // the route of an activity; the activities of a commute route, including the ones imported later, are commutes

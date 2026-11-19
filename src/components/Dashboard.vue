@@ -11,6 +11,9 @@
   } from '@mdi/js'
   import ActivityMonth from '@/components/ActivityMonth.vue'
   import WeeklyVolumeChart from '@/components/WeeklyVolumeChart.vue'
+  import WeeklyHrZonesChart from '@/components/WeeklyHrZonesChart.vue'
+  import ReadinessCard from '@/components/ReadinessCard.vue'
+  import { useTrainingStore } from '@/stores/training'
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
   import type { PeriodTotals, SportRecord, SportSummary } from '@/types/dashboard'
@@ -31,8 +34,15 @@
   const dashboard = computed(() => userStore.dashboard)
   const hasActivities = computed(() => dashboard.value.totals.all_time.activities > 0)
 
+  const trainingStore = useTrainingStore()
+  // the weeks with time in zones: none without heart rate
+  const hasHrZones = computed(() => (trainingStore.hrZones?.weeks ?? []).some(w => w.zones.some(s => s > 0)))
+
   onMounted(() => {
     userStore.refreshDashboard().catch(() => {})
+    // the dashboard shows without them: they have their own cards
+    trainingStore.getReadiness().catch(() => {})
+    trainingStore.getHrZones().catch(() => {})
   })
 
   const open = (id: string) => appStore.navigateToPage(`/activity/${id}`)
@@ -154,6 +164,24 @@
               <ActivityMonth :activities="dashboard.calendar" @open="open" />
             </v-card-text>
           </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- training: how hard the weeks were, and how rested the user is -->
+      <v-row v-if="trainingStore.readiness || hasHrZones" dense>
+        <v-col v-if="hasHrZones && trainingStore.hrZones" cols="12" :lg="trainingStore.readiness ? 8 : 12">
+          <v-card class="h-100">
+            <v-card-item>
+              <v-card-title>Heart rate zones</v-card-title>
+              <v-card-subtitle>Last {{ trainingStore.hrZones.weeks.length }} weeks, by heart rate reserve</v-card-subtitle>
+            </v-card-item>
+            <v-card-text>
+              <WeeklyHrZonesChart :data="trainingStore.hrZones" />
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col v-if="trainingStore.readiness" cols="12" :lg="hasHrZones ? 4 : 12">
+          <ReadinessCard :readiness="trainingStore.readiness" />
         </v-col>
       </v-row>
 

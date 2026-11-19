@@ -8,6 +8,7 @@
   import { api } from '@/api'
   import { activityCursorKey } from '@/composables/activityCursor'
   import MultisportLegs from '@/components/MultisportLegs.vue'
+  import ActivityHrZones from '@/components/ActivityHrZones.vue'
   import { sportLabel } from '@/utils/format'
 
   const appStore = useAppStore()
@@ -74,6 +75,8 @@
   const showSimilar = computed(() => isOwner.value && !!activity.value?.route_id)
   // a triathlon...: one activity made of the sessions of the FIT file
   const hasLegs = computed(() => (activity.value?.legs?.length ?? 0) > 1)
+  // the time in heart rate zones, of the activities with a heart rate (zeros without)
+  const hasHrZones = computed(() => (activity.value?.hr_zones ?? []).some((s: number) => s > 0))
   // the speed per km, of the activities with a distance
   const hasMeans = computed(() => (activity.value?.means ?? []).some((m: number) => m > 0))
   // the owner gets the whole trace; the public trace, without the privacy zones, is empty for a short loop
@@ -200,6 +203,10 @@
           <v-card-subtitle class="pt-2">Average power</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ (activity.power_avg).toFixed(1) }} W</v-card-text>
         </v-card>
+        <v-card v-if="activity.trimp > 0" density="compact">
+          <v-card-subtitle class="pt-2">Training load</v-card-subtitle>
+          <v-card-text class="text-h6 pt-1">{{ Math.round(activity.trimp) }}</v-card-text>
+        </v-card>
         <v-card v-if="activity.is_commute" density="compact">
           <v-card-subtitle class="pt-2">CO2</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ (activity.co2 / 1000).toFixed(1) }} kg</v-card-text>
@@ -208,6 +215,11 @@
       <v-row v-if="hasLegs">
         <v-col cols="12">
           <MultisportLegs :legs="activity.legs" />
+        </v-col>
+      </v-row>
+      <v-row v-if="hasHrZones">
+        <v-col cols="12">
+          <ActivityHrZones :bounds="activity.hr_zone_bounds" :zones="activity.hr_zones" />
         </v-col>
       </v-row>
       <!-- the map and the activities on the same route side by side, stacked on small screens -->
