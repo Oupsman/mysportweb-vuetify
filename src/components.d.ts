@@ -38,6 +38,7 @@ declare module 'vue' {
     ProfileForm: typeof import('./components/ProfileForm.vue')['default']
     ReadinessCard: typeof import('./components/ReadinessCard.vue')['default']
     ReadinessChart: typeof import('./components/ReadinessChart.vue')['default']
+    RouteProgress: typeof import('./components/RouteProgress.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']

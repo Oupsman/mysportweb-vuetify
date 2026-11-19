@@ -31,7 +31,7 @@
   })
 
   type DataPoint = { x: number, y: number }
-  type Serie = { values: number[], stamps: number[], color: string, stepped?: 'before' }
+  type Serie = { values: number[], stamps: number[], color: string, stepped?: 'before', label?: string }
 
   const activity = props.activity
   const numbers = (values?: (number | string)[] | null): number[] => (values ?? []).map(Number)
@@ -39,6 +39,12 @@
   const stampsOf = (own?: number[] | null): number[] => own?.length ? own : numbers(activity.time_stamps)
   const lengths = (activity.lengths ?? []) as { swolf: number, pace: number, strokes: number, timeStamp: number }[]
   const lengthStamps = lengths.map(l => l.timeStamp)
+  // running dynamics (chest strap, pod): each measure is a sparse serie with its own time stamps, absent
+  // when the sensor doesn't record it
+  type Dynamics = { values?: number[] | null, time_stamps?: number[] | null } | null | undefined
+  const running = activity.metrics?.running ?? {}
+  const dynamics = (serie: Dynamics, color: string, label: string, scale = 1): Serie =>
+    ({ values: numbers(serie?.values).map(v => v * scale), stamps: numbers(serie?.time_stamps), color, label })
 
   // values and their time stamps, in seconds since the start of the activity
   const series: Record<string, () => Serie> = {
@@ -51,6 +57,12 @@
     swolf: () => ({ values: lengths.map(l => l.swolf), stamps: lengthStamps, color: 'blue', stepped: 'before' }),
     pace: () => ({ values: lengths.map(l => l.pace), stamps: lengthStamps, color: 'lightgreen', stepped: 'before' }),
     strokes: () => ({ values: lengths.map(l => l.strokes === 65535 ? 0 : l.strokes), stamps: lengthStamps, color: 'orange', stepped: 'before' }),
+    vertical_oscillation: () => dynamics(running.vertical_oscillations, 'teal', 'vertical oscillation (cm)', 0.1),
+    vertical_ratio: () => dynamics(running.vertical_ratios, 'goldenrod', 'vertical ratio (%)'),
+    ground_contact: () => dynamics(running.stance_times, 'slateblue', 'ground contact time (ms)'),
+    ground_contact_percent: () => dynamics(running.stance_time_percents, 'mediumpurple', 'ground contact (% of the step)'),
+    ground_contact_balance: () => dynamics(running.stance_time_balances, 'sienna', 'ground contact balance (% left)'),
+    step_length: () => dynamics(running.step_lengths, 'olivedrab', 'step length (m)', 0.001),
   }
 
   const serie = series[props.graph]?.()
@@ -68,7 +80,7 @@
   // the chart data is big and never changes: keep Vue from making it reactive
   const chartData: ChartData<'line', DataPoint[]> = markRaw({
     datasets: [{
-      label: props.graph,
+      label: serie?.label ?? props.graph,
       data: points,
       stepped: serie?.stepped ?? false,
       borderColor: serie?.color,

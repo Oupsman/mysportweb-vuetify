@@ -10,6 +10,9 @@
   import MultisportLegs from '@/components/MultisportLegs.vue'
   import ActivityHrZones from '@/components/ActivityHrZones.vue'
   import { sportLabel } from '@/utils/format'
+  import RouteProgress from '@/components/RouteProgress.vue'
+  import type { SimilarActivity } from '@/types/activities'
+  import { formatSpeedFor, sportLabel, usesPace } from '@/utils/format'
 
   const appStore = useAppStore()
   const route = useRoute('/activity/[id]/')
@@ -22,6 +25,13 @@
   // every sport but swimming: each graph shows only when the activity has its data
   const graphs = ['speed', 'hr', 'cadence', 'altitude', 'power', 'temperature']
   const graphsSwimming = ['hr', 'swolf', 'pace', 'strokes']
+  // running dynamics, shown only when a sensor recorded them
+  const graphsRunning = [
+    'vertical_oscillation', 'vertical_ratio', 'ground_contact', 'ground_contact_percent', 'ground_contact_balance',
+    'step_length',
+  ]
+  // averages of the running dynamics, absent ones are 0 or missing
+  const running = computed(() => activity.value?.metrics?.running ?? null)
   const means = 'means'
   const formattedActivityDate = computed(() => {
     if (!activity.value?.date) return ''
@@ -73,6 +83,11 @@
   // the list of activities on the same route is only available to the owner
   const isOwner = computed(() => activity.value !== null && userStore.session?.sub === activity.value.user_id)
   const showSimilar = computed(() => isOwner.value && !!activity.value?.route_id)
+  // the activities of the route, this one included, loaded by the same route list
+  const routeActivities = ref<SimilarActivity[]>([])
+  watch(() => route.params.id, () => {
+    routeActivities.value = []
+  })
   // a triathlon...: one activity made of the sessions of the FIT file
   const hasLegs = computed(() => (activity.value?.legs?.length ?? 0) > 1)
   // the time in heart rate zones, of the activities with a heart rate (zeros without)
@@ -184,8 +199,8 @@
           <v-card-text class="text-h6 pt-1">{{ (activity.distance / 1000).toFixed(2) }} km</v-card-text>
         </v-card>
         <v-card v-if="activity.avg_speed > 0" density="compact">
-          <v-card-subtitle class="pt-2">Average speed</v-card-subtitle>
-          <v-card-text class="text-h6 pt-1">{{ (activity.avg_speed * 3.6).toFixed(2) }} km/h</v-card-text>
+          <v-card-subtitle class="pt-2">Average {{ usesPace(activity.sport) ? 'pace' : 'speed' }}</v-card-subtitle>
+          <v-card-text class="text-h6 pt-1">{{ formatSpeedFor(activity.sport, activity.avg_speed) }}</v-card-text>
         </v-card>
         <v-card v-if="activity.kcal > 0" density="compact">
           <v-card-subtitle class="pt-2">Calories</v-card-subtitle>
@@ -207,6 +222,30 @@
           <v-card-subtitle class="pt-2">Training load</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ Math.round(activity.trimp) }}</v-card-text>
         </v-card>
+        <template v-if="running">
+          <v-card v-if="running.avg_vertical_oscillation > 0" density="compact">
+            <v-card-subtitle class="pt-2">Vertical oscillation</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ (running.avg_vertical_oscillation / 10).toFixed(1) }} cm</v-card-text>
+          </v-card>
+          <v-card v-if="running.avg_vertical_ratio > 0" density="compact">
+            <v-card-subtitle class="pt-2">Vertical ratio</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ running.avg_vertical_ratio.toFixed(1) }} %</v-card-text>
+          </v-card>
+          <v-card v-if="running.avg_stance_time > 0" density="compact">
+            <v-card-subtitle class="pt-2">Ground contact time</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ Math.round(running.avg_stance_time) }} ms</v-card-text>
+          </v-card>
+          <v-card v-if="running.avg_stance_time_balance > 0" density="compact">
+            <v-card-subtitle class="pt-2">Ground contact balance</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">
+              {{ running.avg_stance_time_balance.toFixed(1) }} % L / {{ (100 - running.avg_stance_time_balance).toFixed(1) }} % R
+            </v-card-text>
+          </v-card>
+          <v-card v-if="running.avg_step_length > 0" density="compact">
+            <v-card-subtitle class="pt-2">Step length</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ (running.avg_step_length / 1000).toFixed(2) }} m</v-card-text>
+          </v-card>
+        </template>
         <v-card v-if="activity.is_commute" density="compact">
           <v-card-subtitle class="pt-2">CO2</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ (activity.co2 / 1000).toFixed(1) }} kg</v-card-text>
@@ -229,8 +268,19 @@
         </v-col>
         <v-col v-if="showSimilar" cols="12" :md="hasMap ? 4 : 12">
           <div class="similar" :style="hasMap ? { height: mapHeight } : undefined">
-            <SimilarActivities :activity="activity" @commute="onRouteCommute" />
+            <SimilarActivities
+              :key="activity.id"
+              :activity="activity"
+              @commute="onRouteCommute"
+              @loaded="routeActivities = $event"
+            />
           </div>
+        </v-col>
+      </v-row>
+      <!-- the average speed of every activity on the route, once there are two to compare -->
+      <v-row v-if="showSimilar && routeActivities.length > 1">
+        <v-col cols="12">
+          <RouteProgress :activities="routeActivities" :current="activity.id" :sport="activity.sport" />
         </v-col>
       </v-row>
       <!-- the graphs below, the whole width -->
@@ -239,6 +289,9 @@
           <v-card>
             <template v-if="hasLegs || activity.sport !== 'swimming'">
               <Graph-line v-for="graph in graphs" :key="graph" :activity="activity" :graph="graph" />
+              <template v-if="running">
+                <Graph-line v-for="graph in graphsRunning" :key="graph" :activity="activity" :graph="graph" />
+              </template>
               <Graph-bar v-if="hasMeans" :activity="activity" :graph="means" />
             </template>
             <template v-if="activity.sport === 'swimming'">

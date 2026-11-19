@@ -54,3 +54,30 @@ const sportColors: Record<string, string> = {
 }
 const otherColors = ['#546e7a', '#c2185b', '#00897b', '#f9a825']
 export const sportColor = (sport: string, index = 0): string => sportColors[sport] ?? otherColors[index % otherColors.length]
+
+// the sports compared by pace (min/km), the others by speed (km/h)
+const paceSports = new Set(['running', 'walking'])
+export const usesPace = (sport?: string | null): boolean => paceSports.has(sport ?? '')
+
+// minutes per km of a speed in m/s, null when not moving
+export const paceOf = (speed: number): number | null => speed > 0 ? 1000 / 60 / speed : null
+
+// a pace in minutes per km as m:ss
+export const formatPace = (minutes: number): string => {
+  let whole = Math.floor(minutes)
+  let seconds = Math.round((minutes - whole) * 60)
+  if (seconds === 60) {
+    whole++
+    seconds = 0
+  }
+  return `${whole}:${String(seconds).padStart(2, '0')}`
+}
+
+// the average speed (m/s) of an activity as its sport compares it: pace or speed
+export const formatSpeedFor = (sport: string | null | undefined, speed: number): string => {
+  if (!usesPace(sport)) {
+    return `${(speed * 3.6).toFixed(1)} km/h`
+  }
+  const pace = paceOf(speed)
+  return pace === null ? '-' : `${formatPace(pace)} /km`
+}
