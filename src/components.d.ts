@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     ActivitiesTable: typeof import('./components/ActivitiesTable.vue')['default']
+    ActivityBestEfforts: typeof import('./components/ActivityBestEfforts.vue')['default']
     ActivityForm: typeof import('./components/ActivityForm.vue')['default']
     ActivityHrZones: typeof import('./components/ActivityHrZones.vue')['default']
     ActivityMonth: typeof import('./components/ActivityMonth.vue')['default']
@@ -35,6 +36,7 @@ declare module 'vue' {
     LoginForm: typeof import('./components/LoginForm.vue')['default']
     Map: typeof import('./components/Map.vue')['default']
     MultisportLegs: typeof import('./components/MultisportLegs.vue')['default']
+    PersonalRecords: typeof import('./components/PersonalRecords.vue')['default']
     ProfileForm: typeof import('./components/ProfileForm.vue')['default']
     ReadinessCard: typeof import('./components/ReadinessCard.vue')['default']
     ReadinessChart: typeof import('./components/ReadinessChart.vue')['default']

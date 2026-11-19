@@ -1,3 +1,5 @@
+import type { BestEffort } from '@/types/records'
+
 export type Point = {
   lat: number,
   lon: number
@@ -77,6 +79,9 @@ export interface Activity extends ActivityUpdate {
   // the heart rates bounding them: rest, lower limits of the zones 2 to 5, max; null without heart rate
   hr_zones: number[] | null
   hr_zone_bounds: number[] | null
+  // the fastest stretches over distances and the best powers over durations, empty without any, null until
+  // the backend computed them
+  best_efforts: BestEffort[] | null
 }
 
 // the route of an activity; the activities of a commute route, including the ones imported later, are commutes
