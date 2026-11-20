@@ -10,6 +10,7 @@
     mdiUpload,
   } from '@mdi/js'
   import ActivityMonth from '@/components/ActivityMonth.vue'
+  import ActivityThumbnail from '@/components/ActivityThumbnail.vue'
   import WeeklyVolumeChart from '@/components/WeeklyVolumeChart.vue'
   import WeeklyHrZonesChart from '@/components/WeeklyHrZonesChart.vue'
   import ReadinessCard from '@/components/ReadinessCard.vue'
@@ -214,7 +215,7 @@
                   class="cursor-pointer"
                   @click="open(activity.id)"
                 >
-                  <td><v-icon :color="sportColor(activity.sport)" :icon="sportIcon(activity.sport)" size="small" /></td>
+                  <td class="pr-0"><ActivityThumbnail :sport="activity.sport" :thumbnail="activity.thumbnail" /></td>
                   <td class="text-no-wrap">{{ formatDate(activity.date) }}</td>
                   <td class="d-none d-sm-table-cell">{{ activity.title }}</td>
                   <td class="text-right text-no-wrap">{{ formatDistance(activity.distance) }}</td>

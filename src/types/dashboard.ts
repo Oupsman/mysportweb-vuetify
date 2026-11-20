@@ -45,6 +45,7 @@ export interface RecentActivity {
   duration: number
   avg_speed: number
   elevation: number
+  thumbnail: string // the URL of its thumbnail, '' without map
 }
 
 export interface CalendarActivity {

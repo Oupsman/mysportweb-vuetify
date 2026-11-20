@@ -3,6 +3,7 @@
   import type { LocationQuery } from 'vue-router'
   import { useRoute, useRouter } from 'vue-router'
   import { mdiDeleteOutline, mdiFilterRemoveOutline, mdiMagnify, mdiPencil } from '@mdi/js'
+  import ActivityThumbnail from '@/components/ActivityThumbnail.vue'
   import { useActivitiesStore } from '@/stores/activities'
   import { useAppStore } from '@/stores/app'
   import { useEquipmentsStore } from '@/stores/equipments'
@@ -194,7 +195,7 @@
   }, { immediate: true, deep: true })
 
   const headers = [
-    { title: '', key: 'sport', sortable: false, width: 40 },
+    { title: '', key: 'sport', sortable: false, width: 88 },
     { title: 'Date', key: 'date' },
     { title: 'Title', key: 'title' },
     { title: 'Distance', key: 'distance', align: 'end' },
@@ -390,7 +391,7 @@
         @update:options="onOptions"
       >
         <template #[`item.sport`]="{ item }">
-          <v-icon :color="sportColor(item.sport)" :icon="sportIcon(item.sport)" size="small" :title="sportLabel(item.sport)" />
+          <ActivityThumbnail :sport="item.sport" :thumbnail="item.thumbnail" />
         </template>
         <template #[`item.date`]="{ item }"><span class="text-no-wrap">{{ formatDate(item.date) }}</span></template>
         <template #[`item.distance`]="{ item }"><span class="text-no-wrap">{{ formatDistance(item.distance) }}</span></template>
