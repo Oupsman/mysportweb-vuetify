@@ -1,33 +1,16 @@
-import type { UserSession } from '@/types/user'
+// The session is an HttpOnly cookie set by the backend: the scripts of the page never see the token. The
+// page only knows whose session it is and until when (UserSession), from the backend.
 
-export const tokenKey = 'msw-token'
+// the key of the token kept by the versions before the cookie: removed at the start, it must not stay
+// readable by any script
+const legacyTokenKey = 'msw-token'
 
-export function parseJwt (token: string) {
-  const base64Url = token.split('.')[1]
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-  }).join(''))
-
-  return JSON.parse(jsonPayload)
-}
-
-// the session of the stored token, null without token or when it is expired or unreadable (then removed)
-export function storedSession (): UserSession | null {
-  const token = localStorage.getItem(tokenKey)
-  if (!token) {
-    return null
-  }
+export function forgetLegacyToken (): void {
   try {
-    const claims = parseJwt(token)
-    if (typeof claims.exp === 'number' && claims.exp > Date.now() / 1000) {
-      return { ...claims, token }
-    }
+    localStorage.removeItem(legacyTokenKey)
   } catch {
-    // unreadable token, forget it
+    // storage unavailable: nothing kept there either
   }
-  localStorage.removeItem(tokenKey)
-  return null
 }
 
 // where to go after login: only paths of this app, never another site ("//host" or "https://...")

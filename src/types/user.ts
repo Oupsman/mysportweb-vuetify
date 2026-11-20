@@ -1,9 +1,7 @@
+// the session of the cookie, as the backend describes it
 export interface UserSession {
-  authorized: boolean,
-  exp: number,
-  iss: string,
-  role: string,
-  sub: number,
+  sub: number, // the id of the user
   uuid: string,
-  token: string,
+  role: string,
+  exp: number, // the expiry, in seconds since the epoch
 }

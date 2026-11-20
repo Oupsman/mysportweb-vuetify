@@ -3,6 +3,7 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api, errorMessage } from '@/api'
+import { useUserStore } from '@/stores/user'
 import type { Equipment, EquipmentFields, EquipmentService, EquipmentServiceFields } from '@/types/equipments'
 
 export const useEquipmentsStore = defineStore('equipments', () => {
@@ -144,7 +145,8 @@ export const useEquipmentsStore = defineStore('equipments', () => {
     await getAllEquipments()
   }
 
-  if (localStorage.getItem('msw-token')) {
+  // the store is created by a page, once the router knows the session
+  if (useUserStore().session) {
     getAllEquipments().catch(() => {})
   }
 

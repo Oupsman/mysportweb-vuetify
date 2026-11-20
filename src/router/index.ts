@@ -42,7 +42,7 @@ const isPublic = (path: string): boolean =>
 router.beforeEach(async to => {
   // imported here: the stores import the router
   const { useUserStore } = await import('@/stores/user')
-  const loggedIn = useUserStore().restoreSession()
+  const loggedIn = await useUserStore().restoreSession()
   if (!loggedIn && !isPublic(to.path)) {
     return { path: '/login', query: to.fullPath === '/' ? {} : { redirect: to.fullPath } }
   }

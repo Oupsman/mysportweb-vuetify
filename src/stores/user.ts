@@ -2,8 +2,9 @@ import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 import router from '@/router'
-import { api } from '@/api'
-import { parseJwt, safeRedirect, storedSession, tokenKey } from '@/auth'
+import { isAxiosError } from 'axios'
+import { api, setSessionEndedHandler } from '@/api'
+import { safeRedirect } from '@/auth'
 
 import type { UserSession } from '@/types/user'
 import type { CalendarActivity, Dashboard } from '@/types/dashboard'
@@ -14,13 +15,11 @@ export const useUserStore = defineStore('user', () => {
   // redirect: the page asked before being sent to the login page
   const login = async (username: string, password: string, redirect?: unknown): Promise<void> => {
     try {
+      // the backend sets the session cookie, and describes the session
       const response = await api.post('/api/v1/user/login', { username, password })
-      if (response.data.token) {
-        localStorage.setItem('msw-token', response.data.token)
-        setUserSession({
-          ...parseJwt(response.data.token),
-          token: response.data.token,
-        })
+      if (response.data.session) {
+        setUserSession(response.data.session)
+        sessionChecked = true
         await refreshDashboard()
         router.push(safeRedirect(redirect))
       }
@@ -30,15 +29,14 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // the backend revokes the token, a copy of it stops working too; it is forgotten here even when the
-  // backend can't be reached or already refuses it (expired, revoked)
+  // the backend revokes the session, a copy of its token stops working too, and clears the cookie; the
+  // session is forgotten here even when the backend can't be reached
   const logout = async (): Promise<void> => {
     try {
-      await api.get('/api/v1/user/logout')
+      await api.post('/api/v1/user/logout')
     } catch (error) {
       console.error('Logout error:', error)
     }
-    localStorage.removeItem(tokenKey)
     session.value = null
     router.push('/')
   }
@@ -52,7 +50,7 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const setUserSession = (data: UserSession | any): void => {
+  const setUserSession = (data: UserSession | null): void => {
     session.value = data
   }
 
@@ -60,11 +58,39 @@ export const useUserStore = defineStore('user', () => {
     // exp is in seconds since epoch
     return session.value?.exp !== undefined && Date.now() / 1000 < session.value.exp
   })
-  // restores the session from the stored token, false when there is no valid one (called on each navigation)
-  const restoreSession = (): boolean => {
-    session.value = storedSession()
+  // the session is asked to the backend once per page load (the cookie can't be read here), then known
+  let sessionChecked = false
+  // whether there is a valid session, asking the backend the first time (called on each navigation)
+  const restoreSession = async (): Promise<boolean> => {
+    if (!sessionChecked) {
+      try {
+        const response = await api.get('/api/v1/user/session')
+        session.value = response.data.session ?? null
+        sessionChecked = true
+      } catch (error) {
+        session.value = null
+        // 401: no session. The backend unreachable: asked again at the next navigation.
+        if (isAxiosError(error) && error.response?.status === 401) {
+          sessionChecked = true
+        }
+      }
+    }
+    if (session.value && Date.now() / 1000 >= session.value.exp) {
+      session.value = null
+    }
     return session.value !== null
   }
+
+  // the backend refused the session of a request: the login page, back here after
+  setSessionEndedHandler(() => {
+    if (session.value === null) {
+      // anonymous already (a public activity): nothing ended
+      return
+    }
+    session.value = null
+    const current = router.currentRoute.value.fullPath
+    router.push({ path: '/login', query: current === '/' ? {} : { redirect: current } })
+  })
 
   const user = ref({})
 
@@ -82,13 +108,9 @@ export const useUserStore = defineStore('user', () => {
   const updateUser = async (user: Object): Promise<void> => {
     try {
       const response = await api.post('/api/v1/user', user)
-      // a new password ends the sessions, this one included: the backend sends the token to go on with
-      if (response.data?.token) {
-        localStorage.setItem(tokenKey, response.data.token)
-        setUserSession({
-          ...parseJwt(response.data.token),
-          token: response.data.token,
-        })
+      // a new password ends the sessions, this one included: the backend sets the cookie of the new one
+      if (response.data?.session) {
+        setUserSession(response.data.session)
       }
     } catch (error) {
       console.error('Update user error:', error)
@@ -139,8 +161,5 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  if (localStorage.getItem('msw-token')) {
-    refreshDashboard().catch(() => {})
-  }
   return { session, userIsLoggedIn, login, logout, setUserSession, restoreSession, signup, dashboard, refreshDashboard, getCalendar, user, getUser, updateUser }
 })

@@ -1,18 +1,29 @@
 import axios, { isAxiosError } from 'axios'
 
-// Shared client for the backend API: sends the token when there is one
+// Shared client for the backend API. The session is the HttpOnly cookie the backend sets at login, sent by
+// the browser: withCredentials for the development server, whose API is on another port.
 export const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
   // activities carry every record of the FIT file, they can be big
   timeout: 30000,
+  withCredentials: true,
 })
 
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('msw-token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+// what to do when the backend refuses the session (expired, logged out elsewhere, password changed),
+// set by the user store
+let onSessionEnded: (() => void) | null = null
+export const setSessionEndedHandler = (handler: () => void): void => {
+  onSessionEnded = handler
+}
+
+// the requests answering 401 without meaning the session ended: a failed login, the session check
+const sessionRoutes = new Set(['/api/v1/user/login', '/api/v1/user/session', '/api/v1/user/logout'])
+
+api.interceptors.response.use(undefined, error => {
+  if (isAxiosError(error) && error.response?.status === 401 && !sessionRoutes.has(error.config?.url ?? '')) {
+    onSessionEnded?.()
   }
-  return config
+  return Promise.reject(error)
 })
 
 // the message of the backend when there is one, it explains a refused request, else fallback
