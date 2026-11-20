@@ -10,7 +10,8 @@ export const useEquipmentsStore = defineStore('equipments', () => {
   // with their totals, the default one first
   const equipments: Ref<Equipment[]> = ref([])
 
-  const getAllEquipments = async (): Promise<void> => {
+  // loads the equipments, always: after a change, the list must come after it
+  const loadEquipments = async (): Promise<void> => {
     try {
       const response = await api.get('/api/v1/equipment/all')
       equipments.value = response.data ?? []
@@ -18,6 +19,16 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Get all equipments error:', error)
       throw new Error(errorMessage(error, 'The equipments could not be loaded'))
     }
+  }
+
+  // the load running, shared: a page creating the store (which loads them) and loading them at its mount
+  // makes one request
+  let loading: Promise<void> | null = null
+  const getAllEquipments = (): Promise<void> => {
+    loading ??= loadEquipments().finally(() => {
+      loading = null
+    })
+    return loading
   }
 
   const getEquipment = async (id: string): Promise<Equipment> => {
@@ -40,7 +51,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Create equipment error:', error)
       throw new Error(errorMessage(error, 'The equipment could not be created'))
     }
-    await getAllEquipments()
+    await loadEquipments()
     return id
   }
 
@@ -51,7 +62,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Update equipment error:', error)
       throw new Error(errorMessage(error, 'The equipment could not be saved'))
     }
-    await getAllEquipments()
+    await loadEquipments()
   }
 
   const setDefault = (equipment: Equipment): Promise<void> =>
@@ -66,7 +77,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Assign commute equipment error:', error)
       throw new Error(errorMessage(error, 'The commute rides could not be updated'))
     }
-    await getAllEquipments()
+    await loadEquipments()
     return updated
   }
 
@@ -80,7 +91,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Upload equipment picture error:', error)
       throw new Error(errorMessage(error, 'The picture could not be uploaded'))
     }
-    await getAllEquipments()
+    await loadEquipments()
   }
 
   const deletePicture = async (id: string): Promise<void> => {
@@ -90,7 +101,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Delete equipment picture error:', error)
       throw new Error(errorMessage(error, 'The picture could not be removed'))
     }
-    await getAllEquipments()
+    await loadEquipments()
   }
 
   // its activities are kept, without equipment
@@ -122,7 +133,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Create service error:', error)
       throw new Error(errorMessage(error, 'The service could not be saved'))
     }
-    await getAllEquipments()
+    await loadEquipments()
   }
 
   const updateService = async (equipmentId: string, id: string, service: EquipmentServiceFields): Promise<void> => {
@@ -132,7 +143,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Update service error:', error)
       throw new Error(errorMessage(error, 'The service could not be saved'))
     }
-    await getAllEquipments()
+    await loadEquipments()
   }
 
   const deleteService = async (equipmentId: string, id: string): Promise<void> => {
@@ -142,7 +153,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
       console.error('Delete service error:', error)
       throw new Error(errorMessage(error, 'The service could not be deleted'))
     }
-    await getAllEquipments()
+    await loadEquipments()
   }
 
   // the store is created by a page, once the router knows the session
