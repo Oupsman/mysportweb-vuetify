@@ -15,6 +15,9 @@ steps:
       - npm install -g pnpm@12.14.0
       - pnpm install --frozen-lockfile
       - pnpm exec eslint . --ignore-path .gitignore
+      # the known vulnerabilities of the dependencies of the built app (not the build tools): a high or
+      # critical one fails the build until it is upgraded
+      - pnpm audit --prod --audit-level high
 
   - name: tags
     image: debian:bookworm-slim

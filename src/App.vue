@@ -11,7 +11,8 @@
         <v-card>
           <v-card-title>{{ dialog.title }}</v-card-title>
           <v-card-text>
-            <p v-html="dialog.contents" />
+            <!-- text, never HTML: a message holding user data would run its scripts -->
+            <p>{{ dialog.contents }}</p>
           </v-card-text>
           <v-card-actions>
             <v-btn color="primary" @click="appStore.hideDialog">Close</v-btn>

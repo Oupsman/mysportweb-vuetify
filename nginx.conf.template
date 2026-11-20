@@ -6,6 +6,22 @@ server {
     # FIT files and equipment pictures (the backend refuses pictures above 15 MB)
     client_max_body_size 50m;
 
+    # What the pages may load: the app and the API from this origin, the map tiles from OpenStreetMap; styles
+    # inline (Vuetify, Leaflet and Chart.js set style attributes), no inline script. Not in a frame.
+    set $csp "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+
+    # The security headers, repeated in the locations below with an add_header of their own: nginx drops the
+    # add_header of the server in a location that has one.
+    # CSP_HEADER: Content-Security-Policy-Report-Only (default) reports what the policy would block in the
+    # console of the browser without blocking it; Content-Security-Policy blocks it.
+    add_header ${CSP_HEADER} $csp always;
+    # HTTPS only for 180 days once a page came over HTTPS (ignored over HTTP)
+    add_header Strict-Transport-Security "max-age=15552000" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+
     location /api/ {
         proxy_pass ${BACKEND_URL};
         proxy_set_header Host $host;
@@ -25,11 +41,23 @@ server {
     location /assets/ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        add_header ${CSP_HEADER} $csp always;
+        add_header Strict-Transport-Security "max-age=15552000" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
     }
 
     # the app: hash history, every page is index.html
     location / {
         try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-cache";
+        add_header ${CSP_HEADER} $csp always;
+        add_header Strict-Transport-Security "max-age=15552000" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
     }
 }

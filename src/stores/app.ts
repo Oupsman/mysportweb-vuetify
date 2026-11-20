@@ -6,7 +6,7 @@ import router from '@/router'
 
 interface DialogOptions {
   title: string;
-  contents: string | HTMLElement;
+  contents: string; // shown as text
   fullscreen?: boolean;
 }
 

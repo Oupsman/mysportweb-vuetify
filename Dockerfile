@@ -1,6 +1,5 @@
 # Frontend of MySportWeb, served by nginx with the API on the same origin
 FROM node:22-bookworm-slim AS build
-# pnpm-lock.yaml is the lockfile in use, package-lock.json is out of date
 RUN npm install -g pnpm@12.14.0
 WORKDIR /src
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -16,4 +15,7 @@ FROM nginx:1.27-bookworm
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /src/dist /usr/share/nginx/html
 ENV BACKEND_URL=http://backend:8080
+# Content-Security-Policy-Report-Only: the browser reports what the policy would block without blocking it;
+# Content-Security-Policy: it blocks it (see nginx.conf.template)
+ENV CSP_HEADER=Content-Security-Policy-Report-Only
 EXPOSE 80
