@@ -6,6 +6,12 @@ server {
     # FIT files and equipment pictures (the backend refuses pictures above 15 MB)
     client_max_body_size 50m;
 
+    # The address of the backend is looked up at each request (cached 10 s) from the DNS of Docker, not once at
+    # the start: a backend restarted or recreated gets another address, the old one gave 502 until the frontend
+    # was restarted. NGINX_LOCAL_RESOLVERS: set by the entrypoint of the nginx image (see the Dockerfile).
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s ipv6=off;
+    set $backend ${BACKEND_URL};
+
     # What the pages may load: the app and the API from this origin, the map tiles from OpenStreetMap; styles
     # inline (Vuetify, Leaflet and Chart.js set style attributes), no inline script. Not in a frame.
     set $csp "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
@@ -23,7 +29,7 @@ server {
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
 
     location /api/ {
-        proxy_pass ${BACKEND_URL};
+        proxy_pass $backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -33,7 +39,7 @@ server {
     }
 
     location /MEDIA/ {
-        proxy_pass ${BACKEND_URL};
+        proxy_pass $backend;
         proxy_set_header Host $host;
     }
 
