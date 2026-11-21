@@ -1,6 +1,7 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import type { PropType } from 'vue'
+  import { useTrainingStore } from '@/stores/training'
   import { mdiBatteryHeartVariant, mdiHeartPulse, mdiTrendingUp } from '@mdi/js'
   import ReadinessChart from '@/components/ReadinessChart.vue'
   import type { Readiness, ReadinessStatus } from '@/types/training'
@@ -12,6 +13,27 @@
     },
   })
   const today = computed(() => props.readiness.today)
+
+  // the period of the chart: the store loads the series again; today's state doesn't depend on it
+  const trainingStore = useTrainingStore()
+  const periods = [
+    { days: 30, label: '1 month' },
+    { days: 90, label: '3 months' },
+    { days: 180, label: '6 months' },
+    { days: 365, label: '1 year' },
+  ]
+  const days = ref(props.readiness.series.length || 90)
+  const loading = ref(false)
+  const choosePeriod = async (n: number) => {
+    loading.value = true
+    try {
+      await trainingStore.getReadiness(n)
+    } catch {
+      // the chart keeps the previous period
+    } finally {
+      loading.value = false
+    }
+  }
 
   const statuses: Record<ReadinessStatus, { label: string, color: string, advice: string }> = {
     not_enough_data: {
@@ -92,7 +114,22 @@
         </span>
       </div>
 
-      <ReadinessChart v-if="enoughData" :series="readiness.series" />
+      <template v-if="enoughData">
+        <div class="d-flex justify-end mb-1">
+          <v-btn-toggle
+            v-model="days"
+            density="compact"
+            divided
+            mandatory
+            variant="outlined"
+            @update:model-value="choosePeriod"
+          >
+            <v-btn v-for="period in periods" :key="period.days" size="small" :value="period.days">{{ period.label }}</v-btn>
+          </v-btn-toggle>
+        </div>
+        <v-progress-linear :active="loading" indeterminate />
+        <ReadinessChart :series="readiness.series" />
+      </template>
       <div class="text-caption text-medium-emphasis mt-2">
         Fitness: average daily load of 6 weeks, fatigue: of 1 week, form: their difference. The load of an
         activity is the training score of the device, else computed from the heart rate.

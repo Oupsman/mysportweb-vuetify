@@ -2,11 +2,22 @@
   import 'chartjs-adapter-date-fns'
   import { computed } from 'vue'
   import { Line } from 'vue-chartjs'
-  import { Chart as ChartJS, Filler, Legend, LinearScale, LineElement, PointElement, TimeScale, Tooltip } from 'chart.js'
+  import {
+    BarController,
+    BarElement,
+    Chart as ChartJS,
+    Filler,
+    Legend,
+    LinearScale,
+    LineElement,
+    PointElement,
+    TimeScale,
+    Tooltip,
+  } from 'chart.js'
   import type { ChartData, ChartOptions } from 'chart.js'
   import type { ReadinessDay } from '@/types/training'
 
-  ChartJS.register(LinearScale, TimeScale, PointElement, LineElement, Filler, Tooltip, Legend)
+  ChartJS.register(LinearScale, TimeScale, PointElement, LineElement, BarController, BarElement, Filler, Tooltip, Legend)
 
   const props = defineProps<{ series: ReadinessDay[] }>()
 
@@ -24,6 +35,16 @@
     pointHoverRadius: 4,
     tension: 0.2,
   })
+  // the loads of the days, behind the curves they make: the peaks of fatigue come from them
+  const loads = computed(() => ({
+    type: 'bar' as const,
+    label: 'Load',
+    data: props.series.filter(d => d.load > 0).map(d => ({ x: time(d.date), y: d.load })),
+    backgroundColor: 'rgba(120, 144, 156, 0.35)',
+    borderWidth: 0,
+    barThickness: props.series.length > 120 ? 2 : 4,
+    order: 10,
+  }))
   const chartData = computed((): ChartData<'line', { x: number, y: number }[]> => ({
     datasets: [
       line('Fitness', '#2a78d6', d => d.fitness),
@@ -34,6 +55,8 @@
         borderWidth: 1,
         fill: 'origin',
       },
+      // a bar dataset in the line chart: chart.js mixes them, its line typing doesn't
+      loads.value as unknown as ChartData<'line', { x: number, y: number }[]>['datasets'][number],
     ],
   }))
 
@@ -53,7 +76,14 @@
       },
     },
     scales: {
-      x: { type: 'time', time: { unit: 'week', tooltipFormat: 'dd/MM/yyyy', displayFormats: { week: 'dd/MM' } }, grid: { display: false } },
+      // weeks up to 4 months, months beyond
+      x: {
+        type: 'time',
+        time: props.series.length > 120
+          ? { unit: 'month', tooltipFormat: 'dd/MM/yyyy', displayFormats: { month: 'MM/yyyy' } }
+          : { unit: 'week', tooltipFormat: 'dd/MM/yyyy', displayFormats: { week: 'dd/MM' } },
+        grid: { display: false },
+      },
       y: { title: { display: true, text: 'training load / day' } },
     },
   }))

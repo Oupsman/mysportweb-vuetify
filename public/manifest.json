@@ -1,0 +1,11 @@
+{
+  "name": "MySportWeb",
+  "short_name": "MySportWeb",
+  "description": "Your sport activities: rides, runs, equipment and training load.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2e7d32",
+  "icons": [{ "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }]
+}
