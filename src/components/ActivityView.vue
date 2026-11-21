@@ -10,6 +10,7 @@
   import MultisportLegs from '@/components/MultisportLegs.vue'
   import ActivityHrZones from '@/components/ActivityHrZones.vue'
   import ActivityBestEfforts from '@/components/ActivityBestEfforts.vue'
+  import ActivitySegments from '@/components/ActivitySegments.vue'
   import RouteProgress from '@/components/RouteProgress.vue'
   import type { SimilarActivity } from '@/types/activities'
   import { formatSpeedFor, sportLabel, usesPace } from '@/utils/format'
@@ -270,6 +271,17 @@
             :date="activity.date"
             :efforts="activity.best_efforts"
             :owner="isOwner"
+          />
+        </v-col>
+      </v-row>
+      <!-- the passes on the segments of the owner, who creates them from the full trace -->
+      <v-row v-if="isOwner && (activity.gps_points?.length ?? 0) > 1">
+        <v-col cols="12">
+          <ActivitySegments
+            :key="activity.id"
+            :activity-id="activity.id"
+            :points="activity.gps_points ?? []"
+            :stamps="activity.gps_time_stamps ?? []"
           />
         </v-col>
       </v-row>

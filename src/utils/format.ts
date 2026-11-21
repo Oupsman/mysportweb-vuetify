@@ -11,6 +11,15 @@ export const formatDuration = (seconds: number): string => {
   return hours > 0 ? `${hours}h ${String(minutes).padStart(2, '0')}` : `${minutes} min`
 }
 
+// duration in seconds to the second, as a clock: "2:08", "1:02:45"; the times of the segments
+export const formatClock = (seconds: number): string => {
+  const total = Math.round(seconds)
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const rest = String(total % 60).padStart(2, '0')
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${rest}` : `${minutes}:${rest}`
+}
+
 // elevation in meters
 export const formatElevation = (meters: number): string => `${Math.round(meters).toLocaleString('fr-FR')} m`
 
