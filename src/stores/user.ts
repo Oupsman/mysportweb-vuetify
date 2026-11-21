@@ -3,10 +3,10 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 import router from '@/router'
 import { isAxiosError } from 'axios'
-import { api, setSessionEndedHandler } from '@/api'
+import { api, errorMessage, setSessionEndedHandler } from '@/api'
 import { safeRedirect } from '@/auth'
 
-import type { UserSession } from '@/types/user'
+import type { InstanceInfo, SignupGrant, UserSession } from '@/types/user'
 import type { CalendarActivity, Dashboard } from '@/types/dashboard'
 
 export const useUserStore = defineStore('user', () => {
@@ -41,14 +41,37 @@ export const useUserStore = defineStore('user', () => {
     router.push('/')
   }
 
-  const signup = async (username: string, password: string, email: string): Promise<void> => {
+  // grant: the invitation or the setup code, when the registrations need one
+  const signup = async (username: string, password: string, email: string, grant: SignupGrant = {}): Promise<void> => {
     try {
-      await api.post('/api/v1/user/register', { username, password, email })
+      await api.post('/api/v1/user/register', { username, password, email, ...grant })
     } catch (error) {
       console.error('Signup error:', error)
-      throw new Error('Signup failed')
+      throw new Error(errorMessage(error, 'Sign up failed'))
+    }
+    // the setup is done: the instance has its admin
+    if (grant.setup_code && instance.value) {
+      instance.value = { ...instance.value, setup_required: false }
     }
   }
+
+  // how to register on this instance, asked once per page load
+  const instance: Ref<InstanceInfo | null> = ref(null)
+  const loadInstance = async (): Promise<InstanceInfo> => {
+    if (!instance.value) {
+      try {
+        const response = await api.get('/api/v1/instance')
+        instance.value = response.data
+      } catch (error) {
+        console.error('Get instance error:', error)
+        throw new Error(errorMessage(error, 'The server could not be reached'))
+      }
+    }
+    return instance.value!
+  }
+  // the sign up page is worth showing: registrations not closed, or the admin to create
+  const canSignUp = computed(() =>
+    instance.value === null || instance.value.registration !== 'closed' || instance.value.setup_required)
 
   const setUserSession = (data: UserSession | null): void => {
     session.value = data
@@ -58,6 +81,8 @@ export const useUserStore = defineStore('user', () => {
     // exp is in seconds since epoch
     return session.value?.exp !== undefined && Date.now() / 1000 < session.value.exp
   })
+  // the admin pages: the backend checks the role at each request, this only shows them
+  const isAdmin = computed(() => userIsLoggedIn.value && session.value?.role === 'Admin')
   // the session is asked to the backend once per page load (the cookie can't be read here), then known
   let sessionChecked = false
   // whether there is a valid session, asking the backend the first time (called on each navigation)
@@ -161,5 +186,5 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  return { session, userIsLoggedIn, login, logout, setUserSession, restoreSession, signup, dashboard, refreshDashboard, getCalendar, user, getUser, updateUser }
+  return { session, userIsLoggedIn, isAdmin, login, logout, setUserSession, restoreSession, signup, instance, loadInstance, canSignUp, dashboard, refreshDashboard, getCalendar, user, getUser, updateUser }
 })

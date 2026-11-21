@@ -1,11 +1,14 @@
 <script setup lang="ts">
-  import { mdiAccount, mdiAccountArrowRight, mdiAccountPlus, mdiBicycle, mdiHeart, mdiHomeAnalytics, mdiPodium, mdiTrophy, mdiWatch } from '@mdi/js'
+  import { mdiAccount, mdiAccountArrowRight, mdiAccountPlus, mdiBicycle, mdiHeart, mdiHomeAnalytics, mdiPodium, mdiShieldAccount, mdiTrophy, mdiWatch } from '@mdi/js'
+  import { onMounted } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
   const userStore = useUserStore()
   const appStore = useAppStore()
-  const { userIsLoggedIn } = storeToRefs(userStore)
+  const { userIsLoggedIn, isAdmin, canSignUp } = storeToRefs(userStore)
+  // whether to offer the sign up page: not when the registrations are closed
+  onMounted(() => userStore.loadInstance().catch(() => {}))
   const { drawer } = storeToRefs(appStore)
   const goToPage = (page: string): void => {
     appStore.navigateToPage(page)
@@ -62,6 +65,12 @@
         </template>
         <v-list-item-title>{{ item.title }}</v-list-item-title>
       </v-list-item>
+      <v-list-item v-if="isAdmin" @click="goToPage('/admin')">
+        <template #prepend>
+          <v-icon :icon="mdiShieldAccount" />
+        </template>
+        <v-list-item-title>Admin</v-list-item-title>
+      </v-list-item>
       <v-list-item @click="userStore.logout()">
         <template #prepend>
           <v-icon :icon="mdiAccountArrowRight" />
@@ -76,7 +85,7 @@
         </template>
         <v-list-item-title>Login</v-list-item-title>
       </v-list-item>
-      <v-list-item @click="goToPage('/signup')">
+      <v-list-item v-if="canSignUp" @click="goToPage('/signup')">
         <template #prepend>
           <v-icon :icon="mdiAccountPlus" />
         </template>
