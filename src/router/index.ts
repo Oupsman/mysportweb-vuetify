@@ -49,6 +49,10 @@ router.beforeEach(async to => {
   if (loggedIn && (to.path === '/login' || to.path === '/signup')) {
     return { path: '/' }
   }
+  // the admin pages: the backend refuses their requests to the others anyway
+  if (to.path.startsWith('/admin') && !useUserStore().isAdmin) {
+    return { path: '/' }
+  }
 })
 
 // title of the page, from its first path segment; the activity pages show the activity title once loaded
