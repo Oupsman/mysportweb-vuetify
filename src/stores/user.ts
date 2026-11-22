@@ -13,20 +13,43 @@ export const useUserStore = defineStore('user', () => {
   const session: Ref<UserSession | null> = ref(null)
 
   // redirect: the page asked before being sent to the login page
-  const login = async (username: string, password: string, redirect?: unknown): Promise<void> => {
+  // opens the session the backend answered: it set the cookie, and describes the session
+  const startSession = async (data: { session: UserSession }, redirect?: unknown): Promise<void> => {
+    setUserSession(data.session)
+    sessionChecked = true
+    await refreshDashboard()
+    router.push(safeRedirect(redirect))
+  }
+
+  // the first step of a login: with the two-factor authentication, it answers the challenge of the second
+  // one (loginSecondFactor), else the session is open
+  const login = async (username: string, password: string, redirect?: unknown): Promise<string | null> => {
+    let data
     try {
-      // the backend sets the session cookie, and describes the session
-      const response = await api.post('/api/v1/user/login', { username, password })
-      if (response.data.session) {
-        setUserSession(response.data.session)
-        sessionChecked = true
-        await refreshDashboard()
-        router.push(safeRedirect(redirect))
-      }
+      data = (await api.post('/api/v1/user/login', { username, password })).data
     } catch (error) {
       console.error('Login error:', error)
-      throw new Error('Login failed')
+      throw new Error(errorMessage(error, 'Wrong username or password'))
     }
+    if (data.two_factor_required) {
+      return data.challenge
+    }
+    if (data.session) {
+      await startSession(data, redirect)
+    }
+    return null
+  }
+
+  // the second step: a code of the authenticator app, or a recovery code
+  const loginSecondFactor = async (challenge: string, code: string, redirect?: unknown): Promise<void> => {
+    let data
+    try {
+      data = (await api.post('/api/v1/user/login/2fa', { challenge, code })).data
+    } catch (error) {
+      console.error('Login error:', error)
+      throw new Error(errorMessage(error, 'Wrong code'))
+    }
+    await startSession(data, redirect)
   }
 
   // the backend revokes the session, a copy of its token stops working too, and clears the cookie; the
@@ -186,5 +209,5 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  return { session, userIsLoggedIn, isAdmin, login, logout, setUserSession, restoreSession, signup, instance, loadInstance, canSignUp, dashboard, refreshDashboard, getCalendar, user, getUser, updateUser }
+  return { session, userIsLoggedIn, isAdmin, login, loginSecondFactor, logout, setUserSession, restoreSession, signup, instance, loadInstance, canSignUp, dashboard, refreshDashboard, getCalendar, user, getUser, updateUser }
 })

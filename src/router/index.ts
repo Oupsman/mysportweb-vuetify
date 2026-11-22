@@ -34,9 +34,11 @@ router.addRoute({
   path: '/profile/edit', name: 'ProfileEdit', component: ProfileEditPage,
 })
 
-// pages open without session: login, sign up and the view of an activity (public ones are visible to anyone)
+// pages open without session: login, sign up, the password reset link of an admin, and the view of an
+// activity (public ones are visible to anyone)
 const isPublic = (path: string): boolean =>
-  path === '/login' || path === '/signup' || (/^\/activity\/[^/]+$/.test(path) && path !== '/activity/add')
+  path === '/login' || path === '/signup' || path === '/reset-password' ||
+  (/^\/activity\/[^/]+$/.test(path) && path !== '/activity/add')
 
 // keeps the requested page: without session, the login page brings back to it
 router.beforeEach(async to => {

@@ -4,6 +4,39 @@ export interface UserSession {
   uuid: string,
   role: string,
   exp: number, // the expiry, in seconds since the epoch
+  mfa?: boolean, // the login went through the two-factor authentication: the admin pages need it
+  two_factor?: boolean, // the user has the two-factor authentication on
+}
+
+// the two-factor authentication of the user
+export interface TwoFactorStatus {
+  enabled: boolean
+  enabled_at: string | null
+  recovery_codes_left: number
+  required: boolean // an admin must have it
+  session_verified: boolean // this session went through it
+}
+
+// a new secret to scan in the authenticator app
+export interface TwoFactorSetup {
+  secret: string
+  url: string // otpauth://
+  qr_code: string // data:image/png;base64
+}
+
+// a user as the admins see them
+export interface AdminUser {
+  id: number
+  username: string
+  email: string
+  role: 'Admin' | 'User'
+  created_at: string
+  disabled_at: string | null
+  two_factor: boolean
+  activities: number
+  last_activity: string | null
+  last_device_use: string | null
+  disk_bytes: number
 }
 
 // who may create an account (REGISTRATION of the backend)

@@ -37,6 +37,7 @@ declare module 'vue-router/auto-routes' {
     '/profile/edit': RouteRecordInfo<'/profile/edit', '/profile/edit', Record<never, never>, Record<never, never>>,
     '/profile/view': RouteRecordInfo<'/profile/view', '/profile/view', Record<never, never>, Record<never, never>>,
     '/records': RouteRecordInfo<'/records', '/records', Record<never, never>, Record<never, never>>,
+    '/reset-password': RouteRecordInfo<'/reset-password', '/reset-password', Record<never, never>, Record<never, never>>,
     '/segment/[id]': RouteRecordInfo<'/segment/[id]', '/segment/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/segments': RouteRecordInfo<'/segments', '/segments', Record<never, never>, Record<never, never>>,
     '/signup': RouteRecordInfo<'/signup', '/signup', Record<never, never>, Record<never, never>>,

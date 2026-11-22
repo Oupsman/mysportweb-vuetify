@@ -7,6 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AccountDataCard: typeof import('./components/AccountDataCard.vue')['default']
     ActivitiesTable: typeof import('./components/ActivitiesTable.vue')['default']
     ActivityBestEfforts: typeof import('./components/ActivityBestEfforts.vue')['default']
     ActivityForm: typeof import('./components/ActivityForm.vue')['default']
@@ -19,6 +20,7 @@ declare module 'vue' {
     ActivityUpload: typeof import('./components/ActivityUpload.vue')['default']
     ActivityView: typeof import('./components/ActivityView.vue')['default']
     AdminInvitations: typeof import('./components/AdminInvitations.vue')['default']
+    AdminUsers: typeof import('./components/AdminUsers.vue')['default']
     ApiTokens: typeof import('./components/ApiTokens.vue')['default']
     AppMenu: typeof import('./components/AppMenu.vue')['default']
     Dashboard: typeof import('./components/Dashboard.vue')['default']
@@ -48,6 +50,7 @@ declare module 'vue' {
     PushNotifications: typeof import('./components/PushNotifications.vue')['default']
     ReadinessCard: typeof import('./components/ReadinessCard.vue')['default']
     ReadinessChart: typeof import('./components/ReadinessChart.vue')['default']
+    RecoveryCodes: typeof import('./components/RecoveryCodes.vue')['default']
     RouteProgress: typeof import('./components/RouteProgress.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
@@ -55,6 +58,7 @@ declare module 'vue' {
     SegmentMap: typeof import('./components/SegmentMap.vue')['default']
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']
     SimilarActivities: typeof import('./components/SimilarActivities.vue')['default']
+    TwoFactorCard: typeof import('./components/TwoFactorCard.vue')['default']
     WeeklyHrZonesChart: typeof import('./components/WeeklyHrZonesChart.vue')['default']
     WeeklyVolumeChart: typeof import('./components/WeeklyVolumeChart.vue')['default']
     WeightTarget: typeof import('./components/WeightTarget.vue')['default']
