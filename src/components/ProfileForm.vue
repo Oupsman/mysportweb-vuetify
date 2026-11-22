@@ -93,7 +93,7 @@
 
   onMounted(fetchUser)
   onMounted(async () => {
-    ftpInfo.value = await trainingStore.getFTP().catch(() => null)
+    ftpInfo.value = await trainingStore.getFTP().catch((): null => null)
   })
 
   const save = async () => {
