@@ -57,7 +57,8 @@ export const useAccountStore = defineStore('account', () => {
   const setEmailNotifications = (enabled: boolean): Promise<unknown> =>
     call(() => api.post('/api/v1/notifications/email', { enabled }), 'The notifications by email could not be changed')
   const sendTestEmail = (): Promise<{ sent_to: string }> =>
-    call(() => api.post('/api/v1/admin/email/test'), 'The test email could not be sent')
+    // longer than the backend waits for the SMTP server (40 s): the page gets its error, not a timeout
+    call(() => api.post('/api/v1/admin/email/test', null, { timeout: 60_000 }), 'The test email could not be sent')
 
   const users: Ref<AdminUser[]> = ref([])
   const getUsers = async (): Promise<void> => {
