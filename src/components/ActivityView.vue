@@ -291,7 +291,12 @@
       </v-row>
       <v-row v-if="hasPowerCurve">
         <v-col cols="12">
-          <ActivityPowerCurve :curve="activity.power_curve" :date="activity.date" :owner="isOwner" />
+          <ActivityPowerCurve
+            :curve="activity.power_curve"
+            :date="activity.date"
+            :owner="isOwner"
+            :sport="activity.sport"
+          />
         </v-col>
       </v-row>
       <v-row v-if="hasBestEfforts">

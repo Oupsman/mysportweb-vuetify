@@ -33,10 +33,11 @@ export const useTrainingStore = defineStore('training', () => {
     }
   }
 
-  // the best power of the rides over each duration, from and to (YYYY-MM-DD, included) optional
-  const getPowerCurve = async (from = '', to = ''): Promise<PowerCurve> => {
+  // the best measured power of the activities of a sport over each duration, from and to (YYYY-MM-DD,
+  // included) optional
+  const getPowerCurve = async (sport: string, from = '', to = ''): Promise<PowerCurve> => {
     try {
-      const params: Record<string, string> = {}
+      const params: Record<string, string> = { sport }
       if (from) params.from = from
       if (to) params.to = to
       return (await api.get('/api/v1/user/powercurve', { params })).data

@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
+  import PowerCurveSection from '@/components/PowerCurveSection.vue'
   import { useTrainingStore } from '@/stores/training'
   import type { EffortRecord } from '@/types/records'
   import { effortSpeed, effortTarget, effortValue, rankColor } from '@/utils/efforts'
@@ -50,6 +51,9 @@
       sport.value = list[0] ?? ''
     }
   })
+
+  // the curve of the sport, when it has power records: measured power only
+  const hasPower = computed(() => records.value.some(r => r.sport === sport.value && r.kind === 'power'))
 
   // the targets of the sport, by kind then target, each with its top efforts in rank order
   const sections = computed(() => ['distance', 'power'].map(kind => {
@@ -123,6 +127,7 @@
         </v-card>
       </div>
     </template>
+    <PowerCurveSection v-if="hasPower" :sport="sport" />
   </div>
 </template>
 

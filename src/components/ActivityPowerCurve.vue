@@ -7,8 +7,9 @@
   import type { PowerCurve, PowerCurvePoint } from '@/types/records'
   import { isoDay } from '@/utils/efforts'
 
-  // the curve of a ride; its owner also sees their best of the 90 days before it
-  const props = defineProps<{ curve: PowerCurvePoint[], date: string, owner: boolean }>()
+  // the curve of an activity with measured power; its owner also sees their best of the 90 days before it, in
+  // its sport
+  const props = defineProps<{ curve: PowerCurvePoint[], date: string, sport: string, owner: boolean }>()
 
   const trainingStore = useTrainingStore()
   const appStore = useAppStore()
@@ -18,11 +19,11 @@
     const day = new Date(props.date)
     const from = isoDay(new Date(day.getFullYear(), day.getMonth(), day.getDate() - 90))
     const to = isoDay(new Date(day.getFullYear(), day.getMonth(), day.getDate() - 1))
-    before.value = await trainingStore.getPowerCurve(from, to).catch((): null => null)
+    before.value = await trainingStore.getPowerCurve(props.sport, from, to).catch((): null => null)
   })
 
   const series = computed((): CurveSeries[] => {
-    const list: CurveSeries[] = [{ label: 'This ride', color: '#2a78d6', points: props.curve }]
+    const list: CurveSeries[] = [{ label: 'This activity', color: '#2a78d6', points: props.curve }]
     if (before.value?.points.length) {
       list.push({ label: 'Best of the 90 days before', color: '#9e9e9e', dashed: true, points: before.value.points })
     }
@@ -34,7 +35,7 @@
   <v-card>
     <v-card-item>
       <v-card-title>Power curve</v-card-title>
-      <v-card-subtitle>The best power of this ride over each duration</v-card-subtitle>
+      <v-card-subtitle>The best measured power of this activity over each duration</v-card-subtitle>
     </v-card-item>
     <v-card-text>
       <PowerCurveChart :series="series" @open="id => appStore.navigateToPage(`/activity/${id}`)" />

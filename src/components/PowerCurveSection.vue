@@ -6,6 +6,10 @@
   import { useTrainingStore } from '@/stores/training'
   import type { PowerCurve } from '@/types/records'
   import { isoDay } from '@/utils/efforts'
+  import { sportLabel } from '@/utils/format'
+
+  // the curve of a sport: the measured power of its activities (a power meter, a running power meter...)
+  const props = defineProps<{ sport: string }>()
 
   const trainingStore = useTrainingStore()
   const appStore = useAppStore()
@@ -47,8 +51,10 @@
       const [from, to] = bounds(period.value)
       const [otherFrom, otherTo] = bounds(comparison.value)
       ;[main.value, other.value] = await Promise.all([
-        trainingStore.getPowerCurve(from, to),
-        comparison.value === 'none' ? Promise.resolve(null) : trainingStore.getPowerCurve(otherFrom, otherTo),
+        trainingStore.getPowerCurve(props.sport, from, to),
+        comparison.value === 'none'
+          ? Promise.resolve(null)
+          : trainingStore.getPowerCurve(props.sport, otherFrom, otherTo),
       ])
     } catch (e) {
       error.value = (e as Error).message
@@ -57,7 +63,7 @@
     }
   }
   onMounted(load)
-  watch([period, comparison, customFrom, customTo], load)
+  watch([() => props.sport, period, comparison, customFrom, customTo], load)
 
   const label = (value: string) => periods.find(p => p.value === value)?.title ?? value
   const series = computed((): CurveSeries[] => {
@@ -83,7 +89,10 @@
   <v-card>
     <v-card-item>
       <v-card-title>Power curve</v-card-title>
-      <v-card-subtitle>Your best power over each duration, rides with a power meter. Click a point to open its ride.</v-card-subtitle>
+      <v-card-subtitle>
+        Your best measured power over each duration ({{ sportLabel(sport).toLowerCase() }}, with a power meter).
+        Click a point to open its activity.
+      </v-card-subtitle>
     </v-card-item>
     <v-card-text>
       <v-row dense>
@@ -111,7 +120,7 @@
       <v-alert v-if="error" class="mb-2" type="error">{{ error }}</v-alert>
       <v-progress-linear v-if="isLoading" indeterminate />
       <div v-else-if="series.length === 0" class="text-medium-emphasis py-6 text-center">
-        No ride with a power meter in this period.
+        No {{ sportLabel(sport).toLowerCase() }} activity with a power meter in this period.
       </div>
       <template v-else>
         <PowerCurveChart
