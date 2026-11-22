@@ -3,12 +3,13 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api, errorMessage } from '@/api'
-import type { HrZonesWeeks, Readiness } from '@/types/training'
+import type { FTPInfo, HrZonesWeeks, Readiness } from '@/types/training'
 import type { Records } from '@/types/records'
 
 // what the backend computes from the heart rates and the training scores of the activities
 export const useTrainingStore = defineStore('training', () => {
   const hrZones: Ref<HrZonesWeeks | null> = ref(null)
+  const powerZones: Ref<HrZonesWeeks | null> = ref(null)
   const readiness: Ref<Readiness | null> = ref(null)
   const records: Ref<Records | null> = ref(null)
 
@@ -19,6 +20,25 @@ export const useTrainingStore = defineStore('training', () => {
     } catch (error) {
       console.error('Get heart rate zones error:', error)
       throw new Error(errorMessage(error, 'The heart rate zones could not be loaded'))
+    }
+  }
+
+  // the time in power zones of the rides with a power meter, as getHrZones
+  const getPowerZones = async (weeks = 12): Promise<void> => {
+    try {
+      powerZones.value = (await api.get('/api/v1/user/powerzones', { params: { weeks } })).data
+    } catch (error) {
+      console.error('Get power zones error:', error)
+      throw new Error(errorMessage(error, 'The power zones could not be loaded'))
+    }
+  }
+
+  const getFTP = async (): Promise<FTPInfo> => {
+    try {
+      return (await api.get('/api/v1/user/ftp')).data
+    } catch (error) {
+      console.error('Get FTP error:', error)
+      throw new Error(errorMessage(error, 'The FTP could not be loaded'))
     }
   }
 
@@ -50,5 +70,5 @@ export const useTrainingStore = defineStore('training', () => {
     }
   }
 
-  return { hrZones, readiness, records, getHrZones, getReadiness, getRecords }
+  return { hrZones, powerZones, readiness, records, getHrZones, getPowerZones, getFTP, getReadiness, getRecords }
 })

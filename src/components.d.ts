@@ -12,6 +12,7 @@ declare module 'vue' {
     ActivityForm: typeof import('./components/ActivityForm.vue')['default']
     ActivityHrZones: typeof import('./components/ActivityHrZones.vue')['default']
     ActivityMonth: typeof import('./components/ActivityMonth.vue')['default']
+    ActivityPowerZones: typeof import('./components/ActivityPowerZones.vue')['default']
     ActivitySegments: typeof import('./components/ActivitySegments.vue')['default']
     ActivityThumbnail: typeof import('./components/ActivityThumbnail.vue')['default']
     ActivityUpload: typeof import('./components/ActivityUpload.vue')['default']

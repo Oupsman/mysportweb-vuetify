@@ -10,6 +10,15 @@ export interface HrZonesWeeks {
   weeks: WeeklyHrZones[]
 }
 
+// the FTP of the user: the one they set (0: estimated), and the one estimated from their rides of the last
+// window_days (95% of their best 20 minutes), null without power data
+export interface FTPInfo {
+  ftp: number
+  estimated: { ftp: number, best_20min: number, activity_id: string, date: string } | null
+  window_days: number
+  zone_limits: number[] // lower limits of the power zones 2 to 7, fractions of the FTP
+}
+
 // the training state at the end of a day (YYYY-MM-DD), in training load units; the form is the one of
 // its morning, before its load
 export interface ReadinessDay {

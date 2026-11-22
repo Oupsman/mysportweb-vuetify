@@ -79,6 +79,17 @@ export interface Activity extends ActivityUpdate {
   // the heart rates bounding them: rest, lower limits of the zones 2 to 5, max; null without heart rate
   hr_zones: number[] | null
   hr_zone_bounds: number[] | null
+  // seconds in each power zone (Z1 to Z7) of a ride with a power meter, zeros without, null until computed;
+  // the watts bounding them: 0, the lower limits of the zones 2 to 7, null without FTP; the FTP used (0: none)
+  power_zones: number[] | null
+  power_zone_bounds: number[] | null
+  ftp: number
+  // normalized power (W), intensity factor, TSS: null without a power meter or FTP
+  normalized_power: number | null
+  intensity: number | null
+  tss: number | null
+  // where trimp comes from: the device, the TSS of the power, the TRIMP of the heart rate; '' when older
+  score_source: '' | 'device' | 'power' | 'hr'
   // the fastest stretches over distances and the best powers over durations, empty without any, null until
   // the backend computed them
   best_efforts: BestEffort[] | null

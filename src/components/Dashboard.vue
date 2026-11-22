@@ -13,6 +13,7 @@
   import ActivityThumbnail from '@/components/ActivityThumbnail.vue'
   import WeeklyVolumeChart from '@/components/WeeklyVolumeChart.vue'
   import WeeklyHrZonesChart from '@/components/WeeklyHrZonesChart.vue'
+  import { powerZones } from '@/utils/zones'
   import ReadinessCard from '@/components/ReadinessCard.vue'
   import { useTrainingStore } from '@/stores/training'
   import { useUserStore } from '@/stores/user'
@@ -38,12 +39,14 @@
   const trainingStore = useTrainingStore()
   // the weeks with time in zones: none without heart rate
   const hasHrZones = computed(() => (trainingStore.hrZones?.weeks ?? []).some(w => w.zones.some(s => s > 0)))
+  const hasPowerZones = computed(() => (trainingStore.powerZones?.weeks ?? []).some(w => w.zones.some(s => s > 0)))
 
   onMounted(() => {
     userStore.refreshDashboard().catch(() => {})
     // the dashboard shows without them: they have their own cards
     trainingStore.getReadiness().catch(() => {})
     trainingStore.getHrZones().catch(() => {})
+    trainingStore.getPowerZones().catch(() => {})
   })
 
   const open = (id: string) => appStore.navigateToPage(`/activity/${id}`)
@@ -183,6 +186,19 @@
         </v-col>
         <v-col v-if="trainingStore.readiness" cols="12" :lg="hasHrZones ? 4 : 12">
           <ReadinessCard :readiness="trainingStore.readiness" />
+        </v-col>
+      </v-row>
+      <v-row v-if="hasPowerZones && trainingStore.powerZones" dense>
+        <v-col cols="12" :lg="trainingStore.readiness && !hasHrZones ? 8 : 12">
+          <v-card class="h-100">
+            <v-card-item>
+              <v-card-title>Power zones</v-card-title>
+              <v-card-subtitle>Last {{ trainingStore.powerZones.weeks.length }} weeks, rides with a power meter, by FTP</v-card-subtitle>
+            </v-card-item>
+            <v-card-text>
+              <WeeklyHrZonesChart :data="trainingStore.powerZones" :zones="powerZones" />
+            </v-card-text>
+          </v-card>
         </v-col>
       </v-row>
 

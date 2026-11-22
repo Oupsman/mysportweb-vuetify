@@ -7,6 +7,7 @@
   import type { HrZonesWeeks } from '@/types/training'
   import { formatDuration } from '@/utils/format'
   import { hrZones, zonePercent } from '@/utils/zones'
+  import type { Zone } from '@/utils/zones'
 
   ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
@@ -15,6 +16,11 @@
       type: Object as PropType<HrZonesWeeks>,
       required: true,
     },
+    // the heart rate zones by default, the power ones too
+    zones: {
+      type: Array as PropType<Zone[]>,
+      default: () => hrZones,
+    },
   })
 
   // hours on the axis, the formatted durations in the tooltips
@@ -22,7 +28,7 @@
     labels: props.data.weeks.map(w =>
       new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit' }).format(new Date(w.week))),
     // Z1 at the bottom: the easy base the harder zones stack on
-    datasets: hrZones.map((zone, index) => ({
+    datasets: props.zones.map((zone, index) => ({
       label: `${zone.name} ${zone.label}`,
       data: props.data.weeks.map(w => (w.zones[index] ?? 0) / 3600),
       backgroundColor: zone.color,

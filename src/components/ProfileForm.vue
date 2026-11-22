@@ -1,11 +1,15 @@
 <script setup lang="ts">
   import { mdiEye, mdiEyeOff, mdiLock } from '@mdi/js'
   import { useUserStore } from '@/stores/user'
+  import { useTrainingStore } from '@/stores/training'
+  import type { FTPInfo } from '@/types/training'
+  import { formatDate } from '@/utils/format'
   import { useAppStore } from '@/stores/app'
   import { useVuelidate } from '@vuelidate/core'
   import { minLength, required, sameAs } from '@vuelidate/validators'
 
   const userStore = useUserStore()
+  const trainingStore = useTrainingStore()
   const appStore = useAppStore()
 
   const isLoading = ref(true)
@@ -22,6 +26,7 @@
     weight: 0,
     height: 0,
     max_hr: 170,
+    ftp: 0,
     security_distance: 500,
     timezone: '',
   })
@@ -74,7 +79,22 @@
     }
   }
 
+  // the FTP estimated from the rides, shown when the user doesn't set theirs
+  const ftpInfo = ref<FTPInfo | null>(null)
+  const ftpHint = computed(() => {
+    const estimated = ftpInfo.value?.estimated
+    const days = ftpInfo.value?.window_days ?? 42
+    if (!estimated) {
+      return `0: estimated from the best 20 minutes of your rides with a power meter of the last ${days} days`
+    }
+    return `0: estimated, ${estimated.ftp} W now (95% of your best 20 minutes, ${Math.round(estimated.best_20min)} W ` +
+      `on ${formatDate(estimated.date)}). Your rides are scored with it, by their TSS`
+  })
+
   onMounted(fetchUser)
+  onMounted(async () => {
+    ftpInfo.value = await trainingStore.getFTP().catch(() => null)
+  })
 
   const save = async () => {
     const isValid = await v$.value.$validate()
@@ -131,6 +151,16 @@
         <v-text-field v-model.number="userForm.weight" label="Weight" type="number" />
         <v-text-field v-model.number="userForm.height" label="Height (cm)" type="number" />
         <v-text-field v-model.number="userForm.max_hr" label="Max HR" type="number" />
+        <v-text-field
+          v-model.number="userForm.ftp"
+          :hint="ftpHint"
+          label="FTP"
+          max="2000"
+          min="0"
+          persistent-hint
+          suffix="W"
+          type="number"
+        />
         <v-text-field v-model.number="userForm.security_distance" label="Security Distance (m)" type="number" />
         <v-autocomplete
           v-model="userForm.timezone"

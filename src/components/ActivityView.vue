@@ -9,6 +9,7 @@
   import { activityCursorKey } from '@/composables/activityCursor'
   import MultisportLegs from '@/components/MultisportLegs.vue'
   import ActivityHrZones from '@/components/ActivityHrZones.vue'
+  import ActivityPowerZones from '@/components/ActivityPowerZones.vue'
   import ActivityBestEfforts from '@/components/ActivityBestEfforts.vue'
   import ActivitySegments from '@/components/ActivitySegments.vue'
   import RouteProgress from '@/components/RouteProgress.vue'
@@ -93,6 +94,13 @@
   const hasLegs = computed(() => (activity.value?.legs?.length ?? 0) > 1)
   // the time in heart rate zones, of the activities with a heart rate (zeros without)
   const hasHrZones = computed(() => (activity.value?.hr_zones ?? []).some((s: number) => s > 0))
+  const hasPowerZones = computed(() => (activity.value?.power_zones ?? []).some((s: number) => s > 0))
+  // what the training load is
+  const scoreSources: Record<string, string> = {
+    device: 'Recorded by the device',
+    power: 'TSS of the power',
+    hr: 'TRIMP of the heart rate',
+  }
   // the fastest stretches and best powers, of the activities long enough for the shortest one
   const hasBestEfforts = computed(() => (activity.value?.best_efforts?.length ?? 0) > 0)
   // the speed per km, of the activities with a distance
@@ -221,7 +229,19 @@
           <v-card-subtitle class="pt-2">Average power</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ (activity.power_avg).toFixed(1) }} W</v-card-text>
         </v-card>
-        <v-card v-if="activity.trimp > 0" density="compact">
+        <v-card v-if="activity.normalized_power" density="compact">
+          <v-card-subtitle class="pt-2">Normalized power</v-card-subtitle>
+          <v-card-text class="text-h6 pt-1">{{ Math.round(activity.normalized_power) }} W</v-card-text>
+        </v-card>
+        <v-card v-if="activity.intensity" density="compact" :title="`At an FTP of ${activity.ftp} W`">
+          <v-card-subtitle class="pt-2">Intensity factor</v-card-subtitle>
+          <v-card-text class="text-h6 pt-1">{{ activity.intensity.toFixed(2) }}</v-card-text>
+        </v-card>
+        <v-card v-if="activity.tss" density="compact">
+          <v-card-subtitle class="pt-2">TSS</v-card-subtitle>
+          <v-card-text class="text-h6 pt-1">{{ Math.round(activity.tss) }}</v-card-text>
+        </v-card>
+        <v-card v-if="activity.trimp > 0" density="compact" :title="scoreSources[activity.score_source] ?? ''">
           <v-card-subtitle class="pt-2">Training load</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ Math.round(activity.trimp) }}</v-card-text>
         </v-card>
@@ -259,8 +279,11 @@
           <MultisportLegs :legs="activity.legs" />
         </v-col>
       </v-row>
-      <v-row v-if="hasHrZones">
-        <v-col cols="12">
+      <v-row v-if="hasHrZones || hasPowerZones">
+        <v-col v-if="hasPowerZones" cols="12" :lg="hasHrZones ? 6 : 12">
+          <ActivityPowerZones :bounds="activity.power_zone_bounds" :ftp="activity.ftp" :zones="activity.power_zones" />
+        </v-col>
+        <v-col v-if="hasHrZones" cols="12" :lg="hasPowerZones ? 6 : 12">
           <ActivityHrZones :bounds="activity.hr_zone_bounds" :zones="activity.hr_zones" />
         </v-col>
       </v-row>
