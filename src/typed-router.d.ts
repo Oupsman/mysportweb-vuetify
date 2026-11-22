@@ -34,6 +34,7 @@ declare module 'vue-router/auto-routes' {
     '/health/[id]/edit': RouteRecordInfo<'/health/[id]/edit', '/health/:id/edit', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/health/add': RouteRecordInfo<'/health/add', '/health/add', Record<never, never>, Record<never, never>>,
     '/health/import': RouteRecordInfo<'/health/import', '/health/import', Record<never, never>, Record<never, never>>,
+    '/heatmap': RouteRecordInfo<'/heatmap', '/heatmap', Record<never, never>, Record<never, never>>,
     '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
     '/profile/edit': RouteRecordInfo<'/profile/edit', '/profile/edit', Record<never, never>, Record<never, never>>,
     '/profile/view': RouteRecordInfo<'/profile/view', '/profile/view', Record<never, never>, Record<never, never>>,
