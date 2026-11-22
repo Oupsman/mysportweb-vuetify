@@ -7,7 +7,9 @@ export interface EquipmentFields {
   initial_mileage: number; // km, before the first activity
   weight: number; // kg
   maintenance_interval: number; // km between two services, 0: none
-  is_default: boolean; // given to the uploaded activities
+  // the sports it is the default equipment of, given to the uploaded activities of those sports: one
+  // equipment per sport, an equipment can have several (shoes for running and hiking)
+  default_sports: string[];
   is_commute: boolean; // given to the commute rides instead of the default one, one per user
 }
 
@@ -21,6 +23,12 @@ export interface Equipment extends EquipmentFields {
   last_used: string | null;
   last_service: string | null; // date of the latest service, null without one
   km_since_service: number; // of the activities after the latest service, or of all of them without one
+}
+
+// the sports to choose the default equipment of
+export interface Sports {
+  sports: string[]; // of the user's activities and default equipments
+  all: string[]; // every sport an activity can have
 }
 
 // the fields the user edits on a service

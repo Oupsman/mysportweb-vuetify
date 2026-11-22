@@ -1,9 +1,10 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import EquipmentPicture from '@/components/EquipmentPicture.vue'
   import { useEquipmentsStore } from '@/stores/equipments'
   import { useAppStore } from '@/stores/app'
   import type { Equipment, EquipmentFields } from '@/types/equipments'
+  import { sportIcon, sportLabel } from '@/utils/format'
 
   // without equipment, the form creates one
   const props = defineProps<{ equipment?: Equipment }>()
@@ -24,10 +25,33 @@
     initial_mileage: props.equipment?.initial_mileage ?? 0,
     weight: props.equipment?.weight ?? 0,
     maintenance_interval: props.equipment?.maintenance_interval ?? 0,
-    // the first equipment becomes the default one
-    is_default: props.equipment?.is_default ?? equipmentsStore.equipments.length === 0,
+    default_sports: [...(props.equipment?.default_sports ?? [])],
     is_commute: props.equipment?.is_commute ?? false,
   })
+
+  // the sports to choose from: the user's first, then every other one (typing filters them)
+  const userSports = ref<string[]>([])
+  const allSports = ref<string[]>([])
+  const sportsError = ref('')
+  onMounted(async () => {
+    try {
+      const sports = await equipmentsStore.getSports()
+      userSports.value = sports.sports
+      allSports.value = sports.all
+    } catch (e) {
+      sportsError.value = (e as Error).message
+    }
+  })
+  const sportItems = computed(() => [
+    ...userSports.value,
+    ...allSports.value.filter(s => !userSports.value.includes(s)),
+  ].map(sport => ({ title: sportLabel(sport), value: sport })))
+
+  // the sports chosen here that another equipment is the default of: they move to this one
+  const takenFrom = computed(() => form.value.default_sports.flatMap(sport => {
+    const other = equipmentsStore.equipments.find(e => e.id !== props.equipment?.id && e.default_sports.includes(sport))
+    return other ? [`${sportLabel(sport).toLowerCase()} from ${other.name}`] : []
+  }))
 
   // the picture of a new equipment, uploaded once it is created
   const pendingPicture = ref<File | null>(null)
@@ -158,14 +182,32 @@
             />
           </v-col>
         </v-row>
-        <v-switch
-          v-model="form.is_default"
-          class="mt-2"
-          color="primary"
-          hint="Given to the activities you upload; only one equipment is the default one"
-          label="Default equipment"
+        <v-autocomplete
+          v-model="form.default_sports"
+          chips
+          class="mt-4"
+          closable-chips
+          :error-messages="sportsError"
+          hint="Given to the activities of these sports you upload; one equipment per sport. The activities already uploaded keep theirs"
+          :items="sportItems"
+          label="Default equipment of"
+          multiple
           persistent-hint
-        />
+          placeholder="No sport"
+        >
+          <template #chip="{ props: chipProps, item }">
+            <v-chip v-bind="chipProps" :prepend-icon="sportIcon(item.value)" />
+          </template>
+        </v-autocomplete>
+        <v-alert
+          v-if="takenFrom.length"
+          class="mt-2"
+          density="compact"
+          type="info"
+          variant="tonal"
+        >
+          Saving moves the default of {{ takenFrom.join(', ') }} to this equipment.
+        </v-alert>
         <v-switch
           v-model="form.is_commute"
           class="mt-2"

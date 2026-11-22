@@ -1,16 +1,15 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { mdiBriefcaseOutline, mdiDeleteOutline, mdiPencilOutline, mdiStar, mdiStarOutline, mdiWrenchOutline } from '@mdi/js'
+  import { mdiBriefcaseOutline, mdiDeleteOutline, mdiPencilOutline, mdiWrenchOutline } from '@mdi/js'
   import { mediaUrl } from '@/api'
   import type { Equipment } from '@/types/equipments'
-  import { formatDate, formatDistance, formatDuration } from '@/utils/format'
+  import { formatDate, formatDistance, formatDuration, sportIcon, sportLabel } from '@/utils/format'
 
   const props = defineProps<{ equipment: Equipment, busy?: boolean }>()
   const emit = defineEmits<{
     activities: [equipment: Equipment]
     edit: [equipment: Equipment]
     services: [equipment: Equipment]
-    setDefault: [equipment: Equipment]
     delete: [equipment: Equipment]
   }>()
 
@@ -46,7 +45,7 @@
 </script>
 
 <template>
-  <v-card border class="d-flex flex-column h-100" :class="{ 'border-primary border-opacity-100': equipment.is_default }">
+  <v-card border class="d-flex flex-column h-100" :class="{ 'border-primary border-opacity-100': equipment.default_sports.length > 0 }">
     <!-- flex-grow-0: the free height of a card goes to its text, every picture keeps the same height -->
     <v-img
       v-if="equipment.picture"
@@ -67,24 +66,27 @@
       <template #append>
         <v-chip
           v-if="equipment.is_commute"
-          class="mr-1"
           :prepend-icon="mdiBriefcaseOutline"
           size="small"
           title="Given to the commute rides"
         >
           Commute
         </v-chip>
-        <v-chip
-          v-if="equipment.is_default"
-          color="primary"
-          :prepend-icon="mdiStar"
-          size="small"
-          title="Given to the uploaded activities"
-        >
-          Default
-        </v-chip>
       </template>
     </v-card-item>
+
+    <div v-if="equipment.default_sports.length" class="d-flex flex-wrap ga-1 px-4">
+      <v-chip
+        v-for="sport in equipment.default_sports"
+        :key="sport"
+        color="primary"
+        :prepend-icon="sportIcon(sport)"
+        size="small"
+        :title="`Default equipment of the ${sportLabel(sport).toLowerCase()} activities you upload`"
+      >
+        {{ sportLabel(sport) }}
+      </v-chip>
+    </div>
 
     <v-card-text class="flex-grow-1">
       <div class="text-h4 font-weight-medium">{{ km(equipment.mileage) }}</div>
@@ -141,15 +143,6 @@
         Activities
       </v-btn>
       <v-spacer />
-      <v-btn
-        v-if="!equipment.is_default"
-        :disabled="busy"
-        :icon="mdiStarOutline"
-        size="small"
-        title="Make it the default equipment"
-        variant="text"
-        @click="emit('setDefault', equipment)"
-      />
       <v-btn
         :disabled="busy"
         :icon="mdiWrenchOutline"

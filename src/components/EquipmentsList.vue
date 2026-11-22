@@ -36,8 +36,6 @@
     }
   }
 
-  const setDefault = (equipment: Equipment) => change(equipment, () => equipmentsStore.setDefault(equipment))
-
   const remove = (equipment: Equipment) => {
     const activities = equipment.activities > 0
       ? ` Its ${equipment.activities} activities are kept, without equipment.`
@@ -89,7 +87,6 @@
           @delete="remove"
           @edit="edit"
           @services="services"
-          @set-default="setDefault"
         />
       </v-col>
     </v-row>

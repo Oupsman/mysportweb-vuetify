@@ -4,10 +4,10 @@ import { defineStore } from 'pinia'
 
 import { api, errorMessage } from '@/api'
 import { useUserStore } from '@/stores/user'
-import type { Equipment, EquipmentFields, EquipmentService, EquipmentServiceFields } from '@/types/equipments'
+import type { Equipment, EquipmentFields, EquipmentService, EquipmentServiceFields, Sports } from '@/types/equipments'
 
 export const useEquipmentsStore = defineStore('equipments', () => {
-  // with their totals, the default one first
+  // with their totals, the default ones first
   const equipments: Ref<Equipment[]> = ref([])
 
   // loads the equipments, always: after a change, the list must come after it
@@ -41,7 +41,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
     }
   }
 
-  // the list is reloaded after each change: setting a default one changes the others
+  // the list is reloaded after each change: taking the default of a sport changes another equipment
   // returns the id of the new equipment
   const insertEquipment = async (equipment: EquipmentFields): Promise<string> => {
     let id: string
@@ -65,8 +65,14 @@ export const useEquipmentsStore = defineStore('equipments', () => {
     await loadEquipments()
   }
 
-  const setDefault = (equipment: Equipment): Promise<void> =>
-    updateEquipment(equipment.id, { ...equipment, is_default: true })
+  const getSports = async (): Promise<Sports> => {
+    try {
+      return (await api.get('/api/v1/user/sports')).data
+    } catch (error) {
+      console.error('Get sports error:', error)
+      throw new Error(errorMessage(error, 'The sports could not be loaded'))
+    }
+  }
 
   // gives the commute equipment to the commute rides recorded before, returns how many changed
   const assignToCommutes = async (id: string): Promise<number> => {
@@ -167,7 +173,7 @@ export const useEquipmentsStore = defineStore('equipments', () => {
     getEquipment,
     insertEquipment,
     updateEquipment,
-    setDefault,
+    getSports,
     assignToCommutes,
     uploadPicture,
     deletePicture,
