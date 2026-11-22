@@ -13,6 +13,9 @@
 
   const error: Ref<string> = ref('')
 
+  // the forgotten password link needs the emails of the instance
+  onMounted(() => userStore.loadInstance().catch(() => {}))
+
   const login = async () => {
     error.value = ''
     busy.value = true
@@ -64,7 +67,10 @@
             label="Password"
             type="password"
           />
-          <v-btn color="primary" :loading="busy" type="submit">Login</v-btn>
+          <div class="d-flex align-center ga-4">
+            <v-btn color="primary" :loading="busy" type="submit">Login</v-btn>
+            <router-link v-if="userStore.instance?.email" to="/forgot-password">Forgot password?</router-link>
+          </div>
         </v-form>
         <v-form v-else @submit.prevent="verify">
           <p class="mb-4">Enter the code of your authenticator app, or one of your recovery codes.</p>

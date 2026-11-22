@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api, errorMessage } from '@/api'
-import type { AdminUser, TwoFactorSetup, TwoFactorStatus, UserSession } from '@/types/user'
+import type { AdminUser, EmailStatus, TwoFactorSetup, TwoFactorStatus, UserSession } from '@/types/user'
 
 // the code of the authenticator app the critical admin actions send, each time
 const totpHeader = (code: string) => ({ headers: { 'X-TOTP-Code': code } })
@@ -41,6 +41,24 @@ export const useAccountStore = defineStore('account', () => {
   const resetPassword = (code: string, password: string): Promise<{ username: string }> =>
     call(() => api.post('/api/v1/user/password-reset', { code, password }), 'The password could not be changed')
 
+  // the email address of the user, its confirmation, the forgotten passwords
+  const emailStatus: Ref<EmailStatus | null> = ref(null)
+  const getEmailStatus = async (): Promise<void> => {
+    emailStatus.value = await call(() => api.get('/api/v1/user/email'), 'The email address could not be loaded')
+  }
+  const resendVerification = (): Promise<{ sent_to: string }> =>
+    call(() => api.post('/api/v1/user/email/resend'), 'The confirmation could not be sent')
+  const verifyEmail = (code: string): Promise<{ email: string }> =>
+    call(() => api.post('/api/v1/user/email/verify', { code }), 'The address could not be confirmed')
+  const forgotPassword = (login: string): Promise<{ message: string }> =>
+    call(() => api.post('/api/v1/user/password-forgot', { login }), 'The request could not be sent')
+  const getEmailNotifications = (): Promise<{ enabled: boolean, available: boolean, email: string, verified: boolean }> =>
+    call(() => api.get('/api/v1/notifications/email'), 'The notifications by email could not be loaded')
+  const setEmailNotifications = (enabled: boolean): Promise<unknown> =>
+    call(() => api.post('/api/v1/notifications/email', { enabled }), 'The notifications by email could not be changed')
+  const sendTestEmail = (): Promise<{ sent_to: string }> =>
+    call(() => api.post('/api/v1/admin/email/test'), 'The test email could not be sent')
+
   const users: Ref<AdminUser[]> = ref([])
   const getUsers = async (): Promise<void> => {
     users.value = (await call<{ users: AdminUser[] }>(() => api.get('/api/v1/admin/users'), 'The users could not be loaded')).users
@@ -65,6 +83,14 @@ export const useAccountStore = defineStore('account', () => {
     exportUrl,
     deleteAccount,
     resetPassword,
+    emailStatus,
+    getEmailStatus,
+    resendVerification,
+    verifyEmail,
+    forgotPassword,
+    getEmailNotifications,
+    setEmailNotifications,
+    sendTestEmail,
     users,
     getUsers,
     setRole,

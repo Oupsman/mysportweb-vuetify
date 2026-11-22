@@ -24,6 +24,22 @@
     }
   }
   onMounted(load)
+  onMounted(() => userStore.loadInstance().catch(() => {}))
+
+  // the emails: a test to the admin, the error of the server shown
+  const testing = ref(false)
+  const testResult = ref<{ ok: boolean, text: string } | null>(null)
+  const testEmail = async () => {
+    testing.value = true
+    try {
+      const answer = await accountStore.sendTestEmail()
+      testResult.value = { ok: true, text: `Sent to ${answer.sent_to}: check it arrived, and not in the spam folder.` }
+    } catch (e) {
+      testResult.value = { ok: false, text: (e as Error).message }
+    } finally {
+      testing.value = false
+    }
+  }
 
   const size = (bytes: number): string => {
     if (bytes < 1 << 20) return `${Math.round(bytes / 1024)} KB`
@@ -106,9 +122,20 @@
     <v-card-item>
       <v-card-title>Users</v-card-title>
       <v-card-subtitle>Each change asks a code of your authenticator app</v-card-subtitle>
+      <template v-if="userStore.instance?.email" #append>
+        <v-btn :loading="testing" size="small" variant="outlined" @click="testEmail">Send a test email</v-btn>
+      </template>
     </v-card-item>
     <v-card-text>
       <v-alert v-if="error" class="mb-4" type="error">{{ error }}</v-alert>
+      <v-alert
+        v-if="testResult"
+        class="mb-4"
+        closable
+        :type="testResult.ok ? 'success' : 'error'"
+        variant="tonal"
+        @click:close="testResult = null"
+      >{{ testResult.text }}</v-alert>
       <v-alert
         v-if="resetLink"
         class="mb-4"

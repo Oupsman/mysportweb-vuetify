@@ -20,9 +20,10 @@ export const useInvitationsStore = defineStore('invitations', () => {
   }
 
   // email: the only one it registers, '' for any; the code is only given here, it can't be shown again
-  const createInvitation = async (email: string, days: number): Promise<NewInvitation> => {
+  // send: emailed to its address, the emails on
+  const createInvitation = async (email: string, days: number, send = false): Promise<NewInvitation> => {
     try {
-      const response = await api.post('/api/v1/admin/invitations', { email, days })
+      const response = await api.post('/api/v1/admin/invitations', { email, days, send })
       invitations.value = [response.data.invitation, ...invitations.value]
       return response.data
     } catch (error) {

@@ -29,6 +29,7 @@ declare module 'vue-router/auto-routes' {
     '/equipment/[id]/edit': RouteRecordInfo<'/equipment/[id]/edit', '/equipment/:id/edit', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/equipment/add': RouteRecordInfo<'/equipment/add', '/equipment/add', Record<never, never>, Record<never, never>>,
     '/equipments': RouteRecordInfo<'/equipments', '/equipments', Record<never, never>, Record<never, never>>,
+    '/forgot-password': RouteRecordInfo<'/forgot-password', '/forgot-password', Record<never, never>, Record<never, never>>,
     '/health/': RouteRecordInfo<'/health/', '/health', Record<never, never>, Record<never, never>>,
     '/health/[id]/edit': RouteRecordInfo<'/health/[id]/edit', '/health/:id/edit', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/health/add': RouteRecordInfo<'/health/add', '/health/add', Record<never, never>, Record<never, never>>,
@@ -41,5 +42,6 @@ declare module 'vue-router/auto-routes' {
     '/segment/[id]': RouteRecordInfo<'/segment/[id]', '/segment/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/segments': RouteRecordInfo<'/segments', '/segments', Record<never, never>, Record<never, never>>,
     '/signup': RouteRecordInfo<'/signup', '/signup', Record<never, never>, Record<never, never>>,
+    '/verify-email': RouteRecordInfo<'/verify-email', '/verify-email', Record<never, never>, Record<never, never>>,
   }
 }

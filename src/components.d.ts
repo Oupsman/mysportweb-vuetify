@@ -27,6 +27,7 @@ declare module 'vue' {
     DeviceCard: typeof import('./components/DeviceCard.vue')['default']
     DevicesList: typeof import('./components/DevicesList.vue')['default']
     DuplicateActivities: typeof import('./components/DuplicateActivities.vue')['default']
+    EmailCard: typeof import('./components/EmailCard.vue')['default']
     EquipmentCard: typeof import('./components/EquipmentCard.vue')['default']
     EquipmentForm: typeof import('./components/EquipmentForm.vue')['default']
     EquipmentPicture: typeof import('./components/EquipmentPicture.vue')['default']

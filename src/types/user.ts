@@ -47,6 +47,16 @@ export interface InstanceInfo {
   registration: RegistrationMode,
   // the instance waits for its admin: registered with the setup code of the backend logs
   setup_required: boolean,
+  // the instance sends emails (SMTP configured): forgotten passwords, confirmations, invitations
+  email?: boolean,
+}
+
+// the email address of the user
+export interface EmailStatus {
+  email: string
+  verified_at: string | null
+  pending: string // the address they change to, not confirmed yet; '' without
+  enabled: boolean // the instance sends emails
 }
 
 // what allows a registration besides open registrations
@@ -71,4 +81,6 @@ export interface NewInvitation {
   invitation: Invitation,
   code: string,
   link: string, // the sign up page with the code
+  email_sent?: boolean, // sent by email when asked: false when the email failed
+  email_error?: string,
 }

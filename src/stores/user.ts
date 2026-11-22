@@ -153,16 +153,18 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const updateUser = async (user: Object): Promise<void> => {
+  // answers the address the user changes to, confirmed from its mailbox before it is used ('' without)
+  const updateUser = async (user: object): Promise<string> => {
     try {
       const response = await api.post('/api/v1/user', user)
       // a new password ends the sessions, this one included: the backend sets the cookie of the new one
       if (response.data?.session) {
         setUserSession(response.data.session)
       }
+      return response.data?.email_pending ?? ''
     } catch (error) {
       console.error('Update user error:', error)
-      throw new Error('update user failed')
+      throw new Error(errorMessage(error, 'The profile could not be saved'))
     }
   }
 

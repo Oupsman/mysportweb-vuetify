@@ -27,6 +27,7 @@
     height: 0,
     max_hr: 170,
     ftp: 0,
+    email: '',
     security_distance: 500,
     timezone: '',
   })
@@ -105,8 +106,19 @@
       ...userForm.value,
       date_of_birth: dateOfBirth.toISOString(),
     }
-    await userStore.updateUser(updatedUser)
+    saveError.value = ''
+    saved.value = ''
+    try {
+      const pending = await userStore.updateUser(updatedUser)
+      saved.value = pending
+        ? `Saved. ${pending} replaces your address once confirmed: open the link sent there.`
+        : 'Saved.'
+    } catch (e) {
+      saveError.value = (e as Error).message
+    }
   }
+  const saved = ref('')
+  const saveError = ref('')
 </script>
 
 <template>
@@ -147,7 +159,15 @@
           <v-select v-model="userForm.birthday" :items="days" label="Birth day" />
           <v-select v-model="userForm.birthyear" :items="years" label="Birth year" />
         </v-row>
-        <v-select v-model="userForm.gender" :items="genders" label="Gender" />
+        <v-text-field
+          v-model="userForm.email"
+          autocomplete="email"
+          hint="With the emails on, a new address is used once confirmed from its mailbox"
+          label="Email"
+          persistent-hint
+          type="email"
+        />
+        <v-select v-model="userForm.gender" class="mt-2" :items="genders" label="Gender" />
         <v-text-field v-model.number="userForm.weight" label="Weight" type="number" />
         <v-text-field v-model.number="userForm.height" label="Height (cm)" type="number" />
         <v-text-field v-model.number="userForm.max_hr" label="Max HR" type="number" />
@@ -169,6 +189,8 @@
           label="Timezone"
           persistent-hint
         />
+        <v-alert v-if="saveError" class="my-2" type="error">{{ saveError }}</v-alert>
+        <v-alert v-if="saved" class="my-2" type="success" variant="tonal">{{ saved }}</v-alert>
         <v-btn color="primary" :disabled="v$.$invalid" type="submit">Save</v-btn>
       </v-form>
     </v-container>

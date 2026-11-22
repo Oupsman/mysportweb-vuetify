@@ -47,10 +47,10 @@
   const dialog = ref(false)
   const creating = ref(false)
   const createError = ref('')
-  const form = ref({ email: '', days: 7 })
+  const form = ref({ email: '', days: 7, send: false })
 
   const openDialog = () => {
-    form.value = { email: '', days: 7 }
+    form.value = { email: '', days: 7, send: false }
     createError.value = ''
     dialog.value = true
   }
@@ -63,7 +63,8 @@
     creating.value = true
     createError.value = ''
     try {
-      created.value = await invitationsStore.createInvitation(form.value.email.trim(), form.value.days)
+      created.value = await invitationsStore.createInvitation(form.value.email.trim(), form.value.days,
+                                                              form.value.send && form.value.email.trim() !== '')
       copied.value = false
       dialog.value = false
     } catch (e) {
@@ -139,6 +140,8 @@
         variant="tonal"
         @click:close="created = null"
       >
+        <div v-if="created.email_sent" class="mb-2">Sent by email to {{ created.invitation.email }}.</div>
+        <div v-else-if="created.email_error" class="mb-2 text-error">{{ created.email_error }}.</div>
         <div class="mb-2">
           It won't be shown again.
           <template v-if="created.invitation.email">It only registers {{ created.invitation.email }}.</template>
@@ -226,6 +229,13 @@
             class="mt-4"
             :items="durations"
             label="Valid for"
+          />
+          <v-checkbox
+            v-if="userStore.instance?.email"
+            v-model="form.send"
+            :disabled="!form.email.trim()"
+            hide-details
+            label="Send it by email"
           />
         </v-card-text>
         <v-card-actions>

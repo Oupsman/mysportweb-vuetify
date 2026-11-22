@@ -37,7 +37,8 @@ router.addRoute({
 // pages open without session: login, sign up, the password reset link of an admin, and the view of an
 // activity (public ones are visible to anyone)
 const isPublic = (path: string): boolean =>
-  path === '/login' || path === '/signup' || path === '/reset-password' ||
+  path === '/login' || path === '/signup' || path === '/reset-password' || path === '/forgot-password' ||
+  path === '/verify-email' ||
   (/^\/activity\/[^/]+$/.test(path) && path !== '/activity/add')
 
 // keeps the requested page: without session, the login page brings back to it
