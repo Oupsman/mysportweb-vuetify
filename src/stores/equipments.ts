@@ -4,7 +4,16 @@ import { defineStore } from 'pinia'
 
 import { api, errorMessage } from '@/api'
 import { useUserStore } from '@/stores/user'
-import type { Equipment, EquipmentFields, EquipmentService, EquipmentServiceFields, Sports } from '@/types/equipments'
+import type {
+  Equipment,
+  EquipmentFields,
+  EquipmentService,
+  EquipmentServiceFields,
+  Reminder,
+  ReminderDone,
+  ReminderFields,
+  Sports,
+} from '@/types/equipments'
 
 export const useEquipmentsStore = defineStore('equipments', () => {
   // with their totals, the default ones first
@@ -162,6 +171,66 @@ export const useEquipmentsStore = defineStore('equipments', () => {
     await loadEquipments()
   }
 
+  // the reminders are in the equipments: they are reloaded after each change
+  const insertReminder = async (equipmentId: string, reminder: ReminderFields): Promise<void> => {
+    try {
+      await api.post(`/api/v1/equipment/${equipmentId}/reminders`, reminder)
+    } catch (error) {
+      console.error('Create reminder error:', error)
+      throw new Error(errorMessage(error, 'The reminder could not be saved'))
+    }
+    await loadEquipments()
+  }
+
+  const updateReminder = async (equipmentId: string, id: string, reminder: ReminderFields): Promise<void> => {
+    try {
+      await api.post(`/api/v1/equipment/${equipmentId}/reminders/${id}`, reminder)
+    } catch (error) {
+      console.error('Update reminder error:', error)
+      throw new Error(errorMessage(error, 'The reminder could not be saved'))
+    }
+    await loadEquipments()
+  }
+
+  // its services are kept
+  const deleteReminder = async (equipmentId: string, id: string): Promise<void> => {
+    try {
+      await api.delete(`/api/v1/equipment/${equipmentId}/reminders/${id}`)
+    } catch (error) {
+      console.error('Delete reminder error:', error)
+      throw new Error(errorMessage(error, 'The reminder could not be deleted'))
+    }
+    await loadEquipments()
+  }
+
+  // logs a service done for a reminder: now, at the mileage of the equipment, named after the reminder,
+  // unless told otherwise
+  const reminderDone = async (
+    equipmentId: string,
+    id: string,
+    service: { date?: string, mileage?: number, description?: string } = {},
+  ): Promise<ReminderDone> => {
+    let done: ReminderDone
+    try {
+      done = (await api.post(`/api/v1/equipment/${equipmentId}/reminders/${id}/done`, service)).data
+    } catch (error) {
+      console.error('Reminder done error:', error)
+      throw new Error(errorMessage(error, 'The reminder could not be marked done'))
+    }
+    await loadEquipments()
+    return done
+  }
+
+  // the reminders due or soon of all the equipments, the most urgent first
+  const getMaintenance = async (): Promise<Reminder[]> => {
+    try {
+      return (await api.get('/api/v1/user/maintenance')).data.reminders ?? []
+    } catch (error) {
+      console.error('Get maintenance error:', error)
+      throw new Error(errorMessage(error, 'The maintenance reminders could not be loaded'))
+    }
+  }
+
   // the store is created by a page, once the router knows the session
   if (useUserStore().session) {
     getAllEquipments().catch(() => {})
@@ -182,5 +251,10 @@ export const useEquipmentsStore = defineStore('equipments', () => {
     insertService,
     updateService,
     deleteService,
+    insertReminder,
+    updateReminder,
+    deleteReminder,
+    reminderDone,
+    getMaintenance,
   }
 })

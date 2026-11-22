@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import { mdiDeleteOutline, mdiPencilOutline, mdiPlus, mdiWrenchOutline } from '@mdi/js'
+  import { mdiCheck, mdiDeleteOutline, mdiPencilOutline, mdiPlus, mdiWrenchOutline } from '@mdi/js'
   import { useEquipmentsStore } from '@/stores/equipments'
   import type { Equipment, EquipmentService } from '@/types/equipments'
   import { formatDistance } from '@/utils/format'
@@ -23,9 +23,11 @@
     new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })
       .format(new Date(date))
 
-  // the current mileage, from the store: it changes with the services
-  const mileage = computed(() =>
-    equipmentsStore.equipments.find(e => e.id === props.equipment.id)?.mileage ?? props.equipment.mileage)
+  // the current mileage and reminders, from the store: they change with the services
+  const current = computed(() => equipmentsStore.equipments.find(e => e.id === props.equipment.id) ?? props.equipment)
+  const mileage = computed(() => current.value.mileage)
+  const reminders = computed(() => current.value.reminders ?? [])
+  const reminderName = (id: string) => reminders.value.find(r => r.id === id)?.name
 
   const load = async () => {
     error.value = ''
@@ -38,19 +40,26 @@
     }
   }
   onMounted(load)
+  // the edit page reloads them after a reminder is marked done
+  defineExpose({ load })
 
   // creation and edition dialog, editing is null for a new service
   const dialog = ref(false)
   const editing = ref<EquipmentService | null>(null)
   const saving = ref(false)
   const dialogError = ref('')
-  const form = ref({ date: '', mileage: 0, description: '' })
+  const form = ref({ date: '', mileage: 0, description: '', reminder_ids: [] as string[] })
 
   const openDialog = (service: EquipmentService | null) => {
     editing.value = service
     form.value = service
-      ? { date: toDateInput(service.date), mileage: service.mileage, description: service.description }
-      : { date: today(), mileage: Math.round(mileage.value), description: '' }
+      ? {
+        date: toDateInput(service.date),
+        mileage: service.mileage,
+        description: service.description,
+        reminder_ids: [...(service.reminder_ids ?? [])],
+      }
+      : { date: today(), mileage: Math.round(mileage.value), description: '', reminder_ids: [] }
     dialogError.value = ''
     dialog.value = true
   }
@@ -66,7 +75,13 @@
     const date = unchanged
       ? editing.value!.date
       : (form.value.date === today() ? new Date().toISOString() : form.value.date)
-    const fields = { date, mileage: Number(form.value.mileage), description: form.value.description.trim() }
+    const fields = {
+      date,
+      mileage: Number(form.value.mileage),
+      description: form.value.description.trim(),
+      // a deleted reminder isn't sent back
+      reminder_ids: form.value.reminder_ids.filter(id => reminders.value.some(r => r.id === id)),
+    }
     try {
       await (editing.value
         ? equipmentsStore.updateService(props.equipment.id, editing.value.id, fields)
@@ -101,7 +116,7 @@
   <v-card>
     <v-card-item>
       <v-card-title>Services</v-card-title>
-      <v-card-subtitle>The maintenance reminder counts the distance from the latest one.</v-card-subtitle>
+      <v-card-subtitle class="text-wrap">A service restarts the reminders it did.</v-card-subtitle>
       <template #append>
         <v-btn color="primary" :prepend-icon="mdiPlus" @click="openDialog(null)">Log a service</v-btn>
       </template>
@@ -128,6 +143,14 @@
             <span class="text-medium-emphasis"> · {{ km(service.mileage) }}</span>
           </v-list-item-title>
           <v-list-item-subtitle class="text-pre-wrap">{{ service.description || 'No description' }}</v-list-item-subtitle>
+          <div v-if="service.reminder_ids?.some(reminderName)" class="d-flex flex-wrap ga-1 mt-1">
+            <v-chip
+              v-for="id in service.reminder_ids.filter(reminderName)"
+              :key="id"
+              :prepend-icon="mdiCheck"
+              size="x-small"
+            >{{ reminderName(id) }}</v-chip>
+          </div>
           <template #append>
             <v-btn
               :disabled="busy !== null"
@@ -173,6 +196,18 @@
             placeholder="Chain replaced, brakes bled..."
             rows="3"
           />
+          <template v-if="reminders.length">
+            <div class="text-body-2 mt-2">Reminders it did</div>
+            <v-checkbox
+              v-for="reminder in reminders"
+              :key="reminder.id"
+              v-model="form.reminder_ids"
+              density="compact"
+              hide-details
+              :label="reminder.name"
+              :value="reminder.id"
+            />
+          </template>
         </v-card-text>
         <v-card-actions>
           <v-spacer />

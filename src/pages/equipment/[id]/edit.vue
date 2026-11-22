@@ -2,6 +2,7 @@
   import { nextTick, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import EquipmentForm from '@/components/EquipmentForm.vue'
+  import EquipmentReminders from '@/components/EquipmentReminders.vue'
   import EquipmentServices from '@/components/EquipmentServices.vue'
   import { useAppStore } from '@/stores/app'
   import { useEquipmentsStore } from '@/stores/equipments'
@@ -13,6 +14,7 @@
 
   const equipment = ref<Equipment | null>(null)
   const error = ref('')
+  const servicesList = ref<InstanceType<typeof EquipmentServices> | null>(null)
 
   const load = async () => {
     equipment.value = null
@@ -20,10 +22,10 @@
     try {
       equipment.value = await equipmentsStore.getEquipment(route.params.id)
       appStore.pageTitle = equipment.value.name
-      // the services button of the equipment cards opens the page on them
-      if (route.hash === '#services') {
+      // the services button of the equipment cards, and the notifications, open the page on a section
+      if (route.hash === '#services' || route.hash === '#reminders') {
         await nextTick()
-        document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })
+        document.getElementById(route.hash.slice(1))?.scrollIntoView({ behavior: 'smooth' })
       }
     } catch (e) {
       error.value = (e as Error).message
@@ -39,7 +41,20 @@
     <!-- keyed: the form copies the equipment once -->
     <template v-else-if="equipment">
       <EquipmentForm :key="equipment.id" :equipment="equipment" />
-      <EquipmentServices id="services" :key="`services-${equipment.id}`" class="mt-6" :equipment="equipment" />
+      <EquipmentReminders
+        id="reminders"
+        :key="`reminders-${equipment.id}`"
+        class="mt-6"
+        :equipment="equipment"
+        @done="servicesList?.load()"
+      />
+      <EquipmentServices
+        id="services"
+        :key="`services-${equipment.id}`"
+        ref="servicesList"
+        class="mt-6"
+        :equipment="equipment"
+      />
     </template>
     <div v-else>Loading...</div>
   </v-container>

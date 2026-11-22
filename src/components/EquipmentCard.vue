@@ -1,9 +1,11 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
-  import { mdiBriefcaseOutline, mdiDeleteOutline, mdiPencilOutline, mdiWrenchOutline } from '@mdi/js'
+  import { computed, ref } from 'vue'
+  import { mdiBellOutline, mdiBriefcaseOutline, mdiCheck, mdiDeleteOutline, mdiPencilOutline, mdiWrenchOutline } from '@mdi/js'
   import { mediaUrl } from '@/api'
-  import type { Equipment } from '@/types/equipments'
+  import { useEquipmentsStore } from '@/stores/equipments'
+  import type { Equipment, Reminder } from '@/types/equipments'
   import { formatDate, formatDistance, formatDuration, sportIcon, sportLabel } from '@/utils/format'
+  import { intervalText, reminderColor, reminderStatusText } from '@/utils/reminders'
 
   const props = defineProps<{ equipment: Equipment, busy?: boolean }>()
   const emit = defineEmits<{
@@ -25,23 +27,26 @@
       : ''
   })
 
-  // the next service is due an interval after the latest one, or after the first activity without one
-  const maintenance = computed(() => {
-    const interval = props.equipment.maintenance_interval
-    if (interval <= 0) {
-      return null
-    }
-    const left = interval - props.equipment.km_since_service
-    return {
-      left,
-      overdue: left < 0,
-      progress: Math.min(100, (props.equipment.km_since_service / interval) * 100),
-      soon: left <= interval * 0.1,
-    }
-  })
+  // the most urgent reminders, the others on the edit page
+  const shown = 3
+  const reminders = computed(() => (props.equipment.reminders ?? []).slice(0, shown))
+  const hidden = computed(() => Math.max(0, (props.equipment.reminders ?? []).length - shown))
 
-  const maintenanceColor = computed(() =>
-    maintenance.value?.overdue ? 'error' : (maintenance.value?.soon ? 'warning' : undefined))
+  // done in one click: a service of now, at its mileage; a mistake is deleted from its services
+  const equipmentsStore = useEquipmentsStore()
+  const marking = ref<string | null>(null)
+  const doneError = ref('')
+  const markDone = async (reminder: Reminder) => {
+    marking.value = reminder.id
+    doneError.value = ''
+    try {
+      await equipmentsStore.reminderDone(props.equipment.id, reminder.id)
+    } catch (e) {
+      doneError.value = (e as Error).message
+    } finally {
+      marking.value = null
+    }
+  }
 </script>
 
 <template>
@@ -121,20 +126,48 @@
         </div>
       </div>
 
-      <div v-if="maintenance" class="mt-4">
-        <div class="d-flex align-center text-body-2 mb-1">
-          <v-icon class="mr-1" :color="maintenanceColor" :icon="mdiWrenchOutline" size="small" />
-          <span v-if="maintenance.overdue" class="text-error">Service overdue by {{ km(-maintenance.left) }}</span>
-          <span v-else>Service in {{ km(maintenance.left) }}</span>
-          <v-spacer />
-          <span class="text-caption text-medium-emphasis">every {{ km(equipment.maintenance_interval) }}</span>
+      <div v-if="reminders.length" class="mt-4 d-flex flex-column ga-3">
+        <div v-for="reminder in reminders" :key="reminder.id">
+          <div class="d-flex align-center text-body-2 mb-1 ga-1">
+            <v-icon
+              :color="reminder.state === 'ok' ? undefined : reminderColor(reminder.state)"
+              :icon="mdiBellOutline"
+              size="small"
+            />
+            <span class="text-truncate" :title="`${reminder.name}, ${intervalText(reminder)}`">{{ reminder.name }}</span>
+            <v-spacer />
+            <span
+              class="text-caption text-no-wrap"
+              :class="reminder.state === 'ok' ? 'text-medium-emphasis' : `text-${reminderColor(reminder.state)}`"
+            >{{ reminderStatusText(reminder) }}</span>
+            <v-btn
+              v-if="reminder.state !== 'ok'"
+              :color="reminderColor(reminder.state)"
+              density="comfortable"
+              :disabled="busy || marking !== null"
+              :icon="mdiCheck"
+              :loading="marking === reminder.id"
+              size="x-small"
+              :title="`Mark done today: ${reminder.name}`"
+              variant="tonal"
+              @click="markDone(reminder)"
+            />
+          </div>
+          <v-progress-linear
+            :color="reminderColor(reminder.state)"
+            height="6"
+            :model-value="Math.min(100, reminder.progress * 100)"
+            rounded
+          />
         </div>
-        <v-progress-linear
-          :color="maintenanceColor ?? 'primary'"
-          height="6"
-          :model-value="maintenance.progress"
-          rounded
-        />
+        <div v-if="hidden" class="text-caption text-medium-emphasis">and {{ hidden }} more</div>
+        <v-alert
+          v-if="doneError"
+          closable
+          density="compact"
+          type="error"
+          @click:close="doneError = ''"
+        >{{ doneError }}</v-alert>
       </div>
     </v-card-text>
 

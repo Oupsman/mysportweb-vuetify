@@ -24,7 +24,6 @@
     date_of_purchase: toDateInput(props.equipment?.date_of_purchase),
     initial_mileage: props.equipment?.initial_mileage ?? 0,
     weight: props.equipment?.weight ?? 0,
-    maintenance_interval: props.equipment?.maintenance_interval ?? 0,
     default_sports: [...(props.equipment?.default_sports ?? [])],
     is_commute: props.equipment?.is_commute ?? false,
   })
@@ -78,7 +77,6 @@
       date_of_purchase: form.value.date_of_purchase ? new Date(form.value.date_of_purchase).toISOString() : null,
       initial_mileage: Number(form.value.initial_mileage),
       weight: Number(form.value.weight),
-      maintenance_interval: Number(form.value.maintenance_interval),
     }
     saving.value = true
     error.value = ''
@@ -162,18 +160,6 @@
               v-model.number="form.initial_mileage"
               hint="Its distance before the activities recorded here"
               label="Initial mileage"
-              min="0"
-              persistent-hint
-              :rules="[positive]"
-              suffix="km"
-              type="number"
-            />
-          </v-col>
-          <v-col cols="12" sm="6">
-            <v-text-field
-              v-model.number="form.maintenance_interval"
-              hint="Distance between two services, 0 for none"
-              label="Service interval"
               min="0"
               persistent-hint
               :rules="[positive]"

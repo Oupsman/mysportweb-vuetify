@@ -15,6 +15,7 @@
   import WeeklyHrZonesChart from '@/components/WeeklyHrZonesChart.vue'
   import { powerZones } from '@/utils/zones'
   import ReadinessCard from '@/components/ReadinessCard.vue'
+  import MaintenanceCard from '@/components/MaintenanceCard.vue'
   import { useTrainingStore } from '@/stores/training'
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
@@ -137,6 +138,9 @@
           </v-card>
         </v-col>
       </v-row>
+
+      <!-- the maintenance due or soon, nothing otherwise -->
+      <MaintenanceCard />
 
       <v-row dense>
         <v-col cols="12" lg="8">
