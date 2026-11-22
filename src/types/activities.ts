@@ -1,4 +1,4 @@
-import type { BestEffort } from '@/types/records'
+import type { BestEffort, PowerCurvePoint } from '@/types/records'
 
 export type Point = {
   lat: number,
@@ -90,6 +90,8 @@ export interface Activity extends ActivityUpdate {
   tss: number | null
   // where trimp comes from: the device, the TSS of the power, the TRIMP of the heart rate; '' when older
   score_source: '' | 'device' | 'power' | 'hr'
+  // the best power over durations from 1 s to 5 h of a ride with a power meter, empty without, null until computed
+  power_curve: PowerCurvePoint[] | null
   // the fastest stretches over distances and the best powers over durations, empty without any, null until
   // the backend computed them
   best_efforts: BestEffort[] | null

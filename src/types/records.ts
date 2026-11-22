@@ -22,3 +22,33 @@ export interface Records {
   power_durations: number[]
   records: EffortRecord[]
 }
+
+// the best power of a ride over a duration, and the second it starts at
+export interface PowerCurvePoint {
+  duration: number // seconds
+  watts: number
+  start_offset: number
+}
+
+// the best power of the user over a duration of a period, with the ride it comes from
+export interface PowerCurveBest extends PowerCurvePoint {
+  activity_id: string
+  activity_title: string
+  date: string
+  watts_per_kg: number | null // by the weight at the date of the ride, null when unknown
+}
+
+// the 2-parameter model fitted on the 3 to 20 minutes of a curve
+export interface CriticalPower {
+  cp: number // W
+  w_prime: number // J
+  r2: number
+}
+
+// what /user/powercurve returns
+export interface PowerCurve {
+  points: PowerCurveBest[]
+  critical_power: CriticalPower | null
+  ftp: number // the current one, 0 when unknown
+  durations: number[]
+}

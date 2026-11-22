@@ -10,6 +10,7 @@
   import MultisportLegs from '@/components/MultisportLegs.vue'
   import ActivityHrZones from '@/components/ActivityHrZones.vue'
   import ActivityPowerZones from '@/components/ActivityPowerZones.vue'
+  import ActivityPowerCurve from '@/components/ActivityPowerCurve.vue'
   import ActivityBestEfforts from '@/components/ActivityBestEfforts.vue'
   import ActivitySegments from '@/components/ActivitySegments.vue'
   import RouteProgress from '@/components/RouteProgress.vue'
@@ -103,6 +104,7 @@
   }
   // the fastest stretches and best powers, of the activities long enough for the shortest one
   const hasBestEfforts = computed(() => (activity.value?.best_efforts?.length ?? 0) > 0)
+  const hasPowerCurve = computed(() => (activity.value?.power_curve?.length ?? 0) > 1)
   // the speed per km, of the activities with a distance
   const hasMeans = computed(() => (activity.value?.means ?? []).some((m: number) => m > 0))
   // the owner gets the whole trace; the public trace, without the privacy zones, is empty for a short loop
@@ -285,6 +287,11 @@
         </v-col>
         <v-col v-if="hasHrZones" cols="12" :lg="hasPowerZones ? 6 : 12">
           <ActivityHrZones :bounds="activity.hr_zone_bounds" :zones="activity.hr_zones" />
+        </v-col>
+      </v-row>
+      <v-row v-if="hasPowerCurve">
+        <v-col cols="12">
+          <ActivityPowerCurve :curve="activity.power_curve" :date="activity.date" :owner="isOwner" />
         </v-col>
       </v-row>
       <v-row v-if="hasBestEfforts">

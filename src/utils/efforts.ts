@@ -52,3 +52,22 @@ export const rankColor = (rank: number): string => rankColors[rank - 1] ?? 'grey
 // the key of a target of a sport, to match an effort with its records
 export const effortKey = (e: { sport: string, kind: string, target: number }): string =>
   `${e.sport}/${e.kind}/${e.target}`
+
+// a duration of the power curve: "45 s", "1 min 30", "1 h 15"
+export const curveDuration = (seconds: number): string => {
+  if (seconds < 60) {
+    return `${seconds} s`
+  }
+  if (seconds < 3600) {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return s ? `${m} min ${String(s).padStart(2, '0')}` : `${m} min`
+  }
+  const h = Math.floor(seconds / 3600)
+  const m = Math.round((seconds % 3600) / 60)
+  return m ? `${h} h ${String(m).padStart(2, '0')}` : `${h} h`
+}
+
+// YYYY-MM-DD of a day in the browser's timezone
+export const isoDay = (d: Date): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`

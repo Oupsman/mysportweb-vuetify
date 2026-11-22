@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 
 import { api, errorMessage } from '@/api'
 import type { FTPInfo, HrZonesWeeks, Readiness } from '@/types/training'
-import type { Records } from '@/types/records'
+import type { PowerCurve, Records } from '@/types/records'
 
 // what the backend computes from the heart rates and the training scores of the activities
 export const useTrainingStore = defineStore('training', () => {
@@ -30,6 +30,19 @@ export const useTrainingStore = defineStore('training', () => {
     } catch (error) {
       console.error('Get power zones error:', error)
       throw new Error(errorMessage(error, 'The power zones could not be loaded'))
+    }
+  }
+
+  // the best power of the rides over each duration, from and to (YYYY-MM-DD, included) optional
+  const getPowerCurve = async (from = '', to = ''): Promise<PowerCurve> => {
+    try {
+      const params: Record<string, string> = {}
+      if (from) params.from = from
+      if (to) params.to = to
+      return (await api.get('/api/v1/user/powercurve', { params })).data
+    } catch (error) {
+      console.error('Get power curve error:', error)
+      throw new Error(errorMessage(error, 'The power curve could not be loaded'))
     }
   }
 
@@ -70,5 +83,5 @@ export const useTrainingStore = defineStore('training', () => {
     }
   }
 
-  return { hrZones, powerZones, readiness, records, getHrZones, getPowerZones, getFTP, getReadiness, getRecords }
+  return { hrZones, powerZones, readiness, records, getHrZones, getPowerZones, getPowerCurve, getFTP, getReadiness, getRecords }
 })
