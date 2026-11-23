@@ -77,6 +77,9 @@
   const saveError = ref('')
   const widgets = computed(() => editing.value ? draft.value : layoutStore.layout)
   const shown = computed(() => widgets.value.filter(w => !w.hidden))
+  // the ones in the grid: the same while customizing, else the rows would wrap differently and the widgets
+  // change size; the others are in the widgets menu, with why they don't show
+  const placed = computed(() => shown.value.filter(w => !unavailable.value[w.id]))
 
   const startEditing = () => {
     draft.value = layoutStore.layout.map(w => ({ ...w }))
@@ -122,7 +125,7 @@
   }
   // moves a widget before or after the next shown one (the hidden ones keep their place)
   const step = (id: string, direction: -1 | 1) => {
-    const order = shown.value.map(w => w.id)
+    const order = placed.value.map(w => w.id)
     const target = order[order.indexOf(id) + direction]
     if (target) {
       moveTo(id, target)
@@ -263,7 +266,7 @@
             <v-list-item
               v-for="def in widgetDefs"
               :key="def.id"
-              :subtitle="def.description"
+              :subtitle="unavailable[def.id] || def.description"
               :title="def.title"
               @click="toggle(def.id)"
             >
@@ -301,7 +304,7 @@
       >{{ saveError }}</v-alert>
 
       <v-alert
-        v-if="!shown.length"
+        v-if="!placed.length"
         class="mb-2"
         density="compact"
         type="info"
@@ -312,7 +315,7 @@
         <v-row dense>
           <v-col
             v-for="widget in shown"
-            v-show="editing || !unavailable[widget.id]"
+            v-show="!unavailable[widget.id]"
             :key="widget.id"
             cols="12"
             :lg="widget.w"
@@ -331,11 +334,7 @@
             >
               <!-- inert while customizing: a click doesn't open an activity -->
               <div class="dashboard-widget__content" :inert="editing">
-                <v-card v-if="editing && unavailable[widget.id] && widget.id !== 'maintenance'" class="widget-card">
-                  <v-card-title>{{ widgetDef.get(widget.id)?.title }}</v-card-title>
-                  <v-card-text class="text-medium-emphasis">{{ unavailable[widget.id] }}</v-card-text>
-                </v-card>
-                <WidgetTotals v-else-if="widget.id.startsWith('total-')" :measure="totalsMeasure(widget.id)" />
+                <WidgetTotals v-if="widget.id.startsWith('total-')" :measure="totalsMeasure(widget.id)" />
                 <MaintenanceCard v-else-if="widget.id === 'maintenance'" @count="n => reminderCount = n" />
                 <WidgetWeeklyVolume v-else-if="widget.id === 'weekly-volume'" />
                 <WidgetCalendar v-else-if="widget.id === 'calendar'" />
@@ -372,7 +371,7 @@
                   <v-btn
                     aria-label="Move before"
                     density="comfortable"
-                    :disabled="shown[0]?.id === widget.id"
+                    :disabled="placed[0]?.id === widget.id"
                     :icon="mdiArrowLeft"
                     size="small"
                     title="Move before"
@@ -382,7 +381,7 @@
                   <v-btn
                     aria-label="Move after"
                     density="comfortable"
-                    :disabled="shown[shown.length - 1]?.id === widget.id"
+                    :disabled="placed[placed.length - 1]?.id === widget.id"
                     :icon="mdiArrowRight"
                     size="small"
                     title="Move after"
