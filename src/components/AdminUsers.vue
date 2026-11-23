@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
   import {
-    mdiAccountCancelOutline, mdiAccountCheckOutline, mdiCheck, mdiContentCopy, mdiDeleteOutline,
+    mdiAccountCancelOutline, mdiAccountCheckOutline, mdiCheck, mdiContentCopy, mdiDatabaseOutline, mdiDeleteOutline,
     mdiKeyChainVariant, mdiShieldAccountOutline, mdiShieldCheckOutline,
   } from '@mdi/js'
   import { useAccountStore } from '@/stores/account'
@@ -47,15 +47,23 @@
     return `${(bytes / (1 << 30)).toFixed(2)} GB`
   }
   const isMe = (u: AdminUser) => u.id === userStore.session?.sub
+  // the share of their quota their files take, null without quota
+  const usage = (u: AdminUser): number | null => u.quota > 0 ? Math.min(100, (u.disk_bytes / u.quota) * 100) : null
+  const usageColor = (percent: number) => percent >= 100 ? 'error' : percent >= 90 ? 'warning' : 'primary'
 
   // each action asks a code of the authenticator app: the dialog says what it does
-  type Action = { user: AdminUser, kind: 'promote' | 'demote' | 'disable' | 'enable' | 'delete' | 'reset' }
+  type Action = { user: AdminUser, kind: 'promote' | 'demote' | 'disable' | 'enable' | 'delete' | 'reset' | 'quota' }
   const pending = ref<Action | null>(null)
   const code = ref('')
   const confirmName = ref('')
   const busy = ref(false)
   const actionError = ref('')
   const resetLink = ref<{ user: string, link: string, expires_at: string } | null>(null)
+  // the quota dialog: the one of the instance, their own (GB), or none
+  const quotaMode = ref<'instance' | 'own' | 'none'>('instance')
+  const quotaGB = ref('')
+  const quotaValid = computed(() => quotaMode.value !== 'own' ||
+    (/^\d+(\.\d+)?$/.test(quotaGB.value.trim()) && Number(quotaGB.value) > 0))
   const copied = ref(false)
 
   const describe: Record<Action['kind'], (u: AdminUser) => { title: string, text: string, color: string }> = {
@@ -65,6 +73,7 @@
     enable: u => ({ title: `Enable ${u.username}`, text: 'They can log in again.', color: 'primary' }),
     delete: u => ({ title: `Delete ${u.username}`, text: 'Their activities, files, health data, equipment, devices and segments are deleted, for good.', color: 'error' }),
     reset: u => ({ title: `Password reset link for ${u.username}`, text: 'A link valid 24 hours, used once, to choose a new password. Give it to them: it is shown once. Their two-factor authentication stays.', color: 'primary' }),
+    quota: u => ({ title: `Storage quota of ${u.username}`, text: `Their files take ${size(u.disk_bytes)}. Above the quota, their uploads are refused; nothing is deleted.`, color: 'primary' }),
   }
   const details = computed(() => pending.value ? describe[pending.value.kind](pending.value.user) : null)
   const ask = (user: AdminUser, kind: Action['kind']) => {
@@ -72,9 +81,14 @@
     code.value = ''
     confirmName.value = ''
     actionError.value = ''
+    if (kind === 'quota') {
+      quotaMode.value = user.quota_bytes === null ? 'instance' : user.quota_bytes === 0 ? 'none' : 'own'
+      quotaGB.value = user.quota_bytes ? String(Math.round((user.quota_bytes / (1 << 30)) * 100) / 100) : ''
+    }
   }
   const ready = computed(() => code.value.trim().length === 6 &&
-    (pending.value?.kind !== 'delete' || confirmName.value === pending.value.user.username))
+    (pending.value?.kind !== 'delete' || confirmName.value === pending.value.user.username) &&
+    (pending.value?.kind !== 'quota' || quotaValid.value))
 
   const run = async () => {
     const action = pending.value
@@ -95,6 +109,12 @@
         case 'delete':
           await accountStore.deleteUser(user.id, code.value.trim())
           break
+        case 'quota': {
+          const bytes = quotaMode.value === 'instance' ? null
+            : quotaMode.value === 'none' ? 0 : Math.round(Number(quotaGB.value) * (1 << 30))
+          await accountStore.setQuota(user.id, bytes, code.value.trim())
+          break
+        }
         case 'reset': {
           const answer = await accountStore.passwordResetLink(user.id, code.value.trim())
           resetLink.value = { user: user.username, ...answer }
@@ -180,8 +200,27 @@
             <td class="d-none d-md-table-cell">{{ formatDate(u.created_at) }}</td>
             <td class="text-right">{{ u.activities }}</td>
             <td class="d-none d-md-table-cell">{{ u.last_activity ? formatDate(u.last_activity) : '' }}</td>
-            <td class="text-right text-no-wrap d-none d-sm-table-cell">{{ size(u.disk_bytes) }}</td>
+            <td class="text-right text-no-wrap d-none d-sm-table-cell">
+              {{ size(u.disk_bytes) }}
+              <span class="text-medium-emphasis">/ {{ u.quota > 0 ? size(u.quota) : 'no quota' }}</span>
+              <v-progress-linear
+                v-if="usage(u) !== null"
+                class="mt-1"
+                :color="usageColor(usage(u)!)"
+                height="4"
+                :model-value="usage(u)!"
+                rounded
+                :title="u.quota_bytes === null ? 'The quota of the instance' : 'A quota of their own'"
+              />
+            </td>
             <td class="text-right text-no-wrap">
+              <v-btn
+                :icon="mdiDatabaseOutline"
+                size="small"
+                title="Storage quota"
+                variant="text"
+                @click="ask(u, 'quota')"
+              />
               <template v-if="!isMe(u)">
                 <v-btn
                   :icon="mdiShieldAccountOutline"
@@ -226,6 +265,22 @@
         <v-card-text>
           <p class="mb-4">{{ details.text }}</p>
           <v-alert v-if="actionError" class="mb-4" type="error">{{ actionError }}</v-alert>
+          <template v-if="pending.kind === 'quota'">
+            <v-radio-group v-model="quotaMode" density="compact" hide-details>
+              <v-radio label="The quota of the instance (MSW_USER_QUOTA)" value="instance" />
+              <v-radio label="A quota of their own" value="own" />
+              <v-radio label="No quota" value="none" />
+            </v-radio-group>
+            <v-text-field
+              v-if="quotaMode === 'own'"
+              v-model="quotaGB"
+              class="mt-2"
+              inputmode="decimal"
+              label="Quota"
+              :rules="[() => quotaValid || 'A number of GB above 0']"
+              suffix="GB"
+            />
+          </template>
           <v-text-field
             v-if="pending.kind === 'delete'"
             v-model="confirmName"

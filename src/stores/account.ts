@@ -71,6 +71,10 @@ export const useAccountStore = defineStore('account', () => {
       disabled ? 'The account could not be disabled' : 'The account could not be enabled')
   const deleteUser = (id: number, code: string) =>
     call(() => api.delete(`/api/v1/admin/users/${id}`, totpHeader(code)), 'The account could not be deleted')
+  // bytes, 0 for no quota, null for the one of the instance
+  const setQuota = (id: number, quotaBytes: number | null, code: string) =>
+    call(() => api.post(`/api/v1/admin/users/${id}/quota`, { quota_bytes: quotaBytes }, totpHeader(code)),
+      'The quota could not be changed')
   const passwordResetLink = (id: number, code: string): Promise<{ link: string, expires_at: string }> =>
     call(() => api.post(`/api/v1/admin/users/${id}/password-reset`, null, totpHeader(code)), 'The link could not be created')
 
@@ -98,5 +102,6 @@ export const useAccountStore = defineStore('account', () => {
     setDisabled,
     deleteUser,
     passwordResetLink,
+    setQuota,
   }
 })

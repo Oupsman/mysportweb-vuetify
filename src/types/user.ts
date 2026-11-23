@@ -37,6 +37,10 @@ export interface AdminUser {
   last_activity: string | null
   last_device_use: string | null
   disk_bytes: number
+  // the storage quota an admin gave them, null for the one of the instance; quota: the one that applies.
+  // Bytes, 0 for none
+  quota_bytes: number | null
+  quota: number
 }
 
 // who may create an account (REGISTRATION of the backend)
