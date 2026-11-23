@@ -4,6 +4,7 @@
   import { useTrainingStore } from '@/stores/training'
   import type { FTPInfo } from '@/types/training'
   import { formatDate } from '@/utils/format'
+  import { minPasswordLength } from '@/utils/password'
   import { useAppStore } from '@/stores/app'
   import { useVuelidate } from '@vuelidate/core'
   import { minLength, required, sameAs } from '@vuelidate/validators'
@@ -34,7 +35,7 @@
 
   const rules = computed(() => ({
     oldPassword: { required },
-    newPassword: { minLength: minLength(6) },
+    newPassword: { minLength: minLength(minPasswordLength) },
     newPasswordConfirmation: {
       sameAsPassword: sameAs(userForm.value.newPassword),
     },

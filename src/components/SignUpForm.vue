@@ -5,6 +5,7 @@
   import { useUserStore } from '@/stores/user'
   import router from '@/router'
   import type { SignupGrant } from '@/types/user'
+  import { passwordHint, passwordLengthRule } from '@/utils/password'
 
   const userStore = useUserStore()
   const route = useRoute()
@@ -96,7 +97,10 @@
           <v-text-field
             v-model="password"
             autocomplete="new-password"
+            :hint="passwordHint"
             label="Password"
+            persistent-hint
+            :rules="[passwordLengthRule]"
             type="password"
           />
           <v-text-field

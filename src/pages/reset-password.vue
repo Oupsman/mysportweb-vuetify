@@ -2,6 +2,7 @@
   import { computed, ref } from 'vue'
   import { useRoute } from 'vue-router'
   import { useAccountStore } from '@/stores/account'
+  import { minPasswordLength, passwordLengthRule } from '@/utils/password'
 
   // the link an admin gave: /reset-password?code=...
   const route = useRoute()
@@ -15,10 +16,10 @@
   const done = ref('')
 
   const rules = {
-    length: (v: string) => v.length >= 6 || 'At least 6 characters',
+    length: passwordLengthRule,
     same: (v: string) => v === password.value || 'The passwords differ',
   }
-  const valid = computed(() => password.value.length >= 6 && password.value === confirmation.value)
+  const valid = computed(() => password.value.length >= minPasswordLength && password.value === confirmation.value)
 
   const save = async () => {
     error.value = ''
