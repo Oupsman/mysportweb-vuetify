@@ -48,7 +48,8 @@
     animation: false,
     interaction: { mode: 'index', intersect: false },
     scales: {
-      x: { type: 'linear', title: { display: true, text: 'km' }, ticks: { maxTicksLimit: 12 } },
+      // up to the last distance compared, not the next round number
+      x: { type: 'linear', min: 0, max: props.distances.at(-1), title: { display: true, text: 'km' }, ticks: { maxTicksLimit: 12 } },
       y: { title: { display: true, text: props.unit } },
     },
     plugins: {

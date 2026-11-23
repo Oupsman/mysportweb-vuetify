@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { mdiCircle } from '@mdi/js'
   import { useRoute } from 'vue-router'
   import CompareChart from '@/components/CompareChart.vue'
@@ -19,19 +19,27 @@
   const error = ref('')
   const colors = ['rgb(25, 118, 210)', 'rgb(230, 81, 0)']
 
-  onMounted(async () => {
-    const a = route.query.a
-    const b = route.query.b
+  // loaded again when the query changes: the page stays the same component from a pair to another
+  const load = async (a: unknown, b: unknown) => {
+    first.value = null
+    second.value = null
+    error.value = ''
     if (typeof a !== 'string' || typeof b !== 'string') {
       error.value = 'Choose two activities to compare, from the "Same route" list of an activity.'
       return
     }
     try {
-      [first.value, second.value] = await Promise.all([activitiesStore.getActivity(a), activitiesStore.getActivity(b)])
+      const [x, y] = await Promise.all([activitiesStore.getActivity(a), activitiesStore.getActivity(b)])
+      // a later query won meanwhile
+      if (route.query.a === a && route.query.b === b) {
+        first.value = x
+        second.value = y
+      }
     } catch {
       error.value = 'The activities could not be loaded'
     }
-  })
+  }
+  watch(() => [route.query.a, route.query.b], ([a, b]) => load(a, b), { immediate: true })
 
   const comparison = computed(() => first.value && second.value
     ? compareActivities(first.value as unknown as ComparedActivity, second.value as unknown as ComparedActivity)
@@ -108,6 +116,7 @@
           <v-card-text>
             <CompareChart
               :distances="comparison.distances"
+              :format="v => `${v.toFixed(1)} km/h`"
               :series="[
                 { label: label(first), color: colors[0], values: comparison.speedA! },
                 { label: label(second), color: colors[1], values: comparison.speedB! },
