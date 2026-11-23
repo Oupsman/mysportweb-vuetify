@@ -18,8 +18,8 @@ server {
 
     # The security headers, repeated in the locations below with an add_header of their own: nginx drops the
     # add_header of the server in a location that has one.
-    # CSP_HEADER: Content-Security-Policy-Report-Only (default) reports what the policy would block in the
-    # console of the browser without blocking it; Content-Security-Policy blocks it.
+    # CSP_HEADER: Content-Security-Policy (default) blocks what the policy doesn't allow;
+    # Content-Security-Policy-Report-Only only reports it in the console of the browser.
     add_header ${CSP_HEADER} $csp always;
     # HTTPS only for 180 days once a page came over HTTPS (ignored over HTTP)
     add_header Strict-Transport-Security "max-age=15552000" always;

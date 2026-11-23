@@ -18,7 +18,7 @@ ENV BACKEND_URL=http://backend:8080
 # NGINX_LOCAL_RESOLVERS for nginx.conf.template: the DNS servers of the container (Docker's), to look the backend
 # up again when its address changes
 ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
-# Content-Security-Policy-Report-Only: the browser reports what the policy would block without blocking it;
-# Content-Security-Policy: it blocks it (see nginx.conf.template)
-ENV CSP_HEADER=Content-Security-Policy-Report-Only
+# Content-Security-Policy: the browser blocks what the policy doesn't allow; Content-Security-Policy-Report-Only
+# only reports it (see nginx.conf.template)
+ENV CSP_HEADER=Content-Security-Policy
 EXPOSE 80
