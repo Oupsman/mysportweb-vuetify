@@ -3,6 +3,7 @@
   import EmailCard from '@/components/EmailCard.vue'
   import ApiTokens from '@/components/ApiTokens.vue'
   import PushNotifications from '@/components/PushNotifications.vue'
+  import StorageCard from '@/components/StorageCard.vue'
   import TwoFactorCard from '@/components/TwoFactorCard.vue'
 </script>
 
@@ -13,6 +14,7 @@
     <TwoFactorCard class="mt-6" />
     <PushNotifications class="mt-6" />
     <ApiTokens class="mt-6" />
+    <StorageCard class="mt-6" />
     <AccountDataCard class="mt-6" />
   </v-container>
 </template>

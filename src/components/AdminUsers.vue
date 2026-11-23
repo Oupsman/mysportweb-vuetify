@@ -7,7 +7,7 @@
   import { useAccountStore } from '@/stores/account'
   import { useUserStore } from '@/stores/user'
   import type { AdminUser } from '@/types/user'
-  import { formatDate } from '@/utils/format'
+  import { formatBytes, formatDate } from '@/utils/format'
 
   const accountStore = useAccountStore()
   const userStore = useUserStore()
@@ -41,11 +41,7 @@
     }
   }
 
-  const size = (bytes: number): string => {
-    if (bytes < 1 << 20) return `${Math.round(bytes / 1024)} KB`
-    if (bytes < 1 << 30) return `${(bytes / (1 << 20)).toFixed(1)} MB`
-    return `${(bytes / (1 << 30)).toFixed(2)} GB`
-  }
+  const size = formatBytes
   const isMe = (u: AdminUser) => u.id === userStore.session?.sub
   // the share of their quota their files take, null without quota
   const usage = (u: AdminUser): number | null => u.quota > 0 ? Math.min(100, (u.disk_bytes / u.quota) * 100) : null

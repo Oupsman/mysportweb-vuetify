@@ -90,3 +90,10 @@ export const formatSpeedFor = (sport: string | null | undefined, speed: number):
   const pace = paceOf(speed)
   return pace === null ? '-' : `${formatPace(pace)} /km`
 }
+
+// a size in bytes as people read it: 512 KB, 3.4 MB, 1.25 GB
+export const formatBytes = (bytes: number): string => {
+  if (bytes < 1 << 20) return `${Math.round(bytes / 1024)} KB`
+  if (bytes < 1 << 30) return `${(bytes / (1 << 20)).toFixed(1)} MB`
+  return `${(bytes / (1 << 30)).toFixed(2)} GB`
+}

@@ -3,7 +3,7 @@
   import { computed, onMounted, ref } from 'vue'
   import type { Ref } from 'vue'
   import axios from 'axios'
-  import { api } from '@/api'
+  import { api, errorCode } from '@/api'
   import { useAppStore } from '@/stores/app'
   import { useEquipmentsStore } from '@/stores/equipments'
   import { useUserStore } from '@/stores/user'
@@ -12,6 +12,11 @@
   const importResults: Ref<{ filename: string, status: string, color: string }[]> = ref([])
   const files: Ref<File[] | undefined> = ref(undefined)
   const uploadedFiles = ref({ completed: 0, count: 0, total: 0 })
+  // the storage quota is reached: the files left aren't sent, each would be refused
+  const storageFull = ref('')
+  // the files sent at a time: the server analyses a few at a time, the others wait for their turn (a minute at
+  // most, then refused as busy)
+  const parallelUploads = 3
   const appStore = useAppStore()
   const userStore = useUserStore()
   const equipmentsStore = useEquipmentsStore()
@@ -52,6 +57,9 @@
         return error.response.data?.id
       }
       const reason = axios.isAxiosError(error) ? error.response?.data?.error ?? error.message : String(error)
+      if (errorCode(error) === 'quota_exceeded') {
+        storageFull.value = reason
+      }
       importResults.value.push({ filename: file.name, status: 'Error: ' + reason, color: 'red' })
       return undefined
     } finally {
@@ -72,9 +80,24 @@
     uploadedFiles.value = { completed: 0, total: selected.length, count: 0 }
 
     importResults.value = []
+    storageFull.value = ''
     // the first file resets the "last import" flags on the backend: it must be processed before the others
     const firstID = await uploadFile(selected[0], 0, selected.length)
-    await Promise.all(selected.slice(1).map((file, index) => uploadFile(file, index + 1, selected.length)))
+    // the others a few at a time, until the storage is full
+    let next = 1
+    const worker = async () => {
+      while (next < selected.length) {
+        const index = next++
+        const file = selected[index]
+        if (storageFull.value) {
+          importResults.value.push({ filename: file.name, status: 'Not sent: your storage is full', color: 'red' })
+          uploadedFiles.value.completed++
+          continue
+        }
+        await uploadFile(file, index, selected.length)
+      }
+    }
+    await Promise.all(Array.from({ length: parallelUploads }, worker))
 
     userStore.refreshDashboard().catch(() => {})
     if (selected.length === 1 && firstID) {
@@ -131,6 +154,16 @@
         </v-btn>
       </v-col>
     </v-row>
+    <v-alert
+      v-if="storageFull"
+      class="my-4"
+      title="Your storage is full"
+      type="error"
+      variant="tonal"
+    >
+      {{ storageFull }} The files left weren't sent. Your space is on your
+      <router-link to="/profile/view">profile</router-link>.
+    </v-alert>
     <v-row class="h-50">
       <v-table>
         <tbody>

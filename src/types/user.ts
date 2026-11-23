@@ -88,3 +88,9 @@ export interface NewInvitation {
   email_sent?: boolean, // sent by email when asked: false when the email failed
   email_error?: string,
 }
+
+// the space the files of the user take, and their quota: bytes, 0 for no quota
+export interface Storage {
+  used: number
+  quota: number
+}

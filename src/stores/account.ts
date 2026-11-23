@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api, errorMessage } from '@/api'
-import type { AdminUser, EmailStatus, TwoFactorSetup, TwoFactorStatus, UserSession } from '@/types/user'
+import type { AdminUser, EmailStatus, Storage, TwoFactorSetup, TwoFactorStatus, UserSession } from '@/types/user'
 
 // the code of the authenticator app the critical admin actions send, each time
 const totpHeader = (code: string) => ({ headers: { 'X-TOTP-Code': code } })
@@ -61,6 +61,9 @@ export const useAccountStore = defineStore('account', () => {
     call(() => api.post('/api/v1/admin/email/test', null, { timeout: 60_000 }), 'The test email could not be sent')
 
   const users: Ref<AdminUser[]> = ref([])
+  // the space the files of the user take, and their quota: bytes, 0 for no quota
+  const getStorage = (): Promise<Storage> =>
+    call<Storage>(() => api.get('/api/v1/user/storage'), 'Your storage could not be read')
   const getUsers = async (): Promise<void> => {
     users.value = (await call<{ users: AdminUser[] }>(() => api.get('/api/v1/admin/users'), 'The users could not be loaded')).users
   }
@@ -103,5 +106,6 @@ export const useAccountStore = defineStore('account', () => {
     deleteUser,
     passwordResetLink,
     setQuota,
+    getStorage,
   }
 })
