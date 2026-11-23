@@ -1,75 +1,221 @@
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
+  import { useDisplay } from 'vuetify'
   import {
-    mdiCalendarCheck,
-    mdiImageFilterHdr,
-    mdiLeaf,
-    mdiMapMarkerDistance,
-    mdiTimerOutline,
-    mdiTrophyOutline,
+    mdiArrowCollapseVertical,
+    mdiArrowLeft,
+    mdiArrowRight,
+    mdiClose,
+    mdiDrag,
+    mdiResizeBottomRight,
+    mdiRestore,
     mdiUpload,
+    mdiViewDashboardEditOutline,
+    mdiViewGridPlusOutline,
   } from '@mdi/js'
-  import ActivityMonth from '@/components/ActivityMonth.vue'
-  import ActivityThumbnail from '@/components/ActivityThumbnail.vue'
-  import WeeklyVolumeChart from '@/components/WeeklyVolumeChart.vue'
-  import WeeklyHrZonesChart from '@/components/WeeklyHrZonesChart.vue'
-  import { powerZones } from '@/utils/zones'
   import ReadinessCard from '@/components/ReadinessCard.vue'
   import MaintenanceCard from '@/components/MaintenanceCard.vue'
+  import WidgetCalendar from '@/components/dashboard/WidgetCalendar.vue'
+  import WidgetCo2 from '@/components/dashboard/WidgetCo2.vue'
+  import WidgetRecent from '@/components/dashboard/WidgetRecent.vue'
+  import WidgetSports from '@/components/dashboard/WidgetSports.vue'
+  import WidgetTotals from '@/components/dashboard/WidgetTotals.vue'
+  import WidgetWeeklyVolume from '@/components/dashboard/WidgetWeeklyVolume.vue'
+  import WidgetZones from '@/components/dashboard/WidgetZones.vue'
   import { useTrainingStore } from '@/stores/training'
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
-  import type { PeriodTotals, SportRecord, SportSummary } from '@/types/dashboard'
+  import { useDashboardLayoutStore } from '@/stores/dashboardLayout'
+  import type { PeriodTotals, WidgetLayout } from '@/types/dashboard'
   import {
-    formatCo2,
-    formatDate,
-    formatDistance,
-    formatDuration,
-    formatElevation,
-    formatSpeed,
-    sportColor,
-    sportIcon,
-    sportLabel,
-  } from '@/utils/format'
+    defaultLayout,
+    heightStep,
+    maxHeight,
+    minHeight,
+    widgetDef,
+    widgetDefs,
+  } from '@/utils/dashboardWidgets'
 
   const userStore = useUserStore()
   const appStore = useAppStore()
+  const layoutStore = useDashboardLayoutStore()
   const dashboard = computed(() => userStore.dashboard)
   const hasActivities = computed(() => dashboard.value.totals.all_time.activities > 0)
+  // the sizes apply on large screens; smaller ones stack the widgets
+  const { lgAndUp } = useDisplay()
 
   const trainingStore = useTrainingStore()
   // the weeks with time in zones: none without heart rate
   const hasHrZones = computed(() => (trainingStore.hrZones?.weeks ?? []).some(w => w.zones.some(s => s > 0)))
   const hasPowerZones = computed(() => (trainingStore.powerZones?.weeks ?? []).some(w => w.zones.some(s => s > 0)))
+  const reminderCount = ref(0)
 
   onMounted(() => {
     userStore.refreshDashboard().catch(() => {})
-    // the dashboard shows without them: they have their own cards
+    // the dashboard shows without them: they have their own widgets
     trainingStore.getReadiness().catch(() => {})
     trainingStore.getHrZones().catch(() => {})
     trainingStore.getPowerZones().catch(() => {})
+    layoutStore.load(userStore.session?.uuid ?? '')
   })
 
-  const open = (id: string) => appStore.navigateToPage(`/activity/${id}`)
+  // the widgets with something to show; the others are left out of the dashboard until they have, and
+  // explained while customizing it
+  const unavailable = computed((): Record<string, string> => ({
+    'hr-zones': hasHrZones.value ? '' : 'Shown once your activities have heart rate data.',
+    'power-zones': hasPowerZones.value ? '' : 'Shown once your rides have a power meter.',
+    readiness: trainingStore.readiness ? '' : 'Shown once your readiness is computed.',
+    maintenance: reminderCount.value > 0 ? '' : 'Shown when a maintenance is due or soon.',
+  }))
 
-  // one tile per measure, comparing the current periods with the previous ones
-  type Measure = keyof PeriodTotals
-  const tiles: { measure: Measure, title: string, icon: string, format: (v: number) => string }[] = [
-    { measure: 'distance', title: 'Distance', icon: mdiMapMarkerDistance, format: formatDistance },
-    { measure: 'duration', title: 'Time', icon: mdiTimerOutline, format: formatDuration },
-    { measure: 'elevation', title: 'Elevation', icon: mdiImageFilterHdr, format: formatElevation },
-    { measure: 'activities', title: 'Activities', icon: mdiCalendarCheck, format: v => String(v) },
-  ]
+  const totalsMeasure = (id: string) => id.replace('total-', '') as keyof PeriodTotals
 
-  const metric = ref<'distance' | 'duration'>('distance')
+  // customizing: the changes go to a draft, saved or dropped at the end
+  const editing = ref(false)
+  const draft = ref<WidgetLayout[]>([])
+  const saving = ref(false)
+  const saveError = ref('')
+  const widgets = computed(() => editing.value ? draft.value : layoutStore.layout)
+  const shown = computed(() => widgets.value.filter(w => !w.hidden))
 
-  // records of a sport, with their unit
-  const records = (sport: SportSummary) => [
-    { label: 'Longest distance', record: sport.longest_distance, format: formatDistance },
-    { label: 'Longest duration', record: sport.longest_duration, format: formatDuration },
-    { label: 'Biggest climb', record: sport.biggest_climb, format: formatElevation },
-  ].filter((r): r is { label: string, record: SportRecord, format: (v: number) => string } => r.record !== null)
+  const startEditing = () => {
+    draft.value = layoutStore.layout.map(w => ({ ...w }))
+    saveError.value = ''
+    editing.value = true
+  }
+  const cancel = () => {
+    editing.value = false
+  }
+  const reset = () => {
+    draft.value = defaultLayout()
+  }
+  const save = async () => {
+    saving.value = true
+    saveError.value = ''
+    try {
+      await layoutStore.save(draft.value)
+      editing.value = false
+    } catch (e) {
+      saveError.value = (e as Error).message
+    } finally {
+      saving.value = false
+    }
+  }
 
+  const toggle = (id: string) => {
+    const widget = draft.value.find(w => w.id === id)
+    if (widget) {
+      widget.hidden = !widget.hidden
+    }
+  }
+  const visibleCount = computed(() => draft.value.filter(w => !w.hidden).length)
+
+  // puts the widget at the place of target, the others shifting
+  const moveTo = (id: string, target: string) => {
+    const from = draft.value.findIndex(w => w.id === id)
+    const to = draft.value.findIndex(w => w.id === target)
+    if (from < 0 || to < 0 || from === to) {
+      return
+    }
+    const [widget] = draft.value.splice(from, 1)
+    draft.value.splice(to, 0, widget)
+  }
+  // moves a widget before or after the next shown one (the hidden ones keep their place)
+  const step = (id: string, direction: -1 | 1) => {
+    const order = shown.value.map(w => w.id)
+    const target = order[order.indexOf(id) + direction]
+    if (target) {
+      moveTo(id, target)
+    }
+  }
+
+  // dragging by the handle, over the other widgets. The widget it just took the place of may shift under the
+  // pointer: it is passed over until the pointer reaches another one, else the two would swap back and forth.
+  const dragging = ref<string | null>(null)
+  let lastTarget: string | null = null
+  const onDragStart = (event: DragEvent, id: string) => {
+    dragging.value = id
+    lastTarget = null
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('text/plain', id)
+      const el = (event.target as HTMLElement).closest('.dashboard-widget')
+      if (el) {
+        event.dataTransfer.setDragImage(el, 24, 24)
+      }
+    }
+  }
+  const onDragOver = (event: DragEvent, id: string) => {
+    if (!dragging.value) {
+      return
+    }
+    event.preventDefault()
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move'
+    }
+    if (id === dragging.value) {
+      return
+    }
+    if (id !== lastTarget) {
+      moveTo(dragging.value, id)
+    }
+    lastTarget = id
+  }
+  const onDragEnd = () => {
+    dragging.value = null
+    lastTarget = null
+  }
+
+  // resizing by the corner: the width snaps to the columns, the height to heightStep pixels; a widget fitting
+  // its content keeps doing it while only its width changes
+  const grid = ref<HTMLElement | null>(null)
+  const resizing = ref<{
+    widget: WidgetLayout
+    x: number
+    y: number
+    w: number
+    h: number
+    pitch: number
+  } | null>(null)
+  const startResize = (event: PointerEvent, widget: WidgetLayout) => {
+    const handle = event.currentTarget as HTMLElement
+    const el = handle.closest('.dashboard-widget') as HTMLElement | null
+    if (!grid.value || !el) {
+      return
+    }
+    event.preventDefault()
+    handle.setPointerCapture(event.pointerId)
+    resizing.value = {
+      widget,
+      x: event.clientX,
+      y: event.clientY,
+      w: widget.w,
+      h: widget.h || el.getBoundingClientRect().height,
+      pitch: grid.value.getBoundingClientRect().width / 12,
+    }
+  }
+  const onResize = (event: PointerEvent) => {
+    const r = resizing.value
+    if (!r) {
+      return
+    }
+    const minW = widgetDef.get(r.widget.id)?.minW ?? 1
+    r.widget.w = Math.min(Math.max(Math.round(r.w + (event.clientX - r.x) / r.pitch), minW), 12)
+    const dy = event.clientY - r.y
+    if (r.widget.h > 0 || Math.abs(dy) >= heightStep) {
+      const h = Math.round((r.h + dy) / heightStep) * heightStep
+      r.widget.h = Math.min(Math.max(h, minHeight), maxHeight)
+    }
+  }
+  const endResize = () => {
+    resizing.value = null
+  }
+
+  const sizeLabel = (widget: WidgetLayout) =>
+    `${widget.w}/12 · ${widget.h > 0 ? `${widget.h} px` : 'fits content'}`
+
+  // on small screens the widgets stack: the narrow ones by two
+  const smCols = (widget: WidgetLayout) => widget.w <= 4 ? 6 : 12
 </script>
 
 <template>
@@ -95,227 +241,299 @@
       </v-btn>
     </v-card>
 
-    <template v-else>
-      <!-- totals: this week, compared with the previous periods -->
-      <v-row dense>
-        <v-col
-          v-for="tile in tiles"
-          :key="tile.measure"
-          cols="12"
-          lg="3"
-          sm="6"
-        >
-          <v-card class="h-100">
-            <v-card-item>
+    <template v-else-if="layoutStore.loaded">
+      <!-- customizing: what to do, the widgets to show, saving -->
+      <v-sheet
+        v-if="editing"
+        border
+        class="edit-bar d-flex flex-wrap align-center ga-2 pa-2 mb-2"
+        rounded
+      >
+        <div class="text-body-2 text-medium-emphasis flex-grow-1">
+          Drag a widget by its handle to move it<template v-if="lgAndUp">, by its corner to resize it
+            (double-click the corner: fit the content)</template>.
+        </div>
+        <v-menu :close-on-content-click="false" location="bottom end">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" :prepend-icon="mdiViewGridPlusOutline" size="small" variant="tonal">
+              Widgets {{ visibleCount }}/{{ widgetDefs.length }}
+            </v-btn>
+          </template>
+          <v-list density="compact" max-height="420" min-width="300">
+            <v-list-item
+              v-for="def in widgetDefs"
+              :key="def.id"
+              :subtitle="def.description"
+              :title="def.title"
+              @click="toggle(def.id)"
+            >
               <template #prepend>
-                <v-icon color="primary" :icon="tile.icon" />
+                <v-checkbox-btn :model-value="!draft.find(w => w.id === def.id)?.hidden" tabindex="-1" />
               </template>
-              <v-card-title>{{ tile.title }}</v-card-title>
-              <v-card-subtitle>This week</v-card-subtitle>
-            </v-card-item>
-            <v-card-text>
-              <div class="text-h4 font-weight-medium">{{ tile.format(dashboard.totals.this_week[tile.measure]) }}</div>
-              <div class="text-caption text-medium-emphasis mb-2">
-                last week {{ tile.format(dashboard.totals.last_week[tile.measure]) }}
-              </div>
-              <v-divider class="mb-2" />
-              <div class="d-flex justify-space-between text-body-2">
-                <span>This month</span>
-                <span>
-                  <strong>{{ tile.format(dashboard.totals.this_month[tile.measure]) }}</strong>
-                  <span class="text-medium-emphasis"> / last {{ tile.format(dashboard.totals.last_month[tile.measure]) }}</span>
-                </span>
-              </div>
-              <div class="d-flex justify-space-between text-body-2">
-                <span>This year</span>
-                <strong>{{ tile.format(dashboard.totals.this_year[tile.measure]) }}</strong>
-              </div>
-              <div class="d-flex justify-space-between text-body-2">
-                <span>All time</span>
-                <strong>{{ tile.format(dashboard.totals.all_time[tile.measure]) }}</strong>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        <v-btn :prepend-icon="mdiRestore" size="small" variant="text" @click="reset">Default</v-btn>
+        <v-btn :disabled="saving" size="small" variant="text" @click="cancel">Cancel</v-btn>
+        <v-btn
+          color="primary"
+          :loading="saving"
+          size="small"
+          variant="flat"
+          @click="save"
+        >Save</v-btn>
+      </v-sheet>
+      <div v-else class="d-flex justify-end mb-1">
+        <v-btn
+          :prepend-icon="mdiViewDashboardEditOutline"
+          size="small"
+          variant="text"
+          @click="startEditing"
+        >Customize</v-btn>
+      </div>
+      <v-alert
+        v-if="saveError"
+        class="mb-2"
+        closable
+        density="compact"
+        type="error"
+        @click:close="saveError = ''"
+      >{{ saveError }}</v-alert>
 
-      <!-- the maintenance due or soon, nothing otherwise -->
-      <MaintenanceCard />
+      <v-alert
+        v-if="!shown.length"
+        class="mb-2"
+        density="compact"
+        type="info"
+        variant="tonal"
+      >No widget on your dashboard: add some with Customize, then Widgets.</v-alert>
 
-      <v-row dense>
-        <v-col cols="12" lg="8">
-          <v-card class="h-100">
-            <v-card-item>
-              <v-card-title>Last {{ dashboard.week_starts.length }} weeks</v-card-title>
-              <template #append>
-                <v-btn-toggle
-                  v-model="metric"
-                  color="primary"
-                  density="compact"
-                  mandatory
-                  variant="outlined"
-                >
-                  <v-btn value="distance">Distance</v-btn>
-                  <v-btn value="duration">Time</v-btn>
-                </v-btn-toggle>
-              </template>
-            </v-card-item>
-            <v-card-text>
-              <WeeklyVolumeChart :metric="metric" :volumes="dashboard.weekly" :weeks="dashboard.week_starts" />
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" lg="4">
-          <v-card class="h-100">
-            <v-card-title>Calendar</v-card-title>
-            <v-card-text>
-              <ActivityMonth :activities="dashboard.calendar" @open="open" />
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <!-- training: how hard the weeks were, and how rested the user is -->
-      <v-row v-if="trainingStore.readiness || hasHrZones" dense>
-        <v-col v-if="hasHrZones && trainingStore.hrZones" cols="12" :lg="trainingStore.readiness ? 8 : 12">
-          <v-card class="h-100">
-            <v-card-item>
-              <v-card-title>Heart rate zones</v-card-title>
-              <v-card-subtitle>Last {{ trainingStore.hrZones.weeks.length }} weeks, by heart rate reserve</v-card-subtitle>
-            </v-card-item>
-            <v-card-text>
-              <WeeklyHrZonesChart :data="trainingStore.hrZones" />
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col v-if="trainingStore.readiness" cols="12" :lg="hasHrZones ? 4 : 12">
-          <ReadinessCard :readiness="trainingStore.readiness" />
-        </v-col>
-      </v-row>
-      <v-row v-if="hasPowerZones && trainingStore.powerZones" dense>
-        <v-col cols="12" :lg="trainingStore.readiness && !hasHrZones ? 8 : 12">
-          <v-card class="h-100">
-            <v-card-item>
-              <v-card-title>Power zones</v-card-title>
-              <v-card-subtitle>Last {{ trainingStore.powerZones.weeks.length }} weeks, rides with a power meter, by FTP</v-card-subtitle>
-            </v-card-item>
-            <v-card-text>
-              <WeeklyHrZonesChart :data="trainingStore.powerZones" :zones="powerZones" />
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <v-row dense>
-        <v-col cols="12" lg="8">
-          <v-card class="h-100">
-            <v-card-item>
-              <v-card-title>Recent activities</v-card-title>
-              <template #append>
-                <v-btn size="small" variant="text" @click="appStore.navigateToPage('/activities')">All activities</v-btn>
-              </template>
-            </v-card-item>
-            <v-table density="compact" hover>
-              <thead>
-                <tr>
-                  <th />
-                  <th>Date</th>
-                  <!-- phones: only sport, date, distance and time -->
-                  <th class="d-none d-sm-table-cell">Title</th>
-                  <th class="text-right">Distance</th>
-                  <th class="text-right">Time</th>
-                  <th class="text-right d-none d-sm-table-cell">Speed</th>
-                  <th class="text-right d-none d-sm-table-cell">Elevation</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="activity in dashboard.recent"
-                  :key="activity.id"
-                  class="cursor-pointer"
-                  @click="open(activity.id)"
-                >
-                  <td class="pr-0"><ActivityThumbnail :sport="activity.sport" :thumbnail="activity.thumbnail" /></td>
-                  <td class="text-no-wrap">{{ formatDate(activity.date) }}</td>
-                  <td class="d-none d-sm-table-cell">{{ activity.title }}</td>
-                  <td class="text-right text-no-wrap">{{ formatDistance(activity.distance) }}</td>
-                  <td class="text-right text-no-wrap">{{ formatDuration(activity.duration) }}</td>
-                  <td class="text-right text-no-wrap d-none d-sm-table-cell">{{ formatSpeed(activity.avg_speed) }}</td>
-                  <td class="text-right text-no-wrap d-none d-sm-table-cell">{{ formatElevation(activity.elevation) }}</td>
-                </tr>
-              </tbody>
-            </v-table>
-          </v-card>
-        </v-col>
-        <v-col class="d-flex flex-column ga-2" cols="12" lg="4">
-          <!-- CO2 saved by commuting instead of driving -->
-          <v-card>
-            <v-card-item>
-              <template #prepend>
-                <v-icon color="green" :icon="mdiLeaf" />
-              </template>
-              <v-card-title>CO₂ saved</v-card-title>
-              <v-card-subtitle>Commutes instead of driving</v-card-subtitle>
-            </v-card-item>
-            <v-card-text v-if="dashboard.commutes.all_time.activities === 0">
-              Mark your activities as commutes to count the CO₂ you save.
-            </v-card-text>
-            <v-card-text v-else>
-              <div class="text-h4 font-weight-medium">{{ formatCo2(dashboard.commutes.this_year.co2) }}</div>
-              <div class="text-caption text-medium-emphasis mb-2">
-                this year · {{ dashboard.commutes.this_year.activities }} commutes,
-                {{ formatDistance(dashboard.commutes.this_year.distance) }}
+      <div ref="grid">
+        <v-row dense>
+          <v-col
+            v-for="widget in shown"
+            v-show="editing || !unavailable[widget.id]"
+            :key="widget.id"
+            cols="12"
+            :lg="widget.w"
+            :sm="smCols(widget)"
+          >
+            <div
+              class="dashboard-widget"
+              :class="{
+                'dashboard-widget--fixed': widget.h > 0,
+                'dashboard-widget--editing': editing,
+                'dashboard-widget--dragging': dragging === widget.id,
+              }"
+              :style="{ '--widget-h': `${widget.h}px` }"
+              @dragover="onDragOver($event, widget.id)"
+              @drop.prevent
+            >
+              <!-- inert while customizing: a click doesn't open an activity -->
+              <div class="dashboard-widget__content" :inert="editing">
+                <v-card v-if="editing && unavailable[widget.id] && widget.id !== 'maintenance'" class="widget-card">
+                  <v-card-title>{{ widgetDef.get(widget.id)?.title }}</v-card-title>
+                  <v-card-text class="text-medium-emphasis">{{ unavailable[widget.id] }}</v-card-text>
+                </v-card>
+                <WidgetTotals v-else-if="widget.id.startsWith('total-')" :measure="totalsMeasure(widget.id)" />
+                <MaintenanceCard v-else-if="widget.id === 'maintenance'" @count="n => reminderCount = n" />
+                <WidgetWeeklyVolume v-else-if="widget.id === 'weekly-volume'" />
+                <WidgetCalendar v-else-if="widget.id === 'calendar'" />
+                <WidgetZones v-else-if="widget.id === 'hr-zones'" kind="hr" />
+                <WidgetZones v-else-if="widget.id === 'power-zones'" kind="power" />
+                <ReadinessCard
+                  v-else-if="widget.id === 'readiness' && trainingStore.readiness"
+                  :readiness="trainingStore.readiness"
+                />
+                <WidgetCo2 v-else-if="widget.id === 'co2'" />
+                <WidgetRecent v-else-if="widget.id === 'recent'" />
+                <WidgetSports v-else-if="widget.id === 'sports'" />
               </div>
-              <v-divider class="mb-2" />
-              <div class="d-flex justify-space-between text-body-2">
-                <span>All time</span>
-                <span>
-                  <strong>{{ formatCo2(dashboard.commutes.all_time.co2) }}</strong>
-                  <span class="text-medium-emphasis">
-                    · {{ dashboard.commutes.all_time.activities }} commutes,
-                    {{ formatDistance(dashboard.commutes.all_time.distance) }}
-                  </span>
-                </span>
-              </div>
-            </v-card-text>
-          </v-card>
-          <v-card class="flex-grow-1">
-            <v-card-title>By sport</v-card-title>
-            <v-card-text>
-              <div v-for="(sport, index) in dashboard.sports" :key="sport.sport" :class="{ 'mt-4': index > 0 }">
-                <div class="d-flex align-center">
-                  <v-icon class="mr-2" :color="sportColor(sport.sport, index)" :icon="sportIcon(sport.sport)" />
-                  <span class="text-subtitle-1 font-weight-medium">{{ sportLabel(sport.sport) }}</span>
+
+              <template v-if="editing">
+                <div class="dashboard-widget__toolbar">
+                  <v-chip class="dashboard-widget__label" label size="small" variant="flat">
+                    {{ widgetDef.get(widget.id)?.title }}
+                    <span v-if="lgAndUp" class="ml-1">· {{ sizeLabel(widget) }}</span>
+                  </v-chip>
                   <v-spacer />
-                  <span class="text-caption text-medium-emphasis">{{ sport.totals.activities }} activities</span>
-                </div>
-                <div class="text-body-2 mb-1">
-                  {{ formatDistance(sport.totals.distance) }} · {{ formatDuration(sport.totals.duration) }}
-                  · {{ formatElevation(sport.totals.elevation) }}
+                  <v-btn
+                    aria-label="Drag to move"
+                    class="dashboard-widget__handle"
+                    density="comfortable"
+                    draggable="true"
+                    :icon="mdiDrag"
+                    size="small"
+                    title="Drag to move"
+                    variant="flat"
+                    @dragend="onDragEnd"
+                    @dragstart="onDragStart($event, widget.id)"
+                  />
+                  <v-btn
+                    aria-label="Move before"
+                    density="comfortable"
+                    :disabled="shown[0]?.id === widget.id"
+                    :icon="mdiArrowLeft"
+                    size="small"
+                    title="Move before"
+                    variant="flat"
+                    @click="step(widget.id, -1)"
+                  />
+                  <v-btn
+                    aria-label="Move after"
+                    density="comfortable"
+                    :disabled="shown[shown.length - 1]?.id === widget.id"
+                    :icon="mdiArrowRight"
+                    size="small"
+                    title="Move after"
+                    variant="flat"
+                    @click="step(widget.id, 1)"
+                  />
+                  <v-btn
+                    v-if="lgAndUp && widget.h > 0"
+                    aria-label="Fit the content"
+                    density="comfortable"
+                    :icon="mdiArrowCollapseVertical"
+                    size="small"
+                    title="Fit the content"
+                    variant="flat"
+                    @click="widget.h = 0"
+                  />
+                  <v-btn
+                    aria-label="Remove from the dashboard"
+                    density="comfortable"
+                    :icon="mdiClose"
+                    size="small"
+                    title="Remove from the dashboard"
+                    variant="flat"
+                    @click="toggle(widget.id)"
+                  />
                 </div>
                 <div
-                  v-for="r in records(sport)"
-                  :key="r.label"
-                  class="d-flex align-center text-body-2 cursor-pointer record"
-                  @click="open(r.record.id)"
+                  v-if="lgAndUp"
+                  class="dashboard-widget__resize"
+                  title="Drag to resize, double-click to fit the content"
+                  @dblclick="widget.h = 0"
+                  @lostpointercapture="endResize"
+                  @pointercancel="endResize"
+                  @pointerdown="startResize($event, widget)"
+                  @pointermove="onResize"
+                  @pointerup="endResize"
                 >
-                  <v-icon class="mr-1" color="amber-darken-2" :icon="mdiTrophyOutline" size="x-small" />
-                  <span>{{ r.label }}</span>
-                  <v-spacer />
-                  <strong>{{ r.format(r.record.value) }}</strong>
-                  <span class="text-caption text-medium-emphasis ml-2">{{ formatDate(r.record.date) }}</span>
+                  <v-icon :icon="mdiResizeBottomRight" size="small" />
                 </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+              </template>
+            </div>
+          </v-col>
+        </v-row>
+      </div>
     </template>
   </v-container>
 </template>
 
-<style scoped>
-.record:hover {
-  text-decoration: underline;
+<style>
+/* the widgets fill their place; not scoped: the cards are in the widget components */
+.dashboard-widget {
+  position: relative;
+  height: 100%;
+}
+.dashboard-widget__content {
+  height: 100%;
+}
+.dashboard-widget .widget-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* a height chosen by the user, on large screens: the content scrolls, the charts take the room left */
+@media (min-width: 1280px) {
+  .dashboard-widget--fixed {
+    height: var(--widget-h);
+  }
+  .dashboard-widget--fixed .widget-card {
+    overflow: hidden;
+  }
+  .dashboard-widget--fixed .widget-card > .v-card-text {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .dashboard-widget--fixed .widget-card > .widget-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .dashboard-widget--fixed .widget-card > .widget-scroll > .v-table__wrapper {
+    flex: 1 1 0;
+    overflow: auto;
+  }
+  .dashboard-widget--fixed .weekly-chart,
+  .dashboard-widget--fixed .zones-chart,
+  .dashboard-widget--fixed .readiness-chart {
+    flex: 1 1 0;
+    height: auto !important;
+    min-height: 120px;
+  }
+}
+
+/* customizing */
+.dashboard-widget--editing {
+  outline: 2px dashed rgba(var(--v-theme-primary), 0.6);
+  outline-offset: -1px;
+  border-radius: 4px;
+}
+.dashboard-widget--editing .dashboard-widget__content {
+  opacity: 0.85;
+  user-select: none;
+}
+.dashboard-widget--dragging {
+  opacity: 0.4;
+}
+.dashboard-widget__toolbar {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  z-index: 2;
+}
+.dashboard-widget__toolbar .v-btn {
+  background: rgb(var(--v-theme-surface-variant));
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+.dashboard-widget__label.v-chip {
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  max-width: 60%;
+}
+.dashboard-widget__handle {
+  cursor: grab;
+}
+.dashboard-widget__resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 2;
+  border-radius: 4px 0 4px 0;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+}
+.edit-bar {
+  position: sticky;
+  top: 64px;
+  z-index: 3;
 }
 </style>

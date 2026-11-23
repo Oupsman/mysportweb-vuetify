@@ -65,5 +65,12 @@ declare module 'vue' {
     WeeklyHrZonesChart: typeof import('./components/WeeklyHrZonesChart.vue')['default']
     WeeklyVolumeChart: typeof import('./components/WeeklyVolumeChart.vue')['default']
     WeightTarget: typeof import('./components/WeightTarget.vue')['default']
+    WidgetCalendar: typeof import('./components/dashboard/WidgetCalendar.vue')['default']
+    WidgetCo2: typeof import('./components/dashboard/WidgetCo2.vue')['default']
+    WidgetRecent: typeof import('./components/dashboard/WidgetRecent.vue')['default']
+    WidgetSports: typeof import('./components/dashboard/WidgetSports.vue')['default']
+    WidgetTotals: typeof import('./components/dashboard/WidgetTotals.vue')['default']
+    WidgetWeeklyVolume: typeof import('./components/dashboard/WidgetWeeklyVolume.vue')['default']
+    WidgetZones: typeof import('./components/dashboard/WidgetZones.vue')['default']
   }
 }

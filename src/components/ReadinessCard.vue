@@ -54,7 +54,7 @@
 </script>
 
 <template>
-  <v-card class="h-100">
+  <v-card class="widget-card">
     <v-card-item>
       <template #prepend>
         <v-icon color="primary" :icon="mdiBatteryHeartVariant" />

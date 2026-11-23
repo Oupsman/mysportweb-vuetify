@@ -78,3 +78,12 @@ export interface Dashboard {
   nb_equipments: number
   timezone: string
 }
+
+// a widget of the dashboard as the user arranged it: w its width in columns out of 12 on large screens, h
+// its height in pixels there (0: fits its content), hidden when removed from the dashboard
+export interface WidgetLayout {
+  id: string
+  w: number
+  h: number
+  hidden: boolean
+}
