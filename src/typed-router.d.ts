@@ -30,6 +30,7 @@ declare module 'vue-router/auto-routes' {
     '/equipment/add': RouteRecordInfo<'/equipment/add', '/equipment/add', Record<never, never>, Record<never, never>>,
     '/equipments': RouteRecordInfo<'/equipments', '/equipments', Record<never, never>, Record<never, never>>,
     '/forgot-password': RouteRecordInfo<'/forgot-password', '/forgot-password', Record<never, never>, Record<never, never>>,
+    '/goals': RouteRecordInfo<'/goals', '/goals', Record<never, never>, Record<never, never>>,
     '/health/': RouteRecordInfo<'/health/', '/health', Record<never, never>, Record<never, never>>,
     '/health/[id]/edit': RouteRecordInfo<'/health/[id]/edit', '/health/:id/edit', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/health/add': RouteRecordInfo<'/health/add', '/health/add', Record<never, never>, Record<never, never>>,

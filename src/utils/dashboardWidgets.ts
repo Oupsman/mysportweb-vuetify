@@ -16,6 +16,7 @@ export const widgetDefs: WidgetDef[] = [
   { id: 'total-duration', title: 'Time', description: 'This week, month, year and all time', w: 3, h: 0, minW: 2 },
   { id: 'total-elevation', title: 'Elevation', description: 'This week, month, year and all time', w: 3, h: 0, minW: 2 },
   { id: 'total-activities', title: 'Activities', description: 'This week, month, year and all time', w: 3, h: 0, minW: 2 },
+  { id: 'goals', title: 'Goals', description: 'The progress of your training goals', w: 12, h: 0, minW: 3 },
   { id: 'maintenance', title: 'Maintenance', description: 'The reminders due or soon on your equipment', w: 12, h: 0, minW: 3 },
   { id: 'weekly-volume', title: 'Weekly volume', description: 'Distance or time of the last weeks, by sport', w: 8, h: 0, minW: 4 },
   { id: 'calendar', title: 'Calendar', description: 'Your activities of the month', w: 4, h: 0, minW: 3 },

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { mdiAccount, mdiAccountArrowRight, mdiAccountPlus, mdiBicycle, mdiFire, mdiHeart, mdiHomeAnalytics, mdiMapMarkerPath, mdiPodium, mdiShieldAccount, mdiTrophy, mdiWatch } from '@mdi/js'
+  import { mdiAccount, mdiAccountArrowRight, mdiAccountPlus, mdiBicycle, mdiBullseyeArrow, mdiFire, mdiHeart, mdiHomeAnalytics, mdiMapMarkerPath, mdiPodium, mdiShieldAccount, mdiTrophy, mdiWatch } from '@mdi/js'
   import { onMounted } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useUserStore } from '@/stores/user'
@@ -38,6 +38,11 @@
       icon: mdiTrophy,
       title: 'Records',
       page: '/records',
+    },
+    {
+      icon: mdiBullseyeArrow,
+      title: 'Goals',
+      page: '/goals',
     },
     {
       icon: mdiMapMarkerPath,

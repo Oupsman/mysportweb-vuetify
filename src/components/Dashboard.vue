@@ -16,6 +16,7 @@
   import ReadinessCard from '@/components/ReadinessCard.vue'
   import MaintenanceCard from '@/components/MaintenanceCard.vue'
   import WidgetCalendar from '@/components/dashboard/WidgetCalendar.vue'
+  import WidgetGoals from '@/components/dashboard/WidgetGoals.vue'
   import WidgetCo2 from '@/components/dashboard/WidgetCo2.vue'
   import WidgetRecent from '@/components/dashboard/WidgetRecent.vue'
   import WidgetSports from '@/components/dashboard/WidgetSports.vue'
@@ -26,6 +27,7 @@
   import { useUserStore } from '@/stores/user'
   import { useAppStore } from '@/stores/app'
   import { useDashboardLayoutStore } from '@/stores/dashboardLayout'
+  import { useGoalsStore } from '@/stores/goals'
   import type { PeriodTotals, WidgetLayout } from '@/types/dashboard'
   import {
     defaultLayout,
@@ -49,6 +51,7 @@
   const hasHrZones = computed(() => (trainingStore.hrZones?.weeks ?? []).some(w => w.zones.some(s => s > 0)))
   const hasPowerZones = computed(() => (trainingStore.powerZones?.weeks ?? []).some(w => w.zones.some(s => s > 0)))
   const reminderCount = ref(0)
+  const goalsStore = useGoalsStore()
 
   onMounted(() => {
     userStore.refreshDashboard().catch(() => {})
@@ -56,6 +59,7 @@
     trainingStore.getReadiness().catch(() => {})
     trainingStore.getHrZones().catch(() => {})
     trainingStore.getPowerZones().catch(() => {})
+    goalsStore.load().catch(() => {})
     layoutStore.load(userStore.session?.uuid ?? '')
   })
 
@@ -335,6 +339,7 @@
               <!-- inert while customizing: a click doesn't open an activity -->
               <div class="dashboard-widget__content" :inert="editing">
                 <WidgetTotals v-if="widget.id.startsWith('total-')" :measure="totalsMeasure(widget.id)" />
+                <WidgetGoals v-else-if="widget.id === 'goals'" />
                 <MaintenanceCard v-else-if="widget.id === 'maintenance'" @count="n => reminderCount = n" />
                 <WidgetWeeklyVolume v-else-if="widget.id === 'weekly-volume'" />
                 <WidgetCalendar v-else-if="widget.id === 'calendar'" />
