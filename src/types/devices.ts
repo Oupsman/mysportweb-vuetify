@@ -25,7 +25,8 @@ export interface RecomputeStatus {
 // number; the units whose files don't give it share one device per model, serial_number empty
 export interface Device {
   id: string
-  name: string // "Garmin Edge 530"
+  name: string // "Garmin Edge 530", as its files name it
+  label: string // the name the user gave it, shown in place of name; empty for none
   brand: string
   model: string
   serial_number: string

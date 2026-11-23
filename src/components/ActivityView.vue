@@ -197,7 +197,7 @@
         <v-card v-if="activity.device_name" density="compact">
           <v-card-subtitle class="pt-2">Device</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">
-            {{ activity.device_name }}
+            {{ activity.device_label || activity.device_name }}
             <div v-if="activity.device?.software" class="text-caption text-medium-emphasis">
               firmware {{ activity.device.software }}
             </div>

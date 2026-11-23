@@ -30,6 +30,18 @@ export const useDevicesStore = defineStore('devices', () => {
     devices.value = devices.value.map(d => (d.id === id ? updated : d))
   }
 
+  // the name the user gives a device, '' to show the one its files give
+  const renameDevice = async (id: string, label: string): Promise<void> => {
+    let updated: Device
+    try {
+      updated = (await api.post(`/api/v1/device/${id}`, { label })).data
+    } catch (error) {
+      console.error('Rename device error:', error)
+      throw new Error(errorMessage(error, 'The device could not be renamed'))
+    }
+    devices.value = devices.value.map(d => (d.id === id ? updated : d))
+  }
+
   // the same unit, that its files named differently: the activities of id, past and future, go to into.
   // The list is reloaded: id is gone, into has its activities
   const mergeDevice = async (id: string, into: string): Promise<void> => {
@@ -55,5 +67,5 @@ export const useDevicesStore = defineStore('devices', () => {
     devices.value = devices.value.map(d => (d.id === id ? updated : d))
   }
 
-  return { devices, getAllDevices, setAltitudeCorrection, mergeDevice, recompute }
+  return { devices, getAllDevices, setAltitudeCorrection, renameDevice, mergeDevice, recompute }
 })

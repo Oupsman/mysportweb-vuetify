@@ -1,8 +1,8 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { mdiCallMerge, mdiImageFilterHdr, mdiRefresh, mdiWatch } from '@mdi/js'
+  import { mdiCallMerge, mdiImageFilterHdr, mdiPencil, mdiRefresh, mdiWatch } from '@mdi/js'
   import type { AltitudeCorrection, Device } from '@/types/devices'
-  import { altitudeCorrections, unitLabel } from '@/utils/devices'
+  import { altitudeCorrections, deviceName, unitLabel } from '@/utils/devices'
   import { formatDate } from '@/utils/format'
 
   // canMerge: the user has another device to merge this one into
@@ -11,6 +11,7 @@
     activities: [device: Device]
     correction: [device: Device, correction: AltitudeCorrection]
     merge: [device: Device]
+    rename: [device: Device]
     recompute: [device: Device]
   }>()
 
@@ -30,7 +31,21 @@
       <template #prepend>
         <v-avatar color="primary" :icon="mdiWatch" variant="tonal" />
       </template>
-      <v-card-title>{{ device.name }}</v-card-title>
+      <v-card-title class="d-flex align-center">
+        <span class="text-truncate">{{ deviceName(device) }}</span>
+        <v-btn
+          aria-label="Rename"
+          class="ml-1"
+          density="comfortable"
+          :disabled="busy"
+          :icon="mdiPencil"
+          size="small"
+          title="Rename"
+          variant="text"
+          @click="emit('rename', device)"
+        />
+      </v-card-title>
+      <v-card-subtitle v-if="device.label" :title="`How its files name it`">{{ device.name }}</v-card-subtitle>
       <v-card-subtitle v-if="device.serial_number">Serial number {{ device.serial_number }}</v-card-subtitle>
       <v-card-subtitle v-else title="Its files don't give a serial number: every such unit of this model shares this device">
         Serial number unknown

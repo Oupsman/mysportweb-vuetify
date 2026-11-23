@@ -65,6 +65,8 @@ export interface Activity extends ActivityUpdate {
   // the recording device, as its FIT file tells; device_name is empty when it doesn't
   device: { brand: string, model: string, serial_number: string, software: string }
   device_name: string
+  // the name the owner gave the device, shown in place of device_name; empty for none, and for the others
+  device_label?: string
   // seconds since the start of every record
   time_stamps: string[] | null
   dist_array: number[] | null
