@@ -189,6 +189,7 @@ export const useUserStore = defineStore('user', () => {
     calendar: [],
     nb_equipments: 0,
     timezone: '',
+    highlights: [],
   })
 
   const refreshDashboard = async (): Promise<void> => {

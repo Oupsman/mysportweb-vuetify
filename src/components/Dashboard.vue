@@ -19,6 +19,7 @@
   import WidgetGoals from '@/components/dashboard/WidgetGoals.vue'
   import WidgetCo2 from '@/components/dashboard/WidgetCo2.vue'
   import WidgetRecent from '@/components/dashboard/WidgetRecent.vue'
+  import WidgetHighlights from '@/components/dashboard/WidgetHighlights.vue'
   import WidgetSports from '@/components/dashboard/WidgetSports.vue'
   import WidgetTotals from '@/components/dashboard/WidgetTotals.vue'
   import WidgetWeeklyVolume from '@/components/dashboard/WidgetWeeklyVolume.vue'
@@ -339,6 +340,7 @@
               <!-- inert while customizing: a click doesn't open an activity -->
               <div class="dashboard-widget__content" :inert="editing">
                 <WidgetTotals v-if="widget.id.startsWith('total-')" :measure="totalsMeasure(widget.id)" />
+                <WidgetHighlights v-else-if="widget.id === 'highlights'" />
                 <WidgetGoals v-else-if="widget.id === 'goals'" />
                 <MaintenanceCard v-else-if="widget.id === 'maintenance'" @count="n => reminderCount = n" />
                 <WidgetWeeklyVolume v-else-if="widget.id === 'weekly-volume'" />

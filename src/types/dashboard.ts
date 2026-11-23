@@ -1,3 +1,4 @@
+import type { Highlight } from '@/types/highlights'
 // distances and elevations in meters, durations in seconds
 export interface PeriodTotals {
   activities: number
@@ -77,6 +78,8 @@ export interface Dashboard {
   calendar: CalendarActivity[]
   nb_equipments: number
   timezone: string
+  // the new bests and the goals completed of the last 30 days, the latest first
+  highlights: Highlight[]
 }
 
 // a widget of the dashboard as the user arranged it: w its width in columns out of 12 on large screens, h

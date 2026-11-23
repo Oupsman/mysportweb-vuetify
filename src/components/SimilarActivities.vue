@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
   import type { PropType } from 'vue'
+  import { mdiCompareHorizontal } from '@mdi/js'
   import { useActivitiesStore } from '@/stores/activities'
   import { useAppStore } from '@/stores/app'
   import type { Activity, Route, SimilarActivity } from '@/types/activities'
@@ -85,6 +86,8 @@
     }
   }
 
+  // this activity first, the other one second
+  const compare = (id: string) => appStore.navigateToPage(`/compare?a=${props.activity.id}&b=${id}`)
   const open = (id: string) => {
     if (id !== props.activity.id) {
       appStore.navigateToPage(`/activity/${id}`)
@@ -127,6 +130,7 @@
               <th class="text-right">Distance</th>
               <th class="text-right">Duration</th>
               <th class="text-right">{{ usesPace(props.activity.sport) ? 'Pace' : 'Speed' }}</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -147,6 +151,16 @@
               <td class="text-right text-no-wrap">{{ (row.distance / 1000).toFixed(2) }} km</td>
               <td class="text-right">{{ formatDuration(row.duration) }}</td>
               <td class="text-right text-no-wrap">{{ formatSpeedFor(props.activity.sport, row.avg_speed) }}</td>
+              <td class="px-0">
+                <v-btn
+                  v-if="row.id !== props.activity.id"
+                  :icon="mdiCompareHorizontal"
+                  size="x-small"
+                  title="Compare with this activity"
+                  variant="text"
+                  @click.stop="compare(row.id)"
+                />
+              </td>
             </tr>
           </tbody>
         </v-table>
