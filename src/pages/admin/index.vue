@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import AdminInvitations from '@/components/AdminInvitations.vue'
+  import AdminStatus from '@/components/AdminStatus.vue'
   import AdminUsers from '@/components/AdminUsers.vue'
   import { useUserStore } from '@/stores/user'
 
@@ -23,6 +24,7 @@
       </template>
     </v-alert>
     <template v-else>
+      <AdminStatus class="mb-6" />
       <AdminUsers />
       <AdminInvitations class="mt-6" />
     </template>

@@ -3,6 +3,7 @@ import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api, errorMessage } from '@/api'
+import type { InstanceStatus } from '@/types/status'
 import type { AdminUser, EmailStatus, Storage, TwoFactorSetup, TwoFactorStatus, UserSession } from '@/types/user'
 
 // the code of the authenticator app the critical admin actions send, each time
@@ -61,6 +62,9 @@ export const useAccountStore = defineStore('account', () => {
     call(() => api.post('/api/v1/admin/email/test', null, { timeout: 60_000 }), 'The test email could not be sent')
 
   const users: Ref<AdminUser[]> = ref([])
+  // the state of the instance, for the admins
+  const getStatus = (): Promise<InstanceStatus> =>
+    call<InstanceStatus>(() => api.get('/api/v1/admin/status'), 'The status of the instance could not be read')
   // the space the files of the user take, and their quota: bytes, 0 for no quota
   const getStorage = (): Promise<Storage> =>
     call<Storage>(() => api.get('/api/v1/user/storage'), 'Your storage could not be read')
@@ -107,5 +111,6 @@ export const useAccountStore = defineStore('account', () => {
     passwordResetLink,
     setQuota,
     getStorage,
+    getStatus,
   }
 })
