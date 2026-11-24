@@ -51,6 +51,16 @@
     }).format(date)
   })
 
+  // stops of a minute at least that the duration counts (no auto-pause): the moving time and speed then
+  const hasStops = computed(() => {
+    const a = activity.value
+    return !!a && (a.moving_time ?? 0) > 0 && (a.avg_moving_speed ?? 0) > 0 && a.duration - (a.moving_time ?? 0) >= 60
+  })
+  // seconds as the duration shows them: 00:11:13
+  const clock = (seconds: number): string => {
+    const s = Math.round(seconds)
+    return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map(n => String(n).padStart(2, '0')).join(':')
+  }
   const formattedActivityDuration = computed(() => {
     const hours = Math.floor(activity.value.duration / 3600)
     const minutes = Math.floor((activity.value.duration % 3600) / 60)
@@ -217,6 +227,17 @@
           <v-card-subtitle class="pt-2">Average {{ usesPace(activity.sport) ? 'pace' : 'speed' }}</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ formatSpeedFor(activity.sport, activity.avg_speed) }}</v-card-text>
         </v-card>
+        <!-- the stops a device without auto-pause counts: shown when they are a minute at least -->
+        <template v-if="hasStops">
+          <v-card density="compact" :title="`Stopped ${clock(activity.duration - activity.moving_time!)}`">
+            <v-card-subtitle class="pt-2">Moving time</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ clock(activity.moving_time!) }}</v-card-text>
+          </v-card>
+          <v-card density="compact">
+            <v-card-subtitle class="pt-2">Moving {{ usesPace(activity.sport) ? 'pace' : 'speed' }}</v-card-subtitle>
+            <v-card-text class="text-h6 pt-1">{{ formatSpeedFor(activity.sport, activity.avg_moving_speed!) }}</v-card-text>
+          </v-card>
+        </template>
         <v-card v-if="activity.kcal > 0" density="compact">
           <v-card-subtitle class="pt-2">Calories</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ activity.kcal }}</v-card-text>

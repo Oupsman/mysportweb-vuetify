@@ -98,6 +98,10 @@ export interface Activity extends ActivityUpdate {
   // the fastest stretches over distances and the best powers over durations, empty without any, null until
   // the backend computed them
   best_efforts: BestEffort[] | null
+  // the seconds spent moving and the average speed then (m/s), from the records: a device without auto-pause
+  // counts the stops in its duration; null until computed, 0 when the records don't tell
+  moving_time: number | null
+  avg_moving_speed: number | null
   // the weather at its start, null until the backend got it
   weather: Weather | null
 }
