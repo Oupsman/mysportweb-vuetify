@@ -1,4 +1,5 @@
 import type { BestEffort, PowerCurvePoint } from '@/types/records'
+import type { Weather } from '@/types/weather'
 
 export type Point = {
   lat: number,
@@ -97,6 +98,8 @@ export interface Activity extends ActivityUpdate {
   // the fastest stretches over distances and the best powers over durations, empty without any, null until
   // the backend computed them
   best_efforts: BestEffort[] | null
+  // the weather at its start, null until the backend got it
+  weather: Weather | null
 }
 
 // the route of an activity; the activities of a commute route, including the ones imported later, are commutes

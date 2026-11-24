@@ -14,6 +14,7 @@
   import ActivityBestEfforts from '@/components/ActivityBestEfforts.vue'
   import ActivitySegments from '@/components/ActivitySegments.vue'
   import ActivityHighlights from '@/components/ActivityHighlights.vue'
+  import ActivityWeather from '@/components/ActivityWeather.vue'
   import RouteProgress from '@/components/RouteProgress.vue'
   import type { SimilarActivity } from '@/types/activities'
   import { formatSpeedFor, sportLabel, usesPace } from '@/utils/format'
@@ -277,6 +278,12 @@
           <v-card-text class="text-h6 pt-1">{{ (activity.co2 / 1000).toFixed(1) }} kg</v-card-text>
         </v-card>
       </div>
+      <!-- the weather at the start, once the backend got it -->
+      <v-row v-if="activity.weather && !activity.weather.unavailable">
+        <v-col cols="12">
+          <ActivityWeather :weather="activity.weather" />
+        </v-col>
+      </v-row>
       <!-- what it achieved, for its owner: hidden when nothing -->
       <v-row v-if="isOwner">
         <v-col cols="12">
