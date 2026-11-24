@@ -15,6 +15,7 @@
   import { useAppStore } from '@/stores/app'
   import type { SimilarActivity } from '@/types/activities'
   import { formatPace, formatSpeedFor, paceOf, usesPace } from '@/utils/format'
+  import { comparableSpeed } from '@/utils/moving'
 
   ChartJS.register(LinearScale, TimeScale, PointElement, LineElement, Tooltip)
 
@@ -51,14 +52,14 @@
 
   // distances may differ by up to 10%, average speed compares them fairly
   const extremes = computed(() => {
-    const speeds = sorted.value.map(a => a.avg_speed)
+    const speeds = sorted.value.map(a => comparableSpeed(a))
     return { max: Math.max(...speeds), min: Math.min(...speeds) }
   })
 
   // the fastest wins a tie with the slowest (every activity at the same speed)
   const colorOf = (activity: SimilarActivity) => {
-    if (activity.avg_speed === extremes.value.max) return fastest
-    if (activity.avg_speed === extremes.value.min) return slowest
+    if (comparableSpeed(activity) === extremes.value.max) return fastest
+    if (comparableSpeed(activity) === extremes.value.min) return slowest
     return other
   }
 
@@ -70,7 +71,7 @@
         label: pace.value ? 'Average pace' : 'Average speed',
         data: activities.map(a => ({
           x: new Date(a.date).getTime(),
-          y: pace.value ? paceOf(a.avg_speed) : a.avg_speed * 3.6,
+          y: pace.value ? paceOf(comparableSpeed(a)) : comparableSpeed(a) * 3.6,
         })),
         borderColor: other,
         borderWidth: 1,
@@ -111,7 +112,7 @@
             return activity.id === props.current ? 'This activity' : activity.title
           },
           label: (item: TooltipItem<'line'>) =>
-            `${formatDate((item.raw as DataPoint).x)}: ${formatSpeedFor(props.sport, sorted.value[item.dataIndex].avg_speed)}`,
+            `${formatDate((item.raw as DataPoint).x)}: ${formatSpeedFor(props.sport, comparableSpeed(sorted.value[item.dataIndex]))}`,
         },
       },
     },
@@ -133,7 +134,7 @@
 
 <template>
   <v-card>
-    <v-card-title>Average {{ pace ? 'pace' : 'speed' }} on this route</v-card-title>
+    <v-card-title>Moving {{ pace ? 'pace' : 'speed' }} on this route</v-card-title>
     <v-card-text>
       <div class="route-progress">
         <Line :data="chartData" :options="options" />

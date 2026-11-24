@@ -124,6 +124,9 @@ export interface SimilarActivity {
   distance: number
   duration: number
   avg_speed: number
+  // while moving: they compare on them (utils/moving); null until computed, 0 when unknown
+  moving_time?: number | null
+  avg_moving_speed?: number | null
 }
 
 // a row of the activities table, from /activity/search

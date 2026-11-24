@@ -229,9 +229,12 @@
         </v-card>
         <!-- the stops a device without auto-pause counts: shown when they are a minute at least -->
         <template v-if="hasStops">
-          <v-card density="compact" :title="`Stopped ${clock(activity.duration - activity.moving_time!)}`">
+          <v-card density="compact">
             <v-card-subtitle class="pt-2">Moving time</v-card-subtitle>
-            <v-card-text class="text-h6 pt-1">{{ clock(activity.moving_time!) }}</v-card-text>
+            <v-card-text class="text-h6 pt-1">
+              {{ clock(activity.moving_time!) }}
+              <div class="text-caption text-medium-emphasis">stopped {{ clock(activity.duration - activity.moving_time!) }}</div>
+            </v-card-text>
           </v-card>
           <v-card density="compact">
             <v-card-subtitle class="pt-2">Moving {{ usesPace(activity.sport) ? 'pace' : 'speed' }}</v-card-subtitle>
@@ -258,9 +261,12 @@
           <v-card-subtitle class="pt-2">Normalized power</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ Math.round(activity.normalized_power) }} W</v-card-text>
         </v-card>
-        <v-card v-if="activity.intensity" density="compact" :title="`At an FTP of ${activity.ftp} W`">
+        <v-card v-if="activity.intensity" density="compact">
           <v-card-subtitle class="pt-2">Intensity factor</v-card-subtitle>
-          <v-card-text class="text-h6 pt-1">{{ activity.intensity.toFixed(2) }}</v-card-text>
+          <v-card-text class="text-h6 pt-1">
+            {{ activity.intensity.toFixed(2) }}
+            <div class="text-caption text-medium-emphasis">at an FTP of {{ activity.ftp }} W</div>
+          </v-card-text>
         </v-card>
         <v-card v-if="activity.tss" density="compact">
           <v-card-subtitle class="pt-2">TSS</v-card-subtitle>

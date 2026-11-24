@@ -6,6 +6,7 @@
   import { useAppStore } from '@/stores/app'
   import type { Activity, Route, SimilarActivity } from '@/types/activities'
   import { formatSpeedFor, usesPace } from '@/utils/format'
+  import { comparableSpeed, comparableTime } from '@/utils/moving'
 
   const props = defineProps({
     activity: {
@@ -45,8 +46,9 @@
   const rows = computed((): SimilarActivity[] => [props.activity, ...others.value]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()))
 
-  // distances may differ by up to 10%, average speed compares them fairly
-  const fastestID = computed(() => rows.value.reduce((best, a) => a.avg_speed > best.avg_speed ? a : best).id)
+  // distances may differ by up to 10%, average speed compares them fairly; while moving, whether their
+  // device paused at the stops or not
+  const fastestID = computed(() => rows.value.reduce((best, a) => comparableSpeed(a) > comparableSpeed(best) ? a : best).id)
 
   const formatDate = (date: string) => new Intl.DateTimeFormat('fr-FR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
@@ -128,7 +130,7 @@
             <tr>
               <th>Date</th>
               <th class="text-right">Distance</th>
-              <th class="text-right">Duration</th>
+              <th class="text-right" title="The stops left out, whether the device paused at them or not">Moving time</th>
               <th class="text-right">{{ usesPace(props.activity.sport) ? 'Pace' : 'Speed' }}</th>
               <th />
             </tr>
@@ -149,8 +151,8 @@
                 </div>
               </td>
               <td class="text-right text-no-wrap">{{ (row.distance / 1000).toFixed(2) }} km</td>
-              <td class="text-right">{{ formatDuration(row.duration) }}</td>
-              <td class="text-right text-no-wrap">{{ formatSpeedFor(props.activity.sport, row.avg_speed) }}</td>
+              <td class="text-right">{{ formatDuration(comparableTime(row)) }}</td>
+              <td class="text-right text-no-wrap">{{ formatSpeedFor(props.activity.sport, comparableSpeed(row)) }}</td>
               <td class="px-0">
                 <v-btn
                   v-if="row.id !== props.activity.id"
