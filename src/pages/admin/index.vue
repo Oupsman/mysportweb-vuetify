@@ -1,5 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
+  import { mdiAccountMultiple, mdiPulse } from '@mdi/js'
   import AdminInvitations from '@/components/AdminInvitations.vue'
   import AdminStatus from '@/components/AdminStatus.vue'
   import AdminUsers from '@/components/AdminUsers.vue'
@@ -9,6 +11,16 @@
   const userStore = useUserStore()
   const verified = computed(() => userStore.session?.mfa === true)
   const hasTwoFactor = computed(() => userStore.session?.two_factor === true)
+
+  // the tab in the address (?tab=status): kept on a reload, and a link opens it
+  const route = useRoute()
+  const router = useRouter()
+  const tabs = ['users', 'status'] as const
+  type Tab = typeof tabs[number]
+  const tab = computed<Tab>({
+    get: () => (tabs as readonly string[]).includes(String(route.query.tab)) ? route.query.tab as Tab : 'users',
+    set: value => router.replace({ query: { ...route.query, tab: value } }),
+  })
 </script>
 
 <template>
@@ -24,9 +36,16 @@
       </template>
     </v-alert>
     <template v-else>
-      <AdminStatus class="mb-6" />
-      <AdminUsers />
-      <AdminInvitations class="mt-6" />
+      <v-tabs v-model="tab" class="mb-4" color="primary">
+        <v-tab :prepend-icon="mdiAccountMultiple" value="users">Users</v-tab>
+        <v-tab :prepend-icon="mdiPulse" value="status">Status</v-tab>
+      </v-tabs>
+      <!-- only the tab shown: the status stops refreshing on the users -->
+      <template v-if="tab === 'users'">
+        <AdminUsers />
+        <AdminInvitations class="mt-6" />
+      </template>
+      <AdminStatus v-else />
     </template>
   </v-container>
 </template>
