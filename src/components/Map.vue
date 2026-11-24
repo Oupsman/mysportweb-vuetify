@@ -94,6 +94,8 @@
           console.log(err, `Invalid bounds array: ${gpsBounds}`)
         }
       }
+      computeArrows()
+      leafletObject.value.on('zoomend', computeArrows)
     }
     console.log('Map is ready')
   }
@@ -115,6 +117,69 @@
     }
     return [gpsPoints[index].lat, gpsPoints[index].lon]
   })
+
+  // chevrons along the trace showing the direction of travel (which way a loop was ridden).
+  // Placed in screen pixels, so they stay evenly spaced at every zoom level: recomputed on zoomend
+  const ARROW_SPACING = 100 // px between two chevrons
+  const ARROW_SMOOTHING = 8 // px before and after the tip used for the direction, against GPS jitter
+  const ARROW_WING = 8 // px length of each side of a chevron
+  const ARROW_ANGLE = (150 * Math.PI) / 180 // angle of the wings from the direction of travel
+  // one polyline per chevron: Leaflet takes nested arrays, vue-leaflet's prop type does not say so
+  const arrows = ref<LatLngExpression[]>([])
+  const arrowTrace: LatLngExpression[] = publicActivity.value ? publicPoints : transformedPoints!
+
+  const computeArrows = () => {
+    const map = leafletObject.value
+    if (!map?.project || arrowTrace.length < 2) {
+      arrows.value = []
+      return
+    }
+    const zoom = map.getZoom()
+    const pixels = arrowTrace.map(p => map.project(p, zoom))
+    // cumulative pixel distance at each point
+    const distances = [0]
+    for (let i = 1; i < pixels.length; i++) {
+      distances.push(distances[i - 1] + pixels[i].distanceTo(pixels[i - 1]))
+    }
+    const total = distances[distances.length - 1]
+    // position on the trace at a given distance from the start
+    let segment = 1
+    const at = (d: number): [number, number] => {
+      while (segment < distances.length - 1 && distances[segment] < d) {
+        segment++
+      }
+      while (segment > 1 && distances[segment - 1] > d) {
+        segment--
+      }
+      const a = pixels[segment - 1]
+      const b = pixels[segment]
+      const length = distances[segment] - distances[segment - 1]
+      const t = length > 0 ? (d - distances[segment - 1]) / length : 0
+      return [a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t]
+    }
+    const result: LatLngTuple[][] = []
+    // the first one half a spacing from the start and none in the last half spacing: not on the markers
+    for (let d = ARROW_SPACING / 2; d <= total - ARROW_SPACING / 2; d += ARROW_SPACING) {
+      const before = at(d - ARROW_SMOOTHING)
+      const after = at(d + ARROW_SMOOTHING)
+      const tip = at(d)
+      if (before[0] === after[0] && before[1] === after[1]) {
+        continue
+      }
+      const direction = Math.atan2(after[1] - before[1], after[0] - before[0])
+      const wing = (angle: number): LatLngTuple => {
+        const latLng = map.unproject(
+          [tip[0] + ARROW_WING * Math.cos(direction + angle), tip[1] + ARROW_WING * Math.sin(direction + angle)],
+          zoom,
+        )
+        return [latLng.lat, latLng.lng]
+      }
+      const tipLatLng = map.unproject(tip, zoom)
+      result.push([wing(ARROW_ANGLE), [tipLatLng.lat, tipLatLng.lng], wing(-ARROW_ANGLE)])
+    }
+    arrows.value = result as unknown as LatLngExpression[]
+  }
+  onBeforeUnmount(() => leafletObject.value?.off?.('zoomend', computeArrows))
 
   const handleMapError = (error: any) => {
     console.error('Error loading map:', error)
@@ -149,6 +214,12 @@
         <LPolyline
           color="blue"
           :lat-lngs="publicPoints"
+        />
+        <LPolyline
+          color="#5a0000"
+          :interactive="false"
+          :lat-lngs="arrows"
+          :weight="3"
         />
         <LCircleMarker
           v-if="cursorPosition"
