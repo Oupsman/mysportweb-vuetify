@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AccountDataCard: typeof import('./components/AccountDataCard.vue')['default']
+    AccountImportCard: typeof import('./components/AccountImportCard.vue')['default']
     ActivitiesTable: typeof import('./components/ActivitiesTable.vue')['default']
     ActivityBestEfforts: typeof import('./components/ActivityBestEfforts.vue')['default']
     ActivityForm: typeof import('./components/ActivityForm.vue')['default']
@@ -22,6 +23,7 @@ declare module 'vue' {
     ActivityView: typeof import('./components/ActivityView.vue')['default']
     ActivityWeather: typeof import('./components/ActivityWeather.vue')['default']
     AdminInvitations: typeof import('./components/AdminInvitations.vue')['default']
+    AdminStatus: typeof import('./components/AdminStatus.vue')['default']
     AdminUsers: typeof import('./components/AdminUsers.vue')['default']
     ApiTokens: typeof import('./components/ApiTokens.vue')['default']
     AppMenu: typeof import('./components/AppMenu.vue')['default']
@@ -66,6 +68,7 @@ declare module 'vue' {
     SegmentMap: typeof import('./components/SegmentMap.vue')['default']
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']
     SimilarActivities: typeof import('./components/SimilarActivities.vue')['default']
+    StatusChart: typeof import('./components/StatusChart.vue')['default']
     StorageCard: typeof import('./components/StorageCard.vue')['default']
     TwoFactorCard: typeof import('./components/TwoFactorCard.vue')['default']
     WeeklyHrZonesChart: typeof import('./components/WeeklyHrZonesChart.vue')['default']

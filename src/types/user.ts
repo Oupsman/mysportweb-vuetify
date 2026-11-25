@@ -94,3 +94,30 @@ export interface Storage {
   used: number
   quota: number
 }
+
+// the import of the zip of an export into the account (GET /api/v1/user/import): its progress, then its report
+export type AccountImportStatus = 'pending' | 'running' | 'done' | 'failed' | 'cancelled'
+
+// the items of a kind (activities, equipments...): created, already in the account, or skipped (see problems)
+export interface ImportCount {
+  created: number
+  existing: number
+  skipped: number
+}
+
+export interface AccountImport {
+  id: string
+  created_at: string
+  finished_at: string | null
+  status: AccountImportStatus
+  with_profile: boolean
+  format: number
+  total: number // the activities of the export
+  done: number // the ones handled
+  error: string
+  report: {
+    counts: Record<string, ImportCount> | null
+    problems: { item: string, error: string }[] | null
+    more_problems: number
+  } | null
+}

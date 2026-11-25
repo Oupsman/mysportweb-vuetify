@@ -2,9 +2,11 @@ import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { defineStore } from 'pinia'
 
+import { isAxiosError } from 'axios'
+
 import { api, errorMessage } from '@/api'
 import type { InstanceStatus } from '@/types/status'
-import type { AdminUser, EmailStatus, Storage, TwoFactorSetup, TwoFactorStatus, UserSession } from '@/types/user'
+import type { AccountImport, AdminUser, EmailStatus, Storage, TwoFactorSetup, TwoFactorStatus, UserSession } from '@/types/user'
 
 // the code of the authenticator app the critical admin actions send, each time
 const totpHeader = (code: string) => ({ headers: { 'X-TOTP-Code': code } })
@@ -36,6 +38,29 @@ export const useAccountStore = defineStore('account', () => {
 
   // the export is a download of the browser: the session cookie goes with it
   const exportUrl = `${import.meta.env.VITE_BACKEND_URL}/api/v1/user/export`
+  // the import of the zip of an export: uploaded (onProgress: the share sent, 0 to 1), then imported in the
+  // background. No timeout: a zip of a few GB over a home connection takes a while.
+  const startImport = (file: File, profile: boolean, onProgress: (share: number) => void): Promise<AccountImport> => {
+    const form = new FormData()
+    form.append('profile', profile ? 'true' : 'false')
+    form.append('file', file)
+    return call(() => api.post('/api/v1/user/import', form, {
+      timeout: 0,
+      onUploadProgress: event => onProgress(event.total ? event.loaded / event.total : 0),
+    }), 'The export could not be imported')
+  }
+  // the latest import, null when the user never imported
+  const getImport = async (): Promise<AccountImport | null> => {
+    try {
+      return (await api.get('/api/v1/user/import')).data
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) return null
+      console.error('The import could not be read', error)
+      throw new Error(errorMessage(error, 'The import could not be read'))
+    }
+  }
+  const cancelImport = (): Promise<AccountImport> =>
+    call(() => api.delete('/api/v1/user/import'), 'The import could not be cancelled')
   const deleteAccount = (password: string, username: string, code: string): Promise<unknown> =>
     call(() => api.post('/api/v1/user/delete', { password, username, code }), 'The account could not be deleted')
 
@@ -93,6 +118,9 @@ export const useAccountStore = defineStore('account', () => {
     disableTwoFactor,
     newRecoveryCodes,
     exportUrl,
+    startImport,
+    getImport,
+    cancelImport,
     deleteAccount,
     resetPassword,
     emailStatus,
