@@ -11,6 +11,8 @@ declare module 'vue' {
     AccountImportCard: typeof import('./components/AccountImportCard.vue')['default']
     ActivitiesTable: typeof import('./components/ActivitiesTable.vue')['default']
     ActivityBestEfforts: typeof import('./components/ActivityBestEfforts.vue')['default']
+    ActivityCheer: typeof import('./components/ActivityCheer.vue')['default']
+    ActivityComments: typeof import('./components/ActivityComments.vue')['default']
     ActivityForm: typeof import('./components/ActivityForm.vue')['default']
     ActivityHighlights: typeof import('./components/ActivityHighlights.vue')['default']
     ActivityHrZones: typeof import('./components/ActivityHrZones.vue')['default']

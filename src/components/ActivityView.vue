@@ -15,6 +15,8 @@
   import ActivitySegments from '@/components/ActivitySegments.vue'
   import ActivityHighlights from '@/components/ActivityHighlights.vue'
   import ActivityWeather from '@/components/ActivityWeather.vue'
+  import ActivityCheer from '@/components/ActivityCheer.vue'
+  import ActivityComments from '@/components/ActivityComments.vue'
   import RouteProgress from '@/components/RouteProgress.vue'
   import type { SimilarActivity } from '@/types/activities'
   import { formatSpeedFor, sportLabel, usesPace } from '@/utils/format'
@@ -97,6 +99,8 @@
   const userStore = useUserStore()
   // the list of activities on the same route is only available to the owner
   const isOwner = computed(() => activity.value !== null && userStore.session?.sub === activity.value.user_id)
+  // the cheers and comments are for the logged in users only, not the visitors of a public activity
+  const isLoggedIn = computed(() => userStore.session !== null)
   const showSimilar = computed(() => isOwner.value && !!activity.value?.route_id)
   // the activities of the route, this one included, loaded by the same route list
   const routeActivities = ref<SimilarActivity[]>([])
@@ -164,6 +168,7 @@
       <div class="d-flex align-center mb-2">
         <h5 class="text-h5">{{ activity.title }}</h5>
         <v-spacer />
+        <ActivityCheer v-if="isLoggedIn" class="mr-2" />
         <template v-if="isOwner">
           <v-btn
             class="mr-2"
@@ -401,6 +406,11 @@
               <Graph-line v-for="graph in graphsSwimming" :key="graph" :activity="activity" :graph="graph" />
             </template>
           </v-card>
+        </v-col>
+      </v-row>
+      <v-row v-if="isLoggedIn">
+        <v-col cols="12">
+          <ActivityComments :activity-id="activity.id" />
         </v-col>
       </v-row>
     </v-container>

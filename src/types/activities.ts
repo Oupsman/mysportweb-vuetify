@@ -144,6 +144,8 @@ export interface ActivityRow {
   equipment_name: string | null
   device_name: string // the recording device, empty when its file doesn't tell
   thumbnail: string // the URL of its thumbnail, '' without map
+  cheer_count: number
+  comment_count: number
 }
 
 export interface ActivitySearch {

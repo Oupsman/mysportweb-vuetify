@@ -2,7 +2,7 @@
   import { computed, ref, watch } from 'vue'
   import type { LocationQuery } from 'vue-router'
   import { useRoute, useRouter } from 'vue-router'
-  import { mdiDeleteOutline, mdiFilterRemoveOutline, mdiMagnify, mdiPencil } from '@mdi/js'
+  import { mdiCommentOutline, mdiDeleteOutline, mdiFilterRemoveOutline, mdiHandClap, mdiMagnify, mdiPencil } from '@mdi/js'
   import ActivityThumbnail from '@/components/ActivityThumbnail.vue'
   import { useActivitiesStore } from '@/stores/activities'
   import { useAppStore } from '@/stores/app'
@@ -392,6 +392,15 @@
       >
         <template #[`item.sport`]="{ item }">
           <ActivityThumbnail :sport="item.sport" :thumbnail="item.thumbnail" />
+        </template>
+        <template #[`item.title`]="{ item }">
+          {{ item.title }}
+          <span v-if="item.cheer_count > 0" class="text-caption text-medium-emphasis text-no-wrap ml-2" :title="`${item.cheer_count} ${item.cheer_count > 1 ? 'cheers' : 'cheer'}`">
+            <v-icon :icon="mdiHandClap" size="x-small" /> {{ item.cheer_count }}
+          </span>
+          <span v-if="item.comment_count > 0" class="text-caption text-medium-emphasis text-no-wrap ml-2" :title="`${item.comment_count} ${item.comment_count > 1 ? 'comments' : 'comment'}`">
+            <v-icon :icon="mdiCommentOutline" size="x-small" /> {{ item.comment_count }}
+          </span>
         </template>
         <template #[`item.date`]="{ item }"><span class="text-no-wrap">{{ formatDate(item.date) }}</span></template>
         <template #[`item.distance`]="{ item }"><span class="text-no-wrap">{{ formatDistance(item.distance) }}</span></template>

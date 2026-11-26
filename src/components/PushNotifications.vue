@@ -2,9 +2,13 @@
   import { computed, onMounted, ref } from 'vue'
   import { mdiBellOutline, mdiDeleteOutline } from '@mdi/js'
   import { usePushStore } from '@/stores/push'
+  import { useSocialStore } from '@/stores/social'
   import { browserName, currentSubscription, pushSupport, subscribe } from '@/utils/push'
 
   const pushStore = usePushStore()
+  const socialStore = useSocialStore()
+  // notified of the cheers and comments on their activities, by every channel (browsers and email)
+  const notifySocial = ref(true)
   const support = pushSupport()
 
   // the id of the subscription of this browser on the backend, to remove it from here
@@ -38,6 +42,7 @@
 
   onMounted(async () => {
     try {
+      notifySocial.value = await socialStore.getNotify()
       await pushStore.load()
       if (support === 'supported') {
         const subscription = await currentSubscription()
@@ -79,6 +84,11 @@
 
   const toggle = (on: boolean | null) => (on ? turnOn() : turnOff())
 
+  const setNotifySocial = (on: boolean | null) => run(async () => {
+    await socialStore.setNotify(!!on)
+    notifySocial.value = !!on
+  })
+
   const test = () => run(async () => {
     await pushStore.test()
     info.value = 'Sent: it shows within a minute on each subscribed browser.'
@@ -107,7 +117,7 @@
         <v-icon color="primary" :icon="mdiBellOutline" />
       </template>
       <v-card-title>Notifications</v-card-title>
-      <v-card-subtitle>When an equipment is due for a service</v-card-subtitle>
+      <v-card-subtitle>Services due, goals reached, new bests, cheers and comments</v-card-subtitle>
     </v-card-item>
     <v-card-text>
       <v-alert
@@ -144,6 +154,19 @@
           @click="test"
         >Send a test</v-btn>
       </div>
+
+      <v-switch
+        class="mb-3"
+        color="primary"
+        density="compact"
+        :disabled="busy"
+        hint="On this browser and by email, when they are on"
+        inset
+        label="Cheers and comments on your activities"
+        :model-value="notifySocial"
+        persistent-hint
+        @update:model-value="setNotifySocial"
+      />
 
       <div class="text-body-2 text-medium-emphasis">
         Set the service interval of an equipment on its page: you are notified once it is past it, once per
