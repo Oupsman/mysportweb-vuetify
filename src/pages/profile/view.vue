@@ -5,11 +5,13 @@
   import PushNotifications from '@/components/PushNotifications.vue'
   import StorageCard from '@/components/StorageCard.vue'
   import TwoFactorCard from '@/components/TwoFactorCard.vue'
+  import WorkplacesCard from '@/components/WorkplacesCard.vue'
 </script>
 
 <template>
   <v-container>
     <router-link :to="'/profile/edit'"><v-btn color="primary">Edit</v-btn></router-link>
+    <WorkplacesCard class="mt-6" />
     <EmailCard class="mt-6" />
     <TwoFactorCard class="mt-6" />
     <PushNotifications class="mt-6" />

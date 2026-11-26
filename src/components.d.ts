@@ -22,6 +22,7 @@ declare module 'vue' {
     ActivityView: typeof import('./components/ActivityView.vue')['default']
     ActivityWeather: typeof import('./components/ActivityWeather.vue')['default']
     AdminInvitations: typeof import('./components/AdminInvitations.vue')['default']
+    AdminStatus: typeof import('./components/AdminStatus.vue')['default']
     AdminUsers: typeof import('./components/AdminUsers.vue')['default']
     ApiTokens: typeof import('./components/ApiTokens.vue')['default']
     AppMenu: typeof import('./components/AppMenu.vue')['default']
@@ -66,6 +67,7 @@ declare module 'vue' {
     SegmentMap: typeof import('./components/SegmentMap.vue')['default']
     SignUpForm: typeof import('./components/SignUpForm.vue')['default']
     SimilarActivities: typeof import('./components/SimilarActivities.vue')['default']
+    StatusChart: typeof import('./components/StatusChart.vue')['default']
     StorageCard: typeof import('./components/StorageCard.vue')['default']
     TwoFactorCard: typeof import('./components/TwoFactorCard.vue')['default']
     WeeklyHrZonesChart: typeof import('./components/WeeklyHrZonesChart.vue')['default']
@@ -80,5 +82,7 @@ declare module 'vue' {
     WidgetTotals: typeof import('./components/dashboard/WidgetTotals.vue')['default']
     WidgetWeeklyVolume: typeof import('./components/dashboard/WidgetWeeklyVolume.vue')['default']
     WidgetZones: typeof import('./components/dashboard/WidgetZones.vue')['default']
+    WorkplaceForm: typeof import('./components/WorkplaceForm.vue')['default']
+    WorkplacesCard: typeof import('./components/WorkplacesCard.vue')['default']
   }
 }
