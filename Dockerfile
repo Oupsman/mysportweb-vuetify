@@ -21,4 +21,6 @@ ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 # Content-Security-Policy: the browser blocks what the policy doesn't allow; Content-Security-Policy-Report-Only
 # only reports it (see nginx.conf.template)
 ENV CSP_HEADER=Content-Security-Policy
+# the largest zip of an export a user can import, as IMPORT_MAX_SIZE of the backend (see nginx.conf.template)
+ENV IMPORT_MAX_SIZE=2g
 EXPOSE 80

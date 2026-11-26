@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import AccountDataCard from '@/components/AccountDataCard.vue'
+  import AccountImportCard from '@/components/AccountImportCard.vue'
   import EmailCard from '@/components/EmailCard.vue'
   import ApiTokens from '@/components/ApiTokens.vue'
   import PushNotifications from '@/components/PushNotifications.vue'
@@ -18,6 +19,7 @@
     <ApiTokens class="mt-6" />
     <StorageCard class="mt-6" />
     <AccountDataCard class="mt-6" />
+    <AccountImportCard class="mt-6" />
   </v-container>
 </template>
 

@@ -272,9 +272,12 @@
           <v-card-subtitle class="pt-2">TSS</v-card-subtitle>
           <v-card-text class="text-h6 pt-1">{{ Math.round(activity.tss) }}</v-card-text>
         </v-card>
-        <v-card v-if="activity.trimp > 0" density="compact" :title="scoreSources[activity.score_source] ?? ''">
+        <v-card v-if="activity.trimp > 0" density="compact">
           <v-card-subtitle class="pt-2">Training load</v-card-subtitle>
-          <v-card-text class="text-h6 pt-1">{{ Math.round(activity.trimp) }}</v-card-text>
+          <v-card-text class="text-h6 pt-1">
+            {{ Math.round(activity.trimp) }}
+            <div class="text-caption text-medium-emphasis">{{ scoreSources[activity.score_source] ?? '' }}</div>
+          </v-card-text>
         </v-card>
         <template v-if="running">
           <v-card v-if="running.avg_vertical_oscillation > 0" density="compact">
@@ -402,7 +405,7 @@
       </v-row>
     </v-container>
   </div>
-  <div v-else>Activité non trouvée</div>
+  <div v-else>Activity not found</div>
 </template>
 
 <style scoped lang="sass">

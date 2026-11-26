@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AccountDataCard: typeof import('./components/AccountDataCard.vue')['default']
+    AccountImportCard: typeof import('./components/AccountImportCard.vue')['default']
     ActivitiesTable: typeof import('./components/ActivitiesTable.vue')['default']
     ActivityBestEfforts: typeof import('./components/ActivityBestEfforts.vue')['default']
     ActivityForm: typeof import('./components/ActivityForm.vue')['default']
