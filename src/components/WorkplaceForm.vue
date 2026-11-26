@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, nextTick, ref } from 'vue'
   import 'leaflet/dist/leaflet.css'
-  import type { LatLngTuple, Map as LeafletMap, LeafletMouseEvent } from 'leaflet'
+  import type { LatLngTuple, Map as LeafletMap, LeafletMouseEvent, PointTuple } from 'leaflet'
   import { LCircle, LCircleMarker, LMap, LTileLayer } from '@vue-leaflet/vue-leaflet'
   import { mdiCrosshairsGps } from '@mdi/js'
   import { useWorkplacesStore } from '@/stores/workplaces'
@@ -23,7 +23,7 @@
 
   // the view: the workplace, else another one of the user, else France until the user's position is known
   const other = workplacesStore.workplaces.find(w => w.id !== props.workplace?.id)
-  const start: LatLngTuple = center.value ?? (other ? [other.lat, other.lon] : [46.6, 2.5])
+  const start: PointTuple = center.value ? [center.value[0], center.value[1]] : (other ? [other.lat, other.lon] : [46.6, 2.5])
   const startZoom = center.value || other ? 15 : 5
 
   const map = ref()
