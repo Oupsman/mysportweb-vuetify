@@ -1,10 +1,7 @@
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
   import { useDisplay } from 'vuetify'
   import {
-    mdiArrowCollapseVertical,
-    mdiArrowLeft,
-    mdiArrowRight,
     mdiClose,
     mdiDrag,
     mdiResizeBottomRight,
@@ -30,21 +27,16 @@
   import { useDashboardLayoutStore } from '@/stores/dashboardLayout'
   import { useGoalsStore } from '@/stores/goals'
   import type { PeriodTotals, WidgetLayout } from '@/types/dashboard'
-  import {
-    defaultLayout,
-    heightStep,
-    maxHeight,
-    minHeight,
-    widgetDef,
-    widgetDefs,
-  } from '@/utils/dashboardWidgets'
+  import { defaultLayout, gap, maxRows, rowHeight, widgetDef, widgetDefs } from '@/utils/dashboardWidgets'
+  import { bottom, columns, compact, place } from '@/utils/gridLayout'
+  import type { Box } from '@/utils/gridLayout'
 
   const userStore = useUserStore()
   const appStore = useAppStore()
   const layoutStore = useDashboardLayoutStore()
   const dashboard = computed(() => userStore.dashboard)
   const hasActivities = computed(() => dashboard.value.totals.all_time.activities > 0)
-  // the sizes apply on large screens; smaller ones stack the widgets
+  // the grid on large screens; smaller ones stack the widgets in reading order, fitting their content
   const { lgAndUp } = useDisplay()
 
   const trainingStore = useTrainingStore()
@@ -81,10 +73,35 @@
   const saving = ref(false)
   const saveError = ref('')
   const widgets = computed(() => editing.value ? draft.value : layoutStore.layout)
+  // in the DOM in a fixed order (moving a widget doesn't move its element, nor redraw its charts)
   const shown = computed(() => widgets.value.filter(w => !w.hidden))
-  // the ones in the grid: the same while customizing, else the rows would wrap differently and the widgets
-  // change size; the others are in the widgets menu, with why they don't show
+  // the ones in the grid; the others are in the widgets menu, with why they don't show
   const placed = computed(() => shown.value.filter(w => !unavailable.value[w.id]))
+
+  // where the widgets are: the saved places, gone up into the room left by the widgets not shown
+  const boxes = computed(() => {
+    const laid = compact(placed.value.map(w => ({ id: w.id, x: w.x, y: w.y, w: w.w, h: w.h })))
+    return new Map(laid.map((box, index) => [box.id, { ...box, index }]))
+  })
+  const rows = computed(() => bottom([...boxes.value.values()]))
+
+  // how a layout shows: the widgets hidden, the places of the others in the grid
+  const arrangement = (layout: WidgetLayout[]) => JSON.stringify([
+    layout.filter(w => w.hidden).map(w => w.id).sort(),
+    compact(layout.filter(w => !w.hidden && !unavailable.value[w.id])
+      .map(w => ({ id: w.id, x: w.x, y: w.y, w: w.w, h: w.h }))),
+  ])
+
+  // the places of the boxes into the draft
+  const apply = (laid: Box[]) => {
+    for (const box of laid) {
+      const widget = draft.value.find(w => w.id === box.id)
+      if (widget) {
+        Object.assign(widget, { x: box.x, y: box.y, w: box.w, h: box.h })
+      }
+    }
+  }
+  const currentBoxes = (): Box[] => [...boxes.value.values()].map(({ id, x, y, w, h }) => ({ id, x, y, w, h }))
 
   const startEditing = () => {
     draft.value = layoutStore.layout.map(w => ({ ...w }))
@@ -92,6 +109,7 @@
     editing.value = true
   }
   const cancel = () => {
+    endGesture(false)
     editing.value = false
   }
   const reset = () => {
@@ -101,7 +119,8 @@
     saving.value = true
     saveError.value = ''
     try {
-      await layoutStore.save(draft.value)
+      apply(currentBoxes())
+      await layoutStore.save(draft.value, arrangement(draft.value) === arrangement(defaultLayout()))
       editing.value = false
     } catch (e) {
       saveError.value = (e as Error).message
@@ -110,120 +129,223 @@
     }
   }
 
+  // shown again: below the others, then up as far as it goes
   const toggle = (id: string) => {
     const widget = draft.value.find(w => w.id === id)
-    if (widget) {
-      widget.hidden = !widget.hidden
+    if (!widget) {
+      return
+    }
+    if (widget.hidden) {
+      Object.assign(widget, { x: 0, y: rows.value, hidden: false })
+    } else {
+      widget.hidden = true
     }
   }
   const visibleCount = computed(() => draft.value.filter(w => !w.hidden).length)
 
-  // puts the widget at the place of target, the others shifting
-  const moveTo = (id: string, target: string) => {
-    const from = draft.value.findIndex(w => w.id === id)
-    const to = draft.value.findIndex(w => w.id === target)
-    if (from < 0 || to < 0 || from === to) {
+  // dragging a widget by its handle or resizing it by its corner: the layout made again from the one at the
+  // start at each cell the pointer reaches, the others making room
+  interface Gesture {
+    kind: 'move' | 'resize'
+    id: string
+    snapshot: Box[]
+    start: Box
+    // the pointer in the grid at the start; in the widget, to move it
+    gridX: number
+    gridY: number
+    offsetX: number
+    offsetY: number
+    target: string
+  }
+  const grid = ref<HTMLElement | null>(null)
+  const gesture = ref<Gesture | null>(null)
+  const pointer = ref({ x: 0, y: 0 })
+  const gridRect = ref<DOMRect | null>(null)
+  const rowPitch = rowHeight + gap
+  const colPitch = (rect: DOMRect) => (rect.width + gap) / columns
+  const clamp = (x: number, min: number, max: number) => Math.min(Math.max(x, min), max)
+
+  const update = () => {
+    const g = gesture.value
+    if (!g || !grid.value) {
       return
     }
-    const [widget] = draft.value.splice(from, 1)
-    draft.value.splice(to, 0, widget)
-  }
-  // moves a widget before or after the next shown one (the hidden ones keep their place)
-  const step = (id: string, direction: -1 | 1) => {
-    const order = placed.value.map(w => w.id)
-    const target = order[order.indexOf(id) + direction]
-    if (target) {
-      moveTo(id, target)
+    const rect = grid.value.getBoundingClientRect()
+    gridRect.value = rect
+    const px = pointer.value.x - rect.left
+    const py = pointer.value.y - rect.top
+    const def = widgetDef.get(g.id)
+    const to = g.kind === 'move'
+      ? {
+        x: Math.round((px - g.offsetX) / colPitch(rect)),
+        y: Math.round((py - g.offsetY) / rowPitch),
+      }
+      : {
+        w: clamp(g.start.w + Math.round((px - g.gridX) / colPitch(rect)), def?.minW ?? 1, columns - g.start.x),
+        h: clamp(g.start.h + Math.round((py - g.gridY) / rowPitch), def?.minH ?? 1, maxRows),
+      }
+    const target = JSON.stringify(to)
+    if (target !== g.target) {
+      g.target = target
+      apply(place(g.snapshot.map(b => ({ ...b })), g.id, to))
     }
   }
 
-  // dragging by the handle, over the other widgets. The widget it just took the place of may shift under the
-  // pointer: it is passed over until the pointer reaches another one, else the two would swap back and forth.
-  const dragging = ref<string | null>(null)
-  let lastTarget: string | null = null
-  const onDragStart = (event: DragEvent, id: string) => {
-    dragging.value = id
-    lastTarget = null
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = 'move'
-      event.dataTransfer.setData('text/plain', id)
-      const el = (event.target as HTMLElement).closest('.dashboard-widget')
-      if (el) {
-        event.dataTransfer.setDragImage(el, 24, 24)
+  // near the top or the bottom of the window, the page scrolls
+  let frame = 0
+  const autoScroll = () => {
+    const top = 160
+    const y = pointer.value.y
+    let dy = 0
+    if (y < top) {
+      dy = -Math.ceil((top - y) / 8)
+    } else if (y > window.innerHeight - 60) {
+      dy = Math.ceil((y - window.innerHeight + 60) / 8)
+    }
+    if (dy) {
+      window.scrollBy(0, dy)
+      update()
+    }
+    frame = requestAnimationFrame(autoScroll)
+  }
+
+  const onPointerMove = (event: PointerEvent) => {
+    pointer.value = { x: event.clientX, y: event.clientY }
+    update()
+  }
+  const onPointerUp = () => endGesture(true)
+  const onPointerCancel = () => endGesture(false)
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      endGesture(false)
+    }
+  }
+
+  const startGesture = (event: PointerEvent, id: string, kind: Gesture['kind']) => {
+    const el = (event.currentTarget as HTMLElement).closest('.dashboard-widget')
+    const box = boxes.value.get(id)
+    if (!lgAndUp.value || event.button !== 0 || !grid.value || !el || !box || gesture.value) {
+      return
+    }
+    event.preventDefault()
+    const rect = grid.value.getBoundingClientRect()
+    const widgetRect = el.getBoundingClientRect()
+    gesture.value = {
+      kind,
+      id,
+      snapshot: currentBoxes(),
+      start: { id, x: box.x, y: box.y, w: box.w, h: box.h },
+      gridX: event.clientX - rect.left,
+      gridY: event.clientY - rect.top,
+      offsetX: event.clientX - widgetRect.left,
+      offsetY: event.clientY - widgetRect.top,
+      target: '',
+    }
+    pointer.value = { x: event.clientX, y: event.clientY }
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerCancel)
+    window.addEventListener('keydown', onKeyDown)
+    update()
+    frame = requestAnimationFrame(autoScroll)
+  }
+
+  // kept, or back to the layout at the start (Escape, the gesture cancelled)
+  const endGesture = (keep: boolean) => {
+    const g = gesture.value
+    if (!g) {
+      return
+    }
+    if (!keep) {
+      apply(g.snapshot)
+    }
+    gesture.value = null
+    cancelAnimationFrame(frame)
+    window.removeEventListener('pointermove', onPointerMove)
+    window.removeEventListener('pointerup', onPointerUp)
+    window.removeEventListener('pointercancel', onPointerCancel)
+    window.removeEventListener('keydown', onKeyDown)
+  }
+  onBeforeUnmount(() => endGesture(false))
+
+  // the arrow keys on the handle move the widget by a cell, with Shift they resize it. Going down, it passes
+  // the widget below it: one row down, it would go back up into its place.
+  const onHandleKey = (event: KeyboardEvent, id: string) => {
+    const moves: Record<string, [number, number]> = {
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0],
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1],
+    }
+    const move = moves[event.key]
+    const box = boxes.value.get(id)
+    const def = widgetDef.get(id)
+    if (!move || !box || !def || !lgAndUp.value || gesture.value) {
+      return
+    }
+    event.preventDefault()
+    const [dx, dy] = move
+    if (event.shiftKey) {
+      apply(place(currentBoxes(), id, {
+        w: clamp(box.w + dx, def.minW, columns - box.x),
+        h: clamp(box.h + dy, def.minH, maxRows),
+      }))
+      return
+    }
+    const before = JSON.stringify(currentBoxes())
+    for (let step = 1; step <= rows.value + 1; step++) {
+      const laid = place(currentBoxes(), id, { x: box.x + dx * step, y: box.y + dy * step })
+      if (JSON.stringify(laid.map(({ id, x, y, w, h }) => ({ id, x, y, w, h }))) !== before) {
+        apply(laid)
+        return
       }
     }
   }
-  const onDragOver = (event: DragEvent, id: string) => {
-    if (!dragging.value) {
-      return
-    }
-    event.preventDefault()
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move'
-    }
-    if (id === dragging.value) {
-      return
-    }
-    if (id !== lastTarget) {
-      moveTo(dragging.value, id)
-    }
-    lastTarget = id
-  }
-  const onDragEnd = () => {
-    dragging.value = null
-    lastTarget = null
-  }
 
-  // resizing by the corner: the width snaps to the columns, the height to heightStep pixels; a widget fitting
-  // its content keeps doing it while only its width changes
-  const grid = ref<HTMLElement | null>(null)
-  const resizing = ref<{
-    widget: WidgetLayout
-    x: number
-    y: number
-    w: number
-    h: number
-    pitch: number
-  } | null>(null)
-  const startResize = (event: PointerEvent, widget: WidgetLayout) => {
-    const handle = event.currentTarget as HTMLElement
-    const el = handle.closest('.dashboard-widget') as HTMLElement | null
-    if (!grid.value || !el) {
-      return
+  // the widget dragged follows the pointer, above the place it will take
+  const dragOffset = computed(() => {
+    const g = gesture.value
+    const rect = gridRect.value
+    const box = g && boxes.value.get(g.id)
+    if (!g || g.kind !== 'move' || !rect || !box) {
+      return ''
     }
-    event.preventDefault()
-    handle.setPointerCapture(event.pointerId)
-    resizing.value = {
-      widget,
-      x: event.clientX,
-      y: event.clientY,
-      w: widget.w,
-      h: widget.h || el.getBoundingClientRect().height,
-      pitch: grid.value.getBoundingClientRect().width / 12,
-    }
-  }
-  const onResize = (event: PointerEvent) => {
-    const r = resizing.value
-    if (!r) {
-      return
-    }
-    const minW = widgetDef.get(r.widget.id)?.minW ?? 1
-    r.widget.w = Math.min(Math.max(Math.round(r.w + (event.clientX - r.x) / r.pitch), minW), 12)
-    const dy = event.clientY - r.y
-    if (r.widget.h > 0 || Math.abs(dy) >= heightStep) {
-      const h = Math.round((r.h + dy) / heightStep) * heightStep
-      r.widget.h = Math.min(Math.max(h, minHeight), maxHeight)
-    }
-  }
-  const endResize = () => {
-    resizing.value = null
-  }
+    const dx = pointer.value.x - g.offsetX - (rect.left + box.x * colPitch(rect))
+    const dy = pointer.value.y - g.offsetY - (rect.top + box.y * rowPitch)
+    return `translate(${dx}px, ${dy}px)`
+  })
 
-  const sizeLabel = (widget: WidgetLayout) =>
-    `${widget.w}/12 · ${widget.h > 0 ? `${widget.h} px` : 'fits content'}`
+  const area = (box: Box) => ({
+    gridColumn: `${box.x + 1} / span ${box.w}`,
+    gridRow: `${box.y + 1} / span ${box.h}`,
+  })
+  const widgetStyle = (id: string): Record<string, string | number> => {
+    const box = boxes.value.get(id)
+    if (!box) {
+      return {}
+    }
+    if (!lgAndUp.value) {
+      return { order: box.index }
+    }
+    return gesture.value?.id === id && dragOffset.value
+      ? { ...area(box), transform: dragOffset.value }
+      : area(box)
+  }
+  const gridStyle = computed(() => {
+    const style: Record<string, string> = { '--row-h': `${rowHeight}px`, '--gap': `${gap}px` }
+    if (lgAndUp.value && editing.value) {
+      // room below the widgets to drop one there
+      style.gridTemplateRows = `repeat(${rows.value + 4}, ${rowHeight}px)`
+    }
+    return style
+  })
+  // stacked: the narrow ones by two
+  const isNarrow = (id: string) => (boxes.value.get(id)?.w ?? 12) <= 4
 
-  // on small screens the widgets stack: the narrow ones by two
-  const smCols = (widget: WidgetLayout) => widget.w <= 4 ? 6 : 12
+  const sizeLabel = (id: string) => {
+    const box = boxes.value.get(id)
+    return box ? `${box.w} × ${box.h}` : ''
+  }
 </script>
 
 <template>
@@ -258,8 +380,11 @@
         rounded
       >
         <div class="text-body-2 text-medium-emphasis flex-grow-1">
-          Drag a widget by its handle to move it<template v-if="lgAndUp">, by its corner to resize it
-            (double-click the corner: fit the content)</template>.
+          <template v-if="lgAndUp">
+            Drag a widget by its handle to move it, by its corner to resize it. On the handle, the arrow keys
+            move it, Shift + arrows resize it.
+          </template>
+          <template v-else>Widen the window to arrange the widgets: here they stack in their order.</template>
         </div>
         <v-menu :close-on-content-click="false" location="bottom end">
           <template #activator="{ props }">
@@ -316,132 +441,119 @@
         variant="tonal"
       >No widget on your dashboard: add some with Customize, then Widgets.</v-alert>
 
-      <div ref="grid">
-        <v-row dense>
-          <v-col
-            v-for="widget in shown"
-            v-show="!unavailable[widget.id]"
-            :key="widget.id"
-            cols="12"
-            :lg="widget.w"
-            :sm="smCols(widget)"
-          >
-            <div
-              class="dashboard-widget"
-              :class="{
-                'dashboard-widget--fixed': widget.h > 0,
-                'dashboard-widget--editing': editing,
-                'dashboard-widget--dragging': dragging === widget.id,
-              }"
-              :style="{ '--widget-h': `${widget.h}px` }"
-              @dragover="onDragOver($event, widget.id)"
-              @drop.prevent
-            >
-              <!-- inert while customizing: a click doesn't open an activity -->
-              <div class="dashboard-widget__content" :inert="editing">
-                <WidgetTotals v-if="widget.id.startsWith('total-')" :measure="totalsMeasure(widget.id)" />
-                <WidgetHighlights v-else-if="widget.id === 'highlights'" />
-                <WidgetGoals v-else-if="widget.id === 'goals'" />
-                <MaintenanceCard v-else-if="widget.id === 'maintenance'" @count="n => reminderCount = n" />
-                <WidgetWeeklyVolume v-else-if="widget.id === 'weekly-volume'" />
-                <WidgetCalendar v-else-if="widget.id === 'calendar'" />
-                <WidgetZones v-else-if="widget.id === 'hr-zones'" kind="hr" />
-                <WidgetZones v-else-if="widget.id === 'power-zones'" kind="power" />
-                <ReadinessCard
-                  v-else-if="widget.id === 'readiness' && trainingStore.readiness"
-                  :readiness="trainingStore.readiness"
-                />
-                <WidgetCo2 v-else-if="widget.id === 'co2'" />
-                <WidgetRecent v-else-if="widget.id === 'recent'" />
-                <WidgetSports v-else-if="widget.id === 'sports'" />
-              </div>
+      <div
+        ref="grid"
+        class="dashboard-grid"
+        :class="{
+          'dashboard-grid--free': lgAndUp,
+          'dashboard-grid--editing': lgAndUp && editing,
+          'dashboard-grid--gesture': gesture,
+        }"
+        :style="gridStyle"
+      >
+        <!-- where the widget dragged or resized will be -->
+        <div
+          v-if="gesture && boxes.get(gesture.id)"
+          class="dashboard-placeholder"
+          :style="area(boxes.get(gesture.id)!)"
+        />
+        <div
+          v-for="widget in shown"
+          v-show="!unavailable[widget.id]"
+          :key="widget.id"
+          class="dashboard-widget"
+          :class="{
+            'dashboard-widget--narrow': isNarrow(widget.id),
+            'dashboard-widget--editing': editing,
+            'dashboard-widget--moving': gesture?.id === widget.id && gesture.kind === 'move',
+            'dashboard-widget--resizing': gesture?.id === widget.id && gesture.kind === 'resize',
+          }"
+          :style="widgetStyle(widget.id)"
+        >
+          <!-- inert while customizing: a click doesn't open an activity -->
+          <div class="dashboard-widget__content" :inert="editing">
+            <WidgetTotals v-if="widget.id.startsWith('total-')" :measure="totalsMeasure(widget.id)" />
+            <WidgetHighlights v-else-if="widget.id === 'highlights'" />
+            <WidgetGoals v-else-if="widget.id === 'goals'" />
+            <MaintenanceCard v-else-if="widget.id === 'maintenance'" @count="n => reminderCount = n" />
+            <WidgetWeeklyVolume v-else-if="widget.id === 'weekly-volume'" />
+            <WidgetCalendar v-else-if="widget.id === 'calendar'" />
+            <WidgetZones v-else-if="widget.id === 'hr-zones'" kind="hr" />
+            <WidgetZones v-else-if="widget.id === 'power-zones'" kind="power" />
+            <ReadinessCard
+              v-else-if="widget.id === 'readiness' && trainingStore.readiness"
+              :readiness="trainingStore.readiness"
+            />
+            <WidgetCo2 v-else-if="widget.id === 'co2'" />
+            <WidgetRecent v-else-if="widget.id === 'recent'" />
+            <WidgetSports v-else-if="widget.id === 'sports'" />
+          </div>
 
-              <template v-if="editing">
-                <div class="dashboard-widget__toolbar">
-                  <v-chip class="dashboard-widget__label" label size="small" variant="flat">
-                    {{ widgetDef.get(widget.id)?.title }}
-                    <span v-if="lgAndUp" class="ml-1">· {{ sizeLabel(widget) }}</span>
-                  </v-chip>
-                  <v-spacer />
-                  <v-btn
-                    aria-label="Drag to move"
-                    class="dashboard-widget__handle"
-                    density="comfortable"
-                    draggable="true"
-                    :icon="mdiDrag"
-                    size="small"
-                    title="Drag to move"
-                    variant="flat"
-                    @dragend="onDragEnd"
-                    @dragstart="onDragStart($event, widget.id)"
-                  />
-                  <v-btn
-                    aria-label="Move before"
-                    density="comfortable"
-                    :disabled="placed[0]?.id === widget.id"
-                    :icon="mdiArrowLeft"
-                    size="small"
-                    title="Move before"
-                    variant="flat"
-                    @click="step(widget.id, -1)"
-                  />
-                  <v-btn
-                    aria-label="Move after"
-                    density="comfortable"
-                    :disabled="placed[placed.length - 1]?.id === widget.id"
-                    :icon="mdiArrowRight"
-                    size="small"
-                    title="Move after"
-                    variant="flat"
-                    @click="step(widget.id, 1)"
-                  />
-                  <v-btn
-                    v-if="lgAndUp && widget.h > 0"
-                    aria-label="Fit the content"
-                    density="comfortable"
-                    :icon="mdiArrowCollapseVertical"
-                    size="small"
-                    title="Fit the content"
-                    variant="flat"
-                    @click="widget.h = 0"
-                  />
-                  <v-btn
-                    aria-label="Remove from the dashboard"
-                    density="comfortable"
-                    :icon="mdiClose"
-                    size="small"
-                    title="Remove from the dashboard"
-                    variant="flat"
-                    @click="toggle(widget.id)"
-                  />
-                </div>
-                <div
-                  v-if="lgAndUp"
-                  class="dashboard-widget__resize"
-                  title="Drag to resize, double-click to fit the content"
-                  @dblclick="widget.h = 0"
-                  @lostpointercapture="endResize"
-                  @pointercancel="endResize"
-                  @pointerdown="startResize($event, widget)"
-                  @pointermove="onResize"
-                  @pointerup="endResize"
-                >
-                  <v-icon :icon="mdiResizeBottomRight" size="small" />
-                </div>
-              </template>
+          <template v-if="editing">
+            <div class="dashboard-widget__toolbar">
+              <v-chip class="dashboard-widget__label" label size="small" variant="flat">
+                {{ widgetDef.get(widget.id)?.title }}
+                <span v-if="lgAndUp" class="ml-1">· {{ sizeLabel(widget.id) }}</span>
+              </v-chip>
+              <v-spacer />
+              <v-btn
+                v-if="lgAndUp"
+                :aria-label="`Move ${widgetDef.get(widget.id)?.title}: drag, or arrow keys; Shift + arrow keys to resize`"
+                class="dashboard-widget__handle"
+                density="comfortable"
+                :icon="mdiDrag"
+                size="small"
+                title="Drag to move; arrow keys to move, Shift + arrow keys to resize"
+                variant="flat"
+                @keydown="onHandleKey($event, widget.id)"
+                @pointerdown="startGesture($event, widget.id, 'move')"
+              />
+              <v-btn
+                aria-label="Remove from the dashboard"
+                density="comfortable"
+                :icon="mdiClose"
+                size="small"
+                title="Remove from the dashboard"
+                variant="flat"
+                @click="toggle(widget.id)"
+              />
             </div>
-          </v-col>
-        </v-row>
+            <div
+              v-if="lgAndUp"
+              class="dashboard-widget__resize"
+              title="Drag to resize"
+              @pointerdown="startGesture($event, widget.id, 'resize')"
+            >
+              <v-icon :icon="mdiResizeBottomRight" size="small" />
+            </div>
+          </template>
+        </div>
       </div>
     </template>
   </v-container>
 </template>
 
 <style>
-/* the widgets fill their place; not scoped: the cards are in the widget components */
+/* not scoped: the cards are in the widget components */
+
+/* stacked (small screens): one column, two from sm with the narrow widgets side by side; each fits its
+   content */
+.dashboard-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 600px) {
+  .dashboard-grid:not(.dashboard-grid--free) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dashboard-grid:not(.dashboard-grid--free) .dashboard-widget:not(.dashboard-widget--narrow) {
+    grid-column: 1 / -1;
+  }
+}
 .dashboard-widget {
   position: relative;
-  height: 100%;
+  min-width: 0;
 }
 .dashboard-widget__content {
   height: 100%;
@@ -452,41 +564,56 @@
   flex-direction: column;
 }
 
-/* a height chosen by the user, on large screens: the content scrolls, the charts take the room left */
-@media (min-width: 1280px) {
-  .dashboard-widget--fixed {
-    height: var(--widget-h);
-  }
-  .dashboard-widget--fixed .widget-card {
-    overflow: hidden;
-  }
-  .dashboard-widget--fixed .widget-card > .v-card-text {
-    flex: 1 1 0;
-    min-height: 0;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-  }
-  .dashboard-widget--fixed .widget-card > .widget-scroll {
-    flex: 1 1 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
-  .dashboard-widget--fixed .widget-card > .widget-scroll > .v-table__wrapper {
-    flex: 1 1 0;
-    overflow: auto;
-  }
-  .dashboard-widget--fixed .weekly-chart,
-  .dashboard-widget--fixed .zones-chart,
-  .dashboard-widget--fixed .readiness-chart {
-    flex: 1 1 0;
-    height: auto !important;
-    min-height: 120px;
-  }
+/* the grid (large screens): each widget at its place, as high as its rows; the content scrolls, the charts
+   take the room left */
+.dashboard-grid--free {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: var(--row-h);
+  gap: var(--gap);
+}
+.dashboard-grid--free .dashboard-widget {
+  min-height: 0;
+}
+.dashboard-grid--free .widget-card {
+  overflow: hidden;
+}
+.dashboard-grid--free .widget-card > .v-card-text {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.dashboard-grid--free .widget-card > .widget-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dashboard-grid--free .widget-card > .widget-scroll > .v-table__wrapper {
+  flex: 1 1 0;
+  overflow: auto;
+}
+.dashboard-grid--free .weekly-chart,
+.dashboard-grid--free .zones-chart,
+.dashboard-grid--free .readiness-chart {
+  flex: 1 1 0;
+  height: auto !important;
+  min-height: 120px;
 }
 
-/* customizing */
+/* customizing: the cells of the grid drawn, the widgets outlined */
+.dashboard-grid--editing {
+  background-image:
+    linear-gradient(to bottom, transparent var(--row-h), rgb(var(--v-theme-background)) var(--row-h)),
+    linear-gradient(to right, rgba(var(--v-theme-primary), 0.07) calc(100% - var(--gap)), transparent calc(100% - var(--gap)));
+  background-size:
+    100% calc(var(--row-h) + var(--gap)),
+    calc((100% + var(--gap)) / 12) 100%;
+}
+.dashboard-grid--gesture {
+  user-select: none;
+}
 .dashboard-widget--editing {
   outline: 2px dashed rgba(var(--v-theme-primary), 0.6);
   outline-offset: -1px;
@@ -496,8 +623,22 @@
   opacity: 0.85;
   user-select: none;
 }
-.dashboard-widget--dragging {
-  opacity: 0.4;
+.dashboard-widget--moving {
+  z-index: 4;
+  opacity: 0.85;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.dashboard-widget--moving .dashboard-widget__handle {
+  cursor: grabbing;
+}
+.dashboard-widget--resizing {
+  z-index: 4;
+}
+.dashboard-placeholder {
+  border: 2px dashed rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.12);
+  border-radius: 4px;
+  z-index: 0;
 }
 .dashboard-widget__toolbar {
   position: absolute;
@@ -516,10 +657,11 @@
 .dashboard-widget__label.v-chip {
   background: rgb(var(--v-theme-primary));
   color: rgb(var(--v-theme-on-primary));
-  max-width: 60%;
+  max-width: 70%;
 }
 .dashboard-widget__handle {
   cursor: grab;
+  touch-action: none;
 }
 .dashboard-widget__resize {
   position: absolute;
@@ -540,6 +682,6 @@
 .edit-bar {
   position: sticky;
   top: 64px;
-  z-index: 3;
+  z-index: 5;
 }
 </style>

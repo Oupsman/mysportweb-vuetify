@@ -31,9 +31,10 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
     }
   }
 
-  // the default layout is saved as null: the user gets the widgets added later at their default place
-  const save = async (widgets: WidgetLayout[]): Promise<void> => {
-    const isDefault = sameLayout(widgets, defaultLayout())
+  // the default layout is saved as null: the user gets the widgets added later at their default place.
+  // isDefault: the layout shows as the default one (its places may differ, gone up into the room of a widget
+  // with nothing to show).
+  const save = async (widgets: WidgetLayout[], isDefault = sameLayout(widgets, defaultLayout())): Promise<void> => {
     try {
       await api.put('/api/v1/user/dashboard/layout', { widgets: isDefault ? null : widgets })
     } catch (error) {

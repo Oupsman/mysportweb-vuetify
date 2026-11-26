@@ -82,10 +82,13 @@ export interface Dashboard {
   highlights: Highlight[]
 }
 
-// a widget of the dashboard as the user arranged it: w its width in columns out of 12 on large screens, h
-// its height in pixels there (0: fits its content), hidden when removed from the dashboard
+// a widget of the dashboard as the user arranged it, on a grid of 12 columns and rows of a fixed height (large
+// screens): at column x and row y (from 0), w columns wide and h rows high; hidden when removed from the
+// dashboard. A layout saved before the grid has no x and y, and h in pixels (0: fits its content).
 export interface WidgetLayout {
   id: string
+  x: number
+  y: number
   w: number
   h: number
   hidden: boolean
