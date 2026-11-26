@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { mdiAccount, mdiAccountArrowRight, mdiAccountPlus, mdiBicycle, mdiBullseyeArrow, mdiFire, mdiHeart, mdiHomeAnalytics, mdiMapMarkerPath, mdiPodium, mdiShieldAccount, mdiTrophy, mdiWatch } from '@mdi/js'
+  import { mdiAccount, mdiAccountArrowRight, mdiAccountGroup, mdiAccountPlus, mdiBicycle, mdiBullseyeArrow, mdiFire, mdiHeart, mdiHomeAnalytics, mdiMapMarkerPath, mdiNewspaperVariantOutline, mdiPodium, mdiShieldAccount, mdiTrophy, mdiWatch } from '@mdi/js'
   import { onMounted } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useUserStore } from '@/stores/user'
@@ -18,6 +18,16 @@
       icon: mdiHomeAnalytics,
       title: 'Home',
       page: '/',
+    },
+    {
+      icon: mdiNewspaperVariantOutline,
+      title: 'Feed',
+      page: '/feed',
+    },
+    {
+      icon: mdiAccountGroup,
+      title: 'Athletes',
+      page: '/athletes',
     },
     {
       icon: mdiBicycle,

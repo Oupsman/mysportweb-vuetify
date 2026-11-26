@@ -117,7 +117,7 @@
         <v-icon color="primary" :icon="mdiBellOutline" />
       </template>
       <v-card-title>Notifications</v-card-title>
-      <v-card-subtitle>Services due, goals reached, new bests, cheers and comments</v-card-subtitle>
+      <v-card-subtitle>Services due, goals reached, new bests, cheers, comments and followers</v-card-subtitle>
     </v-card-item>
     <v-card-text>
       <v-alert
@@ -162,7 +162,7 @@
         :disabled="busy"
         hint="On this browser and by email, when they are on"
         inset
-        label="Cheers and comments on your activities"
+        label="Cheers, comments and followers"
         :model-value="notifySocial"
         persistent-hint
         @update:model-value="setNotifySocial"

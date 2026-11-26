@@ -19,12 +19,15 @@
   import ActivityComments from '@/components/ActivityComments.vue'
   import RouteProgress from '@/components/RouteProgress.vue'
   import type { SimilarActivity } from '@/types/activities'
+  import type { SocialUser } from '@/types/social'
   import { formatSpeedFor, sportLabel, usesPace } from '@/utils/format'
 
   const appStore = useAppStore()
   const route = useRoute('/activity/[id]/')
   // shallow: the activity holds every record of the FIT file, Vue doesn't need to track them
   const activity = shallowRef(null)
+  // whose it is, for the logged in users (null for the visitors of a public activity)
+  const owner = ref<SocialUser | null>(null)
   // time hovered on a chart, shared with the other charts and the map
   const cursor = ref<number | null>(null)
   provide(activityCursorKey, cursor)
@@ -83,6 +86,7 @@
       const response = await api.get(`/api/v1/activity/${route.params.id}`)
       console.log('Activity:', response.data.activity)
       activity.value = response.data.activity
+      owner.value = response.data.owner ?? null
       if (activity.value) {
         appStore.pageTitle = activity.value.title
       }
@@ -167,6 +171,9 @@
     <v-container class="pa-4" fluid>
       <div class="d-flex align-center mb-2">
         <h5 class="text-h5">{{ activity.title }}</h5>
+        <router-link v-if="owner && !isOwner" class="ml-3 text-medium-emphasis" :to="`/athletes/${owner.uuid}`">
+          by {{ owner.username }}
+        </router-link>
         <v-spacer />
         <ActivityCheer v-if="isLoggedIn" class="mr-2" />
         <template v-if="isOwner">
