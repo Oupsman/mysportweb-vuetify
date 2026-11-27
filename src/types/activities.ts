@@ -148,8 +148,22 @@ export interface ActivityRow {
   comment_count: number
 }
 
+// a row of the activities table, with the measures the user may show as columns
+export interface ActivitySearchRow extends ActivityRow {
+  moving_time: number | null // seconds, null until computed, 0 when the records don't tell
+  avg_moving_speed: number | null // m/s, the same
+  max_speed: number // m/s
+  descent: number // meters
+  // 0 when not recorded
+  avg_hr: number
+  power_avg: number // watts
+  avg_rpm: number
+  kcal: number
+  co2: number // grams saved by a commute
+}
+
 export interface ActivitySearch {
-  activities: ActivityRow[]
+  activities: ActivitySearchRow[]
   total: number
   totals: { activities: number, distance: number, duration: number, elevation: number }
   sports: string[]

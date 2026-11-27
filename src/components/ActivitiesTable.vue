@@ -1,19 +1,32 @@
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import type { LocationQuery } from 'vue-router'
   import { useRoute, useRouter } from 'vue-router'
-  import { mdiCommentOutline, mdiDeleteOutline, mdiFilterRemoveOutline, mdiHandClap, mdiMagnify, mdiPencil } from '@mdi/js'
+  import {
+    mdiBriefcaseOutline,
+    mdiCommentOutline,
+    mdiDeleteOutline,
+    mdiDrag,
+    mdiFilterRemoveOutline,
+    mdiHandClap,
+    mdiMagnify,
+    mdiPencil,
+    mdiRestore,
+    mdiViewColumnOutline,
+  } from '@mdi/js'
   import ActivityThumbnail from '@/components/ActivityThumbnail.vue'
   import { useActivitiesStore } from '@/stores/activities'
+  import { useActivitiesColumnsStore } from '@/stores/activitiesColumns'
   import { useAppStore } from '@/stores/app'
   import { useEquipmentsStore } from '@/stores/equipments'
+  import { useUserStore } from '@/stores/user'
   import type { ActivityRow, ActivitySearch } from '@/types/activities'
+  import { activityColumn, activityColumns, defaultColumns, requiredColumn } from '@/utils/activityColumns'
   import {
     formatDate,
     formatDistance,
     formatDuration,
     formatElevation,
-    formatSpeed,
     sportColor,
     sportIcon,
     sportLabel,
@@ -194,17 +207,59 @@
     load()
   }, { immediate: true, deep: true })
 
-  const headers = [
-    { title: '', key: 'sport', sortable: false, width: 88 },
-    { title: 'Date', key: 'date' },
-    { title: 'Title', key: 'title' },
-    { title: 'Distance', key: 'distance', align: 'end' },
-    { title: 'Time', key: 'duration', align: 'end' },
-    { title: 'Speed', key: 'speed', align: 'end' },
-    { title: 'Elevation', key: 'elevation', align: 'end' },
-    { title: 'Equipment', key: 'equipment', sortable: false },
-    { title: '', key: 'actions', sortable: false, align: 'end' },
-  ] as const
+  // the columns the user chose, in their order, then the actions
+  const columnsStore = useActivitiesColumnsStore()
+  const userStore = useUserStore()
+  onMounted(() => columnsStore.load(userStore.session?.uuid ?? ''))
+  const shownColumns = computed(() => columnsStore.columns.map(key => activityColumn.get(key)!).filter(Boolean))
+  const headers = computed(() => [
+    ...shownColumns.value.map(c => ({
+      title: c.title, key: c.key, sortable: c.sortable, align: c.align ?? 'start', width: c.width,
+    })),
+    { title: '', key: 'actions', sortable: false, align: 'end' as const },
+  ])
+  // the cells shown as text; the others have their own template below
+  const textColumns = computed(() => shownColumns.value.filter(c => c.format))
+
+  // the columns menu: the ones shown in their order, then the others. Each change is shown at once and saved.
+  const menuColumns = computed(() => [
+    ...shownColumns.value,
+    ...activityColumns.filter(c => !columnsStore.columns.includes(c.key)),
+  ])
+  const saveColumns = (next: string[]) => {
+    columnsStore.save(next).catch((e: Error) => {
+      error.value = e.message
+    })
+  }
+  const toggleColumn = (key: string) => {
+    if (key === requiredColumn) {
+      return
+    }
+    const current = columnsStore.columns
+    saveColumns(current.includes(key) ? current.filter(k => k !== key) : [...current, key])
+  }
+  const isDefaultColumns = computed(() => columnsStore.columns.join() === defaultColumns().join())
+  // a shown column dragged over another one takes its place
+  const draggedColumn = ref<string | null>(null)
+  const onColumnDragOver = (event: DragEvent, key: string) => {
+    const dragged = draggedColumn.value
+    const current = columnsStore.columns
+    if (!dragged || !current.includes(key)) {
+      return
+    }
+    event.preventDefault()
+    if (dragged !== key) {
+      const next = current.filter(k => k !== dragged)
+      next.splice(current.indexOf(key), 0, dragged)
+      columnsStore.columns = next
+    }
+  }
+  const onColumnDragEnd = () => {
+    if (draggedColumn.value) {
+      draggedColumn.value = null
+      saveColumns(columnsStore.columns)
+    }
+  }
   const sortBy = computed(() => [{ key: query.value.sort, order: query.value.order as 'asc' | 'desc' }])
   const onOptions = (options: { page: number, itemsPerPage: number, sortBy: { key: string, order?: boolean | 'asc' | 'desc' }[] }) => {
     const sort = options.sortBy[0]
@@ -345,6 +400,45 @@
         </v-chip>
       </v-chip-group>
       <v-spacer />
+      <v-menu :close-on-content-click="false" location="bottom end">
+        <template #activator="{ props }">
+          <v-btn v-bind="props" :prepend-icon="mdiViewColumnOutline" size="small" variant="text">Columns</v-btn>
+        </template>
+        <v-list density="compact" max-height="480" min-width="280">
+          <v-list-subheader>Tick to show, drag to reorder</v-list-subheader>
+          <v-list-item
+            v-for="column in menuColumns"
+            :key="column.key"
+            :class="{ 'column-dragged': draggedColumn === column.key }"
+            :draggable="columnsStore.columns.includes(column.key)"
+            :title="column.menu ?? column.title"
+            @click="toggleColumn(column.key)"
+            @dragend="onColumnDragEnd"
+            @dragover="onColumnDragOver($event, column.key)"
+            @dragstart="draggedColumn = column.key"
+            @drop.prevent
+          >
+            <template #prepend>
+              <!-- the title always shown, but it can be moved -->
+              <v-checkbox-btn
+                :disabled="column.key === requiredColumn"
+                :model-value="columnsStore.columns.includes(column.key)"
+                tabindex="-1"
+              />
+            </template>
+            <template v-if="columnsStore.columns.includes(column.key)" #append>
+              <v-icon class="column-handle" :icon="mdiDrag" size="small" />
+            </template>
+          </v-list-item>
+          <v-divider />
+          <v-list-item
+            :disabled="isDefaultColumns"
+            :prepend-icon="mdiRestore"
+            title="Default columns"
+            @click="saveColumns(defaultColumns())"
+          />
+        </v-list>
+      </v-menu>
       <v-btn
         v-if="hasFilters"
         :prepend-icon="mdiFilterRemoveOutline"
@@ -403,12 +497,20 @@
           </span>
         </template>
         <template #[`item.date`]="{ item }"><span class="text-no-wrap">{{ formatDate(item.date) }}</span></template>
-        <template #[`item.distance`]="{ item }"><span class="text-no-wrap">{{ formatDistance(item.distance) }}</span></template>
-        <template #[`item.duration`]="{ item }"><span class="text-no-wrap">{{ formatDuration(item.duration) }}</span></template>
-        <template #[`item.speed`]="{ item }"><span class="text-no-wrap">{{ formatSpeed(item.avg_speed) }}</span></template>
-        <template #[`item.elevation`]="{ item }"><span class="text-no-wrap">{{ formatElevation(item.elevation) }}</span></template>
+        <template v-for="column in textColumns" :key="column.key" #[`item.${column.key}`]="{ item }">
+          <span class="text-no-wrap">{{ column.format!(item) }}</span>
+        </template>
         <template #[`item.equipment`]="{ item }">
           <span class="text-medium-emphasis">{{ item.equipment_name ?? '' }}</span>
+        </template>
+        <template #[`item.commute`]="{ item }">
+          <v-icon
+            v-if="item.is_commute"
+            color="green"
+            :icon="mdiBriefcaseOutline"
+            size="small"
+            title="Commute"
+          />
         </template>
         <template #[`item.actions`]="{ item }">
           <span class="text-no-wrap">
@@ -438,5 +540,11 @@
 <style scoped>
 .activities-table :deep(tbody tr) {
   cursor: pointer;
+}
+.column-handle {
+  cursor: grab;
+}
+.column-dragged {
+  opacity: 0.5;
 }
 </style>
