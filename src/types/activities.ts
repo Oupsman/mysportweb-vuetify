@@ -52,6 +52,18 @@ export interface Leg {
   transition_time: number // seconds of the transitions just before the leg
 }
 
+// a stretch during which a rear radar saw vehicles behind the rider
+export interface RadarEvent {
+  offset: number // seconds since the start, at its first record
+  duration: number // seconds
+  threat: number // the highest threat level: 1 approaching, 2 approaching fast, 3 critical
+  vehicles: number // the most vehicles tracked at once
+  // meters behind the rider of the nearest vehicle when the threat was highest: how far behind, not how
+  // close it passed; 0 when the radar gave none
+  distance: number
+  position: Point | null // where the threat was highest, null without GPS fix
+}
+
 export interface Activity extends ActivityUpdate {
   user_id: number
   date: string
@@ -104,6 +116,9 @@ export interface Activity extends ActivityUpdate {
   avg_moving_speed: number | null
   // the weather at its start, null until the backend got it
   weather: Weather | null
+  // the vehicles a rear radar saw behind the rider (EIradar on a Karoo): the owner's only, null for the
+  // others and until computed, empty without radar
+  radar_events: RadarEvent[] | null
 }
 
 // the route of an activity; the activities of a commute route, including the ones imported later, are commutes

@@ -1,10 +1,14 @@
 <script setup lang="ts">
-  import { computed, defineProps, inject, nextTick, onBeforeUnmount, ref } from 'vue'
+  import { computed, defineProps, inject, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
   import 'leaflet/dist/leaflet.css'
   import StartIcon from '@/assets/start.svg'
   import StopIcon from '@/assets/stop.svg'
   import type { Point } from '@/types/activities'
   import { activityCursorKey, nearestIndex } from '@/composables/activityCursor'
+  import { api, errorMessage } from '@/api'
+  import { useUserStore } from '@/stores/user'
+  import { drawnRadarEvents, radarEventLabel, radarThreatColors } from '@/utils/radar'
+  import { mdiCarArrowRight, mdiCarOff } from '@mdi/js'
   import { LatLngExpression, LatLngTuple, Map as LeafletMap, PointTuple } from 'leaflet'
 
   import {
@@ -15,6 +19,7 @@
     LMarker,
     LPolyline,
     LTileLayer,
+    LTooltip,
   } from '@vue-leaflet/vue-leaflet'
 
   const props = defineProps({
@@ -181,13 +186,50 @@
   }
   onBeforeUnmount(() => leafletObject.value?.off?.('zoomend', computeArrows))
 
+  // the vehicles of the rear radar closing in fast: the backend sends them to the owner only. Shown unless
+  // the owner turned them off, a setting of their account (every browser)
+  const radarEvents = drawnRadarEvents(props.activity.radar_events)
+  const userStore = useUserStore()
+  const showRadar = computed((): boolean => (userStore.user as { show_radar_events?: boolean }).show_radar_events ?? true)
+  const radarError = ref('')
+  onMounted(() => {
+    if (radarEvents.length > 0 && !('show_radar_events' in userStore.user)) {
+      userStore.getUser().catch(() => { /* shown by default */ })
+    }
+  })
+  const toggleRadar = async () => {
+    const shown = !showRadar.value
+    radarError.value = ''
+    try {
+      await api.put('/api/v1/user/radar-events/shown', { shown })
+      userStore.user = { ...userStore.user, show_radar_events: shown }
+    } catch (error) {
+      radarError.value = errorMessage(error, 'The setting could not be saved')
+    }
+  }
+  const radarLabel = (event: typeof radarEvents[number]) => radarEventLabel(event, new Date(props.activity.date))
+
   const handleMapError = (error: any) => {
     console.error('Error loading map:', error)
   }
 </script>
 
 <template>
-  <div ref="container" :style="{ height, width: '100%' }">
+  <div ref="container" class="map-container" :style="{ height, width: '100%' }">
+    <div v-if="radarEvents.length > 0" class="radar-switch">
+      <v-btn
+        :color="showRadar ? 'orange-darken-2' : undefined"
+        density="comfortable"
+        :prepend-icon="showRadar ? mdiCarArrowRight : mdiCarOff"
+        size="small"
+        :title="showRadar ? 'Hide the vehicles of the radar' : 'Show the vehicles of the radar'"
+        :variant="showRadar ? 'flat' : 'outlined'"
+        @click="toggleRadar"
+      >
+        Radar ({{ radarEvents.length }})
+      </v-btn>
+      <div v-if="radarError" class="text-error text-caption bg-surface pa-1">{{ radarError }}</div>
+    </div>
     <l-map
       ref="gpsMap"
       v-model="zoom"
@@ -230,6 +272,20 @@
           :radius="7"
           :weight="2"
         />
+        <template v-if="showRadar">
+          <LCircleMarker
+            v-for="(event, i) in radarEvents"
+            :key="`radar-${i}`"
+            color="white"
+            :fill-color="radarThreatColors[event.threat] ?? radarThreatColors[2]"
+            :fill-opacity="0.9"
+            :lat-lng="[event.position.lat, event.position.lon]"
+            :radius="8"
+            :weight="2"
+          >
+            <LTooltip :options="{ direction: 'top' }"><span v-html="radarLabel(event)" /></LTooltip>
+          </LCircleMarker>
+        </template>
         <LMarker
           v-for="marker in markers"
           :key="marker.name"
@@ -243,5 +299,14 @@
 </template>
 
 <style scoped lang="css">
-
-    </style>
+  .map-container {
+    position: relative;
+  }
+  /* over the map, under the zoom buttons of Leaflet (top right) */
+  .radar-switch {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+  }
+</style>
