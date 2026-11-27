@@ -36,6 +36,7 @@ export interface AdminUser {
   activities: number
   last_activity: string | null
   last_device_use: string | null
+  last_login: string | null // in the last 90 days
   disk_bytes: number
   // the storage quota an admin gave them, null for the one of the instance; quota: the one that applies.
   // Bytes, 0 for none

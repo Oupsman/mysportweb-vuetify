@@ -178,6 +178,7 @@
             <th class="d-none d-md-table-cell">Since</th>
             <th class="text-right">Activities</th>
             <th class="d-none d-md-table-cell">Last activity</th>
+            <th class="d-none d-lg-table-cell">Last login</th>
             <th class="text-right d-none d-sm-table-cell">Files</th>
             <th />
           </tr>
@@ -196,6 +197,7 @@
             <td class="d-none d-md-table-cell">{{ formatDate(u.created_at) }}</td>
             <td class="text-right">{{ u.activities }}</td>
             <td class="d-none d-md-table-cell">{{ u.last_activity ? formatDate(u.last_activity) : '' }}</td>
+            <td class="d-none d-lg-table-cell">{{ u.last_login ? formatDate(u.last_login) : '' }}</td>
             <td class="text-right text-no-wrap d-none d-sm-table-cell">
               {{ size(u.disk_bytes) }}
               <span class="text-medium-emphasis">/ {{ u.quota > 0 ? size(u.quota) : 'no quota' }}</span>

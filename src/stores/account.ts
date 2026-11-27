@@ -5,6 +5,7 @@ import { defineStore } from 'pinia'
 import { isAxiosError } from 'axios'
 
 import { api, errorMessage } from '@/api'
+import type { LogQuery, NotificationLogPage, UserEventPage } from '@/types/adminlogs'
 import type { InstanceStatus } from '@/types/status'
 import type { AccountImport, AdminUser, EmailStatus, Storage, TwoFactorSetup, TwoFactorStatus, UserSession } from '@/types/user'
 
@@ -93,6 +94,12 @@ export const useAccountStore = defineStore('account', () => {
   // the space the files of the user take, and their quota: bytes, 0 for no quota
   const getStorage = (): Promise<Storage> =>
     call<Storage>(() => api.get('/api/v1/user/storage'), 'Your storage could not be read')
+  // what the users do, and the notifications they get, newest first
+  const getUserEvents = (query: LogQuery): Promise<UserEventPage> =>
+    call<UserEventPage>(() => api.get('/api/v1/admin/events', { params: query }), 'The activity of the users could not be read')
+  const getNotificationLogs = (query: LogQuery): Promise<NotificationLogPage> =>
+    call<NotificationLogPage>(() => api.get('/api/v1/admin/notifications', { params: query }),
+      'The notifications could not be read')
   const getUsers = async (): Promise<void> => {
     users.value = (await call<{ users: AdminUser[] }>(() => api.get('/api/v1/admin/users'), 'The users could not be loaded')).users
   }
@@ -140,5 +147,7 @@ export const useAccountStore = defineStore('account', () => {
     setQuota,
     getStorage,
     getStatus,
+    getUserEvents,
+    getNotificationLogs,
   }
 })

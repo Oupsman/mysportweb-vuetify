@@ -24,6 +24,7 @@ declare module 'vue' {
     ActivityUpload: typeof import('./components/ActivityUpload.vue')['default']
     ActivityView: typeof import('./components/ActivityView.vue')['default']
     ActivityWeather: typeof import('./components/ActivityWeather.vue')['default']
+    AdminActivity: typeof import('./components/AdminActivity.vue')['default']
     AdminInvitations: typeof import('./components/AdminInvitations.vue')['default']
     AdminStatus: typeof import('./components/AdminStatus.vue')['default']
     AdminUsers: typeof import('./components/AdminUsers.vue')['default']
