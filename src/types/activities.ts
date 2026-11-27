@@ -119,6 +119,8 @@ export interface Activity extends ActivityUpdate {
   // the vehicles a rear radar saw behind the rider (EIradar on a Karoo): the owner's only, null for the
   // others and until computed, empty without radar
   radar_events: RadarEvent[] | null
+  // whether a rear radar was connected (a Varia among the sensors, or EIradar's events), null until computed
+  radar_connected: boolean | null
 }
 
 // the route of an activity; the activities of a commute route, including the ones imported later, are commutes

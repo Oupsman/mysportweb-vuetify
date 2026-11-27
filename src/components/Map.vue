@@ -7,7 +7,8 @@
   import { activityCursorKey, nearestIndex } from '@/composables/activityCursor'
   import { api, errorMessage } from '@/api'
   import { useUserStore } from '@/stores/user'
-  import { drawnRadarEvents, radarEventLabel, radarThreatColors } from '@/utils/radar'
+  import type { RadarLevel } from '@/utils/radar'
+  import { drawnRadarEvents, radarEventLabel, radarLevel, radarMarkerRadius, radarThreatColors } from '@/utils/radar'
   import { mdiCarArrowRight, mdiCarOff } from '@mdi/js'
   import { LatLngExpression, LatLngTuple, Map as LeafletMap, PointTuple } from 'leaflet'
 
@@ -186,23 +187,34 @@
   }
   onBeforeUnmount(() => leafletObject.value?.off?.('zoomend', computeArrows))
 
-  // the vehicles of the rear radar closing in fast: the backend sends them to the owner only. Shown unless
-  // the owner turned them off, a setting of their account (every browser)
+  // the vehicles behind the rider seen by the rear radar: the backend sends them to the owner only. The
+  // approaching ones and the fast ones each shown unless the owner turned them off, settings of their account
+  // (every browser)
   const radarEvents = drawnRadarEvents(props.activity.radar_events)
   const userStore = useUserStore()
-  const showRadar = computed((): boolean => (userStore.user as { show_radar_events?: boolean }).show_radar_events ?? true)
+  type RadarSettings = { show_radar_approaching?: boolean, show_radar_fast?: boolean }
+  const radarSettings = computed(() => userStore.user as RadarSettings)
+  const radarLevels: { level: RadarLevel, label: string, color: string, count: number }[] = [
+    { level: 'approaching', label: 'Approaching', color: 'yellow-darken-2', count: 0 },
+    { level: 'fast', label: 'Fast', color: 'orange-darken-2', count: 0 },
+  ]
+  for (const event of radarEvents) {
+    radarLevels.find(l => l.level === radarLevel(event.threat))!.count++
+  }
+  const radarShown = (level: RadarLevel): boolean =>
+    (level === 'approaching' ? radarSettings.value.show_radar_approaching : radarSettings.value.show_radar_fast) ?? true
+  const shownRadarEvents = computed(() => radarEvents.filter(e => radarShown(radarLevel(e.threat))))
   const radarError = ref('')
   onMounted(() => {
-    if (radarEvents.length > 0 && !('show_radar_events' in userStore.user)) {
+    if (radarEvents.length > 0 && !('show_radar_approaching' in userStore.user)) {
       userStore.getUser().catch(() => { /* shown by default */ })
     }
   })
-  const toggleRadar = async () => {
-    const shown = !showRadar.value
+  const toggleRadar = async (level: RadarLevel) => {
     radarError.value = ''
     try {
-      await api.put('/api/v1/user/radar-events/shown', { shown })
-      userStore.user = { ...userStore.user, show_radar_events: shown }
+      const { data } = await api.put('/api/v1/user/radar-events/shown', { [level]: !radarShown(level) })
+      userStore.user = { ...userStore.user, show_radar_approaching: data.approaching, show_radar_fast: data.fast }
     } catch (error) {
       radarError.value = errorMessage(error, 'The setting could not be saved')
     }
@@ -217,17 +229,23 @@
 <template>
   <div ref="container" class="map-container" :style="{ height, width: '100%' }">
     <div v-if="radarEvents.length > 0" class="radar-switch">
-      <v-btn
-        :color="showRadar ? 'orange-darken-2' : undefined"
-        density="comfortable"
-        :prepend-icon="showRadar ? mdiCarArrowRight : mdiCarOff"
-        size="small"
-        :title="showRadar ? 'Hide the vehicles of the radar' : 'Show the vehicles of the radar'"
-        :variant="showRadar ? 'flat' : 'outlined'"
-        @click="toggleRadar"
-      >
-        Radar ({{ radarEvents.length }})
-      </v-btn>
+      <div class="d-flex ga-1">
+        <template v-for="l in radarLevels" :key="l.level">
+          <v-btn
+            v-if="l.count > 0"
+            :class="{ 'bg-surface': !radarShown(l.level) }"
+            :color="radarShown(l.level) ? l.color : undefined"
+            density="comfortable"
+            :prepend-icon="radarShown(l.level) ? mdiCarArrowRight : mdiCarOff"
+            size="small"
+            :title="`${radarShown(l.level) ? 'Hide' : 'Show'} the vehicles of the radar ${l.level === 'fast' ? 'approaching fast' : 'approaching'}`"
+            :variant="radarShown(l.level) ? 'flat' : 'outlined'"
+            @click="toggleRadar(l.level)"
+          >
+            {{ l.label }} ({{ l.count }})
+          </v-btn>
+        </template>
+      </div>
       <div v-if="radarError" class="text-error text-caption bg-surface pa-1">{{ radarError }}</div>
     </div>
     <l-map
@@ -272,15 +290,15 @@
           :radius="7"
           :weight="2"
         />
-        <template v-if="showRadar">
+        <template v-if="shownRadarEvents.length > 0">
           <LCircleMarker
-            v-for="(event, i) in radarEvents"
-            :key="`radar-${i}`"
+            v-for="event in shownRadarEvents"
+            :key="`radar-${event.offset}`"
             color="white"
-            :fill-color="radarThreatColors[event.threat] ?? radarThreatColors[2]"
+            :fill-color="radarThreatColors[event.threat] ?? radarThreatColors[3]"
             :fill-opacity="0.9"
             :lat-lng="[event.position.lat, event.position.lon]"
-            :radius="8"
+            :radius="radarMarkerRadius(event.threat)"
             :weight="2"
           >
             <LTooltip :options="{ direction: 'top' }"><span v-html="radarLabel(event)" /></LTooltip>

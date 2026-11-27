@@ -1,9 +1,8 @@
 import type { Point, RadarEvent } from '@/types/activities'
 import { formatClock } from '@/utils/format'
 
-// the threat levels drawn on the map: the vehicles closing in fast. A vehicle merely behind the rider
-// (approaching) is in every ride on a road, the map would be covered with them
-export const RADAR_MIN_THREAT = 2
+// the threat levels drawn on the map: every vehicle behind the rider, the ones closing in fast bigger
+export const RADAR_MIN_THREAT = 1
 
 export const radarThreatLabels: Record<number, string> = {
   1: 'Vehicle approaching',
@@ -12,13 +11,24 @@ export const radarThreatLabels: Record<number, string> = {
 }
 
 export const radarThreatColors: Record<number, string> = {
+  1: '#fbc02d',
   2: '#f57c00',
   3: '#c62828',
 }
 
-// the events drawn on the map, with their position
+// the levels the user shows or hides apart: the vehicles approaching, the ones approaching fast (and the
+// critical ones, a level no radar was seen sending)
+export type RadarLevel = 'approaching' | 'fast'
+export const radarLevel = (threat: number): RadarLevel => threat >= 2 ? 'fast' : 'approaching'
+
+// the radius of the marker of an event (px): an approaching vehicle smaller than one closing in fast
+export const radarMarkerRadius = (threat: number): number => threat >= 2 ? 8 : 6
+
+// the events drawn on the map, with their position; the most threatening last, drawn over the others
 export const drawnRadarEvents = (events: RadarEvent[] | null | undefined): (RadarEvent & { position: Point })[] =>
-  (events ?? []).filter((e): e is RadarEvent & { position: Point } => e.threat >= RADAR_MIN_THREAT && e.position !== null)
+  (events ?? [])
+    .filter((e): e is RadarEvent & { position: Point } => e.threat >= RADAR_MIN_THREAT && e.position !== null)
+    .sort((a, b) => a.threat - b.threat)
 
 // the text of the marker of an event: what, when (time of the day, from the start of the activity), how long
 export const radarEventLabel = (event: RadarEvent, activityStart: Date): string => {

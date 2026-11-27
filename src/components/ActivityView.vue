@@ -3,7 +3,7 @@
   import { useAppStore } from '@/stores/app'
   import { useUserStore } from '@/stores/user'
   import { useRoute, useRouter } from 'vue-router'
-  import { mdiDeleteOutline, mdiPencilOutline } from '@mdi/js'
+  import { mdiCarArrowRight, mdiDeleteOutline, mdiPencilOutline } from '@mdi/js'
   import { useActivitiesStore } from '@/stores/activities'
   import { api } from '@/api'
   import { activityCursorKey } from '@/composables/activityCursor'
@@ -224,6 +224,9 @@
             {{ activity.device_label || activity.device_name }}
             <div v-if="activity.device?.software" class="text-caption text-medium-emphasis">
               firmware {{ activity.device.software }}
+            </div>
+            <div v-if="activity.radar_connected" class="text-caption text-medium-emphasis">
+              <v-icon :icon="mdiCarArrowRight" size="small" /> radar connected
             </div>
           </v-card-text>
         </v-card>
